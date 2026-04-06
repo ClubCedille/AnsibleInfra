@@ -62,6 +62,18 @@ jobs:
             exit 1
           fi
 
+      - name: Setup venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          make venv
+
+      - name: Install galaxy roles
+        shell: bash
+        run: |
+          set -euo pipefail
+          make galaxy-install
+
       - name: Run target
         shell: bash
         env:
