@@ -28,7 +28,11 @@ venv:
 
 .PHONY: galaxy-install
 galaxy-install: venv
-	$(PYTHON) -m ansible_galaxy install -r roles/requirements.yml
+	@if [ -f roles/requirements.yml ]; then \
+		$(VENV_BIN)/ansible-galaxy install -r roles/requirements.yml; \
+	else \
+		printf '%s\n' "roles/requirements.yml not found; skipping galaxy-install"; \
+	fi
 
 .PHONY: list-playbooks
 list-playbooks:
