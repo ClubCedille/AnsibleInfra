@@ -12,6 +12,13 @@ PYTHON = .venv/bin/python3
 VENV_DIR = .venv
 VENV_BIN = $(VENV_DIR)/bin
 
+# DRY_RUN=1 active le mode Ansible check+diff.
+DRY_RUN ?= 0
+ANSIBLE_MODE_FLAGS =
+ifeq ($(DRY_RUN),1)
+ANSIBLE_MODE_FLAGS += --check --diff
+endif
+
 .PHONY: venv
 venv:
 	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
@@ -30,7 +37,7 @@ list-playbooks:
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
 $(1): $(playbook)/$(1).yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $$< --ask-vault-pass
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $$< --ask-vault-pass $(ANSIBLE_MODE_FLAGS)
 endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))
