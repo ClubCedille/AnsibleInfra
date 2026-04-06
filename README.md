@@ -13,11 +13,7 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │   ├─ generic-config
 │   └─ rack-config
 ├─ playbook/
-│   ├─ ceph
-│   ├─ networking
-│   ├─ proxmox
-│   └─ SAN
-├─ ansible.conf
+│   └─ proxmox
 ├─ Makefile
 └─ requirements.txt
 ```
