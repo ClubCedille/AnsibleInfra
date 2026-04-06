@@ -24,7 +24,7 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 
 ## Installation
 
-Documentaiton faite en fonction d'une distribution Debian-based:
+Documentation faite en fonction d'une distribution Debian-based:
 
 Installer make, python, pip, virtualenv
 
