@@ -40,7 +40,7 @@ source ~/.bashrc
 Exécuter le playbook pour générer l'environnement
 
 ```bash
-cd ansible-staging
+# Depuis le répertoire cloné du projet
 make venv
 ```
 
