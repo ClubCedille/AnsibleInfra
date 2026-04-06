@@ -40,7 +40,7 @@ list-playbooks:
 
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
-$(1): $(playbook)/$(1).yaml
+$(1): galaxy-install $(playbook)/$(1).yaml
 	$(VENV_BIN)/ansible-playbook -i $(inventory) $$< --ask-vault-pass $(ANSIBLE_MODE_FLAGS)
 endef
 
