@@ -28,7 +28,7 @@ venv:
 	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
-	touch $(VENV_DIR)/bin/activate
+# 	source $(VENV_DIR)/bin/activate
 
 .PHONY: galaxy-install
 galaxy-install: venv

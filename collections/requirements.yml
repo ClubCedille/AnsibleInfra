@@ -6,3 +6,5 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/proxmox
     type: dir
+  - name: .cache/AnsibleRoles/docker
+    type: dir
