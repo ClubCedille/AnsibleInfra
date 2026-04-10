@@ -22,49 +22,15 @@
 #       ansible.builtin.include_role:
 #         name: cedille.proxmox.vm
 
-- name: Retrieve Forgejo Runner Token
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  tasks:
-    - name: Fetch Forgejo registration token for runners
-      ansible.builtin.uri:
-        url: "{{ hostvars[groups['forgejo-runners'][0]]['forgejo_api_url'] }}/api/v1/admin/runners/registration-token"
-        method: GET
-        headers:
-          Authorization: "token {{ hostvars[groups['forgejo-runners'][0]]['forgejo_api_token'] }}"
-          Accept: "application/json"
-        return_content: true
-      register: forgejo_token_response
-      when: hostvars[groups['forgejo-runners'][0]]['forgejo_api_token'] is defined
-
-    - name: Set fact for runner token
-      ansible.builtin.set_fact:
-        global_runner_token: "{{ forgejo_token_response.json.token if hostvars[groups['forgejo-runners'][0]]['forgejo_api_token'] is defined }}"
-
 - name: Configure Forgejo Runners
   hosts: forgejo-runners
-  gather_facts: true
+  gather_facts: false
   become: true
+  become_method: sudo
   tasks:
     - name: Ensure apt cache is updated
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Install Docker and requirements
-      ansible.builtin.apt:
-        name:
-          - docker.io
-          - docker-compose-v2
-          - python3-docker
-        state: present
-
-    - name: Ensure Docker service is started and enabled
-      ansible.builtin.systemd:
-        name: docker
-        state: started
-        enabled: true
+      ansible.builtin.include_role:
+        name: cedille.docker.install
 
     - name: Create act_runner configuration directory
       ansible.builtin.file:
@@ -90,12 +56,27 @@
         owner: root
         group: root
 
+    - name: Fetch Forgejo registration token for runners
+      ansible.builtin.uri:
+        url: "{{ hostvars['forgejo_api_url'] }}/api/v1/admin/runners/registration-token"
+        method: GET
+        headers:
+          Authorization: "token {{ hostvars['forgejo_api_token'] }}"
+          Accept: "application/json"
+        return_content: true
+      register: forgejo_token_response
+      when: hostvars['forgejo_api_token'] is defined
+
+    - name: Set fact for runner token
+      ansible.builtin.set_fact:
+        global_runner_token: "{{ forgejo_token_response.json.token if hostvars['forgejo_api_token'] is defined }}"
+
     - name: Generate .runner file via standard registration
       ansible.builtin.command: >
         docker run --rm -v /opt/act_runner/data:/data -w /data code.forgejo.org/forgejo/runner:12
         forgejo-runner register --no-interactive
         --instance {{ hostvars['forgejo_api_url'] }}
-        --token {{ hostvars['localhost']['global_runner_token'] }}
+        --token {{ hostvars['global_runner_token'] }}
         --name {{ inventory_hostname }}
       args:
         creates: /opt/act_runner/data/.runner
