@@ -4,36 +4,91 @@ ansible_host: 10.0.21.81
 ansible_user: localadmin
 ansible_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          34646338383665623031633939333739303161336535376338313832353864653731613939303966
-          3237353965653663303262326663666337653135653063630a303265633863376566643134653238
-          31333931333434643230323433653137333631363564666236333564653439613062396135343433
-          6137383331366564300a313437356431353265643730643263303737643562666236376362313366
-          32343637613262373764303830366639633161346533613030386430386262363462316534666631
-          3566313132386532343639653739663266346434616561313164
+          35653565353663656433343433616431623466366338616537616435336232343062363536613761
+          6633303438653737353263653931323531666538663066620a636461316130363830633231383137
+          66363732306439666164316436376535653438303161326166393131663136653632393731666233
+          3034303865643139380a373933343831663134663065626664333735626361373330363536623265
+          6466
 
-pnp_server_day0_site_domain_name: pnp01.mgmt.etsmtl.club
-pnp_server_day0_site_name_servers:
-  - 1.1.1.1
-  - 8.8.8.8
-pnp_server_day0_ntp_servers:
-  - 0.pool.ntp.org
-  - 1.pool.ntp.org
 
-pnp_server_day0_profiles:
-  - name: sw01
-    hostname: sw01.etsmtl.club
-    admin_password: !vault |
+pnp_server_http:
+  docroot: /var/www/cisco-pnp
+  device_map_path: /var/lib/cisco-pnp/device-map.yaml
+  profiles_src_dir: /var/lib/cisco-pnp/profiles
+  public_host: "{{ ansible_default_ipv4.address }}"
+  image_url: "http://{{ pnp_server_http.public_host }}:{{ pnp_server_http.listen.port }}/images"
+  config_url: "http://{{ pnp_server_http.public_host }}:{{ pnp_server_http.listen.port }}/configs"
+  listen:
+    address: "0.0.0.0"
+    port: 8080
+  install_nginx: true
+  nginx_service_name: nginx
+
+pnp_server_day0:
+  profiles_source_group: cisco_bootstrapped
+  devices_source_group: cisco_bootstrapped
+  require_identifier: true
+  validate_unique_serial: true
+  validate_unique_mac: true
+  mgmt_svi_vlan_id: 100
+
+  site:
+    domain_name: pnp01.mgmt.etsmtl.club
+    name_servers:
+      - 1.1.1.1
+      - 8.8.8.8
+    ntp_servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+
+  profiles:
+    - name: sw01
+      hostname: sw01.etsmtl.club
+      admin_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          36333637316439643565353866303937376165393662323063653934323766346133656237316331
-          6439376563653336646430353032326233336566626465310a303863663234376562353632623432
-          30306461646262393837366263663061646137303132643130313531353361393831303034643732
-          6535333830343866310a356135663939393233636133356433633532376661386335303434656433
-          35373930316637343236333739626538326534623632323562323630623431353364393465336531
-          3662316463393861343037623539656163623862666365343234
-    description: Switch 01
-    mgmt_default_gateway: 10.0.21.1
+          35653565353663656433343433616431623466366338616537616435336232343062363536613761
+          6633303438653737353263653931323531666538663066620a636461316130363830633231383137
+          66363732306439666164316436376535653438303161326166393131663136653632393731666233
+          3034303865643139380a373933343831663134663065626664333735626361373330363536623265
+          6466
+      description: Switch 01
+      mgmt_default_gateway: 10.0.21.1
 
-pnp_server_day0_devices:
-  - profile: sw01
-    mac_address: 6C:99:89:73:64:00
-    serial: FOC1801U0EQ
+  devices:
+    - profile: sw01
+      mac: 6C:99:89:73:64:00
+      serial: FOC1801U0EQ
+
+pnp_server_backend:
+  enabled: true
+  bind:
+    address: "127.0.0.1"
+    port: 9191
+  base_dir: /var/lib/cisco-pnp
+  bundle_dir: "{{ pnp_server_backend.base_dir }}/pnp"
+  git:
+    repo: https://github.com/GreatSymphonia/pnp-server.git
+    version: main
+    checkout_dir: "{{ pnp_server_backend.base_dir }}/src/pnp-server"
+  user: pnp
+  group: pnp
+  venv_dir: "{{ pnp_server_backend.base_dir }}/venv"
+  log_dir: "{{ pnp_server_backend.base_dir }}/log"
+  log_file: "{{ pnp_server_backend.log_dir }}/pnp_debug.log"
+  script_path: "{{ pnp_server_backend.bundle_dir }}/open-pnp.py"
+  config_path: "{{ pnp_server_backend.bundle_dir }}/open-pnp.toml"
+  images_path: "{{ pnp_server_backend.bundle_dir }}/images.toml"
+  service_name: pnp-server
+  pip_packages:
+    - flask
+    - xmltodict
+    - requests
+    - ifaddr
+    - tomli
+
+pnp_server_tls:
+  enabled: false
+  selfsigned: false
+  days: 3650
+  cert: /etc/nginx/certs/cisco-pnp.crt
+  key: /etc/nginx/certs/cisco-pnp.key
