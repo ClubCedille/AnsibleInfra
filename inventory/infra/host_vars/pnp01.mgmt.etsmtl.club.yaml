@@ -15,13 +15,13 @@ pnp_server_http:
   docroot: /var/www/cisco-pnp
   device_map_path: /var/lib/cisco-pnp/device-map.yaml
   profiles_src_dir: /var/lib/cisco-pnp/profiles
-  configs_src_dir: /var/lib/cisco-pnp/configs
+  configs_src_dir: "{{ pnp_server_backend.bundle_dir }}/configs"
   public_host: "{{ ansible_default_ipv4.address }}"
   image_url: "http://{{ pnp_server_http.public_host }}:{{ pnp_server_http.listen.port }}/images"
   config_url: "http://{{ pnp_server_http.public_host }}:{{ pnp_server_http.listen.port }}/configs"
   listen:
     address: "0.0.0.0"
-    port: 8080
+    port: 9191
   install_nginx: true
   nginx_service_name: nginx
 
@@ -53,6 +53,8 @@ pnp_server_day0:
           3034303865643139380a373933343831663134663065626664333735626361373330363536623265
           6466
       description: Switch 01
+      mgmt_svi_ip_address: 10.0.21.81
+      mgmt_svi_ip_mask: 255.255.255.0
       mgmt_default_gateway: 10.0.21.1
 
   devices:
@@ -63,7 +65,7 @@ pnp_server_day0:
 pnp_server_backend:
   enabled: true
   bind:
-    address: "127.0.0.1"
+    address: "0.0.0.0"
     port: 9191
   base_dir: /var/lib/cisco-pnp
   bundle_dir: "{{ pnp_server_backend.base_dir }}/pnp"
@@ -71,8 +73,8 @@ pnp_server_backend:
     repo: https://github.com/GreatSymphonia/pnp-server.git
     version: main
     checkout_dir: "{{ pnp_server_backend.base_dir }}/src/pnp-server"
-  user: pnp
-  group: pnp
+  user: www-data
+  group: www-data
   venv_dir: "{{ pnp_server_backend.base_dir }}/venv"
   log_dir: "{{ pnp_server_backend.base_dir }}/log"
   log_file: "{{ pnp_server_backend.log_dir }}/pnp_debug.log"
@@ -86,6 +88,14 @@ pnp_server_backend:
     - requests
     - ifaddr
     - tomli
+
+pnp_server_images:
+  - filename: packages.conf
+    version: "16.12.10a"
+    md5: ""
+    size: 0
+    models:
+      - WS-C3850-48P-L
 
 pnp_server_tls:
   enabled: false
