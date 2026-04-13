@@ -8,3 +8,4 @@ ansible.log
 out/*
 
 .cache/*
+tmp.yaml

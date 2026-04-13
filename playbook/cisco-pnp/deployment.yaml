@@ -6,3 +6,33 @@
   become: true
   roles:
     - cedille.cisco-3850.pnp_server
+
+  tasks:
+    - name: Ensure PnP artifact directories are owned by backend user
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ pnp_server_backend.user }}"
+        group: "{{ pnp_server_backend.group }}"
+        mode: "0750"
+      loop:
+        - "{{ pnp_server_http.profiles_src_dir }}"
+        - "{{ pnp_server_http.configs_src_dir }}"
+        - "{{ pnp_server_http.device_map_path | dirname }}"
+
+    - name: Ensure PnP artifacts have correct ownership
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: "{{ pnp_server_backend.user }}"
+        group: "{{ pnp_server_backend.group }}"
+        recurse: true
+      loop:
+        - "{{ pnp_server_http.profiles_src_dir }}"
+        - "{{ pnp_server_http.configs_src_dir }}"
+
+    - name: Ensure Day-0 device map ownership and mode
+      ansible.builtin.file:
+        path: "{{ pnp_server_http.device_map_path }}"
+        owner: "{{ pnp_server_backend.user }}"
+        group: "{{ pnp_server_backend.group }}"
+        mode: "0640"
