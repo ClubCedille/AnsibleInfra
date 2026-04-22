@@ -1,4 +1,7 @@
 ---
+
+ansible_user: "{{ vm_user }}"
+
 forgejo_api_url: "https://git.etsmtl.club"
 forgejo_api_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -21,6 +24,7 @@ vm_password: !vault |
   6535333830343866310a356135663939393233636133356433633532376661386335303434656433
   35373930316637343236333739626538326534623632323562323630623431353364393465336531
   3662316463393861343037623539656163623862666365343234
+vm_sshkeys: "{{ ansible_ssh_public }}"
 
 vm_disk_image_path: "/var/lib/vz/images/pulled_disks/ubuntu-22.04-server-cloudimg-amd64.img"
 vm_disk_storage: "local-lvm"

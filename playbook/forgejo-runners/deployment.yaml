@@ -24,7 +24,7 @@
 
 - name: Configure Forgejo Runners
   hosts: forgejo-runners
-  gather_facts: false
+  gather_facts: true
   become: true
   become_method: sudo
   tasks:
@@ -58,25 +58,25 @@
 
     - name: Fetch Forgejo registration token for runners
       ansible.builtin.uri:
-        url: "{{ hostvars['forgejo_api_url'] }}/api/v1/admin/runners/registration-token"
+        url: "{{ forgejo_api_url }}/api/v1/admin/runners/registration-token"
         method: GET
         headers:
-          Authorization: "token {{ hostvars['forgejo_api_token'] }}"
+          Authorization: "token {{ forgejo_api_token }}"
           Accept: "application/json"
         return_content: true
       register: forgejo_token_response
-      when: hostvars['forgejo_api_token'] is defined
+      when: forgejo_api_token is defined
 
     - name: Set fact for runner token
       ansible.builtin.set_fact:
-        global_runner_token: "{{ forgejo_token_response.json.token if hostvars['forgejo_api_token'] is defined }}"
+        global_runner_token: "{{ forgejo_token_response.json.token if forgejo_api_token is defined }}"
 
     - name: Generate .runner file via standard registration
       ansible.builtin.command: >
         docker run --rm -v /opt/act_runner/data:/data -w /data code.forgejo.org/forgejo/runner:12
         forgejo-runner register --no-interactive
-        --instance {{ hostvars['forgejo_api_url'] }}
-        --token {{ hostvars['global_runner_token'] }}
+        --instance {{ forgejo_api_url }}
+        --token {{ global_runner_token }}
         --name {{ inventory_hostname }}
       args:
         creates: /opt/act_runner/data/.runner

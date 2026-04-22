@@ -1,0 +1,3 @@
+ansible_ssh_private_key_file: ~/.ssh/id_rsa_clubs
+
+ansible_ssh_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJET97bQbDWv7z1yXNgCjip9Fhtrf/POyT2j4p1YJZlq
