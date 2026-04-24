@@ -1,0 +1,85 @@
+name: Make Targets
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Cible make a executer"
+        required: true
+        default: "list-playbooks"
+      inventory:
+        description: "Inventory (infra ou staging)"
+        required: true
+        default: "infra"
+        type: choice
+        options:
+          - infra
+          - staging
+
+jobs:
+  run-target:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve execution mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref_name="${GITHUB_REF#refs/heads/}"
+          if [ "$ref_name" = "main" ]; then
+            echo "DRY_RUN=0" >> "$GITHUB_ENV"
+            echo "Mode: real run (main)"
+          else
+            echo "DRY_RUN=1" >> "$GITHUB_ENV"
+            echo "Mode: dry-run (branche != main)"
+          fi
+
+      - name: Validate make target
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          {
+            echo "venv"
+            echo "galaxy-install"
+            echo "list-playbooks"
+            echo "lint"
+            make -s list-playbooks
+          } | sort -u > /tmp/allowed-targets.txt
+
+          if ! grep -Fxq "$TARGET" /tmp/allowed-targets.txt; then
+            echo "Target invalide: $TARGET"
+            echo "Targets autorisees:"
+            cat /tmp/allowed-targets.txt
+            exit 1
+          fi
+
+      - name: Setup venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          make venv
+
+      - name: Install galaxy roles
+        shell: bash
+        run: |
+          set -euo pipefail
+          make galaxy-install
+
+      - name: Run target
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+          INVENTORY_NAME: ${{ inputs.inventory }}
+        run: |
+          set -euo pipefail
+          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN"

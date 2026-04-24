@@ -1,0 +1,11 @@
+# VENV
+.venv
+
+# Ansible Log
+ansible.log
+
+# Configuration Output
+out/*
+
+.cache/*
+tmp.yaml
