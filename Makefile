@@ -1,8 +1,8 @@
-infra_inventory = inventory/infra/hosts.ini
-staging_inventory = inventory/staging/hosts.ini
+infra_inventory = inventories/infra/hosts.ini
+staging_inventory = inventories/staging/hosts.ini
 inventory ?= $(infra_inventory)
 
-playbook = playbook
+playbook = playbooks
 
 playbook_files = $(wildcard $(playbook)/*/*.yaml)
 playbook_targets = $(patsubst $(playbook)/%.yaml,%,$(playbook_files))
@@ -53,6 +53,15 @@ galaxy-install: venv
 .PHONY: list-playbooks
 list-playbooks:
 	@printf '%s\n' $(playbook_targets)
+
+.PHONY: lint-tools
+lint-tools: venv
+	$(PYTHON) -m pip install ansible-lint yamllint
+
+.PHONY: lint
+lint: galaxy-install lint-tools
+	$(VENV_BIN)/ansible-lint playbooks
+	$(VENV_BIN)/yamllint -c .yamllint inventories playbooks collections .github/workflows
 
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)

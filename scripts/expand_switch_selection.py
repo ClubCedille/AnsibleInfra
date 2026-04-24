@@ -19,8 +19,8 @@ from pathlib import Path
 from typing import Iterable
 
 
-DEFAULT_CSV = "LanETS - Inventaire Switch.csv"
-DEFAULT_HOST_VARS = "inventory/infra/host_vars/pnp01.mgmt.etsmtl.club.yaml"
+DEFAULT_CSV = "data/raw/lanets-inventaire-switch.csv"
+DEFAULT_HOST_VARS = "inventories/infra/host_vars/pnp01.mgmt.etsmtl.club.yaml"
 
 
 @dataclass
