@@ -1,0 +1,16 @@
+---
+vm_id: 1102
+vm_name: dhcp02-event
+vm_net:
+  bridge: vmbr1
+  vlan: 1
+  device: virtio
+  ip: 10.10.0.12
+  netmask: 16
+  gateway: 10.10.0.1
+  nameservers: 1.1.1.1,8.8.8.8
+  search_domain: event.lanets.ca
+
+netservices_dhcp:
+  ha:
+    this_server_name: secondary

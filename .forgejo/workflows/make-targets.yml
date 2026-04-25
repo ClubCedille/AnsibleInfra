@@ -8,13 +8,13 @@ on:
         required: true
         default: "list-playbooks"
       inventory:
-        description: "Inventory (infra ou staging)"
+        description: "Inventory (infra ou event)"
         required: true
         default: "infra"
         type: choice
         options:
           - infra
-          - staging
+          - event
 
 jobs:
   run-target:
@@ -81,4 +81,4 @@ jobs:
           INVENTORY_NAME: ${{ inputs.inventory }}
         run: |
           set -euo pipefail
-          make "$TARGET" inventory="inventory/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN"
+          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN"

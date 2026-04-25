@@ -1,6 +1,9 @@
 # VENV
 .venv
 
+# .ansible
+.ansible
+
 # Ansible Log
 ansible.log
 

@@ -1,0 +1,15 @@
+---
+vm_id: 1301
+vm_name: stork01-event
+vm_net:
+  bridge: vmbr1
+  vlan: 1
+  device: virtio
+  ip: 10.10.0.31
+  netmask: 16
+  gateway: 10.10.0.1
+  nameservers: 1.1.1.1,8.8.8.8
+  search_domain: event.lanets.ca
+
+netservices_stork:
+  enabled: true

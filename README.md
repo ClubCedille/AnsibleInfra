@@ -8,7 +8,7 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 .
 ├─ inventories/
 │   ├─ infra
-│   └─ staging
+│   └─ event
 ├─ playbooks/
 │   ├─ cisco-pnp
 │   └─ proxmox
@@ -41,7 +41,7 @@ make proxmox/update
 Exécuter un playbook avec un inventaire spécifique:
 
 ```bash
-make cisco-pnp/deployment inventory=inventories/staging/hosts.ini
+make cisco-pnp/deployment inventory=inventories/event/hosts.ini
 ```
 
 Valider la qualité YAML/Ansible localement:

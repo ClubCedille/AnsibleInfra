@@ -1,0 +1,22 @@
+---
+vm_cpu_cores: 2
+vm_memory_mb: 4096
+vm_disk_size: 20G
+
+netservices_dns:
+  enabled: true
+  ha:
+    enabled: true
+    this_server_role: master
+    master_ip: 10.10.0.21
+    slave_ip: 10.10.0.22
+    zones:
+      - name: event.lanets.ca
+        master_file: /var/lib/bind/db.event.lanets.ca
+        slave_file: /var/cache/bind/db.event.lanets.ca
+  options:
+    forwarders:
+      - 1.1.1.1
+      - 8.8.8.8
+  local:
+    zones: []
