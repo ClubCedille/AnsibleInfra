@@ -9,7 +9,7 @@ vm_net:
   netmask: 16
   gateway: 10.10.0.1
   nameservers: 1.1.1.1,8.8.8.8
-  search_domain: event.etsmtl.club
+  search_domain: event.lanets.ca
 
 netservices_stork:
   enabled: true

@@ -11,9 +11,9 @@ netservices_dns:
     master_ip: 10.10.0.21
     slave_ip: 10.10.0.22
     zones:
-      - name: event.etsmtl.club
-        master_file: /var/lib/bind/db.event.etsmtl.club
-        slave_file: /var/cache/bind/db.event.etsmtl.club
+      - name: event.lanets.ca
+        master_file: /var/lib/bind/db.event.lanets.ca
+        slave_file: /var/cache/bind/db.event.lanets.ca
   options:
     forwarders:
       - 1.1.1.1

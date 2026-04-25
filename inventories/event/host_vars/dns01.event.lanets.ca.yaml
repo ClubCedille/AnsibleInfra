@@ -1,16 +1,16 @@
 ---
-vm_id: 1202
-vm_name: dns02-event
+vm_id: 1201
+vm_name: dns01-event
 vm_net:
   bridge: vmbr1
   vlan: 1
   device: virtio
-  ip: 10.10.0.22
+  ip: 10.10.0.21
   netmask: 16
   gateway: 10.10.0.1
   nameservers: 1.1.1.1,8.8.8.8
-  search_domain: event.etsmtl.club
+  search_domain: event.lanets.ca
 
 netservices_dns:
   ha:
-    this_server_role: slave
+    this_server_role: master
