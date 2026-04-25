@@ -1,0 +1,14 @@
+---
+- name: Provision Stork VM on Proxmox
+  hosts: netservices_stork
+  gather_facts: false
+  become: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy netservices Stork
+  hosts: netservices_stork
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.stork

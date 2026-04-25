@@ -1,0 +1,20 @@
+---
+vm_proxmox_api:
+  user: root@pam
+  password: change-me
+  host: pve01.mgmt.etsmtl.club
+
+vm_proxmox_node: pve01
+vm_cloud_init_storage: local-lvm
+vm_disk_storage: local-lvm
+vm_disk_format: qcow2
+vm_disk_device: virtio0
+vm_disk_image_path: /var/lib/vz/template/iso/ubuntu-24.04-server-cloudimg-amd64.img
+
+vm_user: ansible
+vm_password: change-me
+vm_sshkeys: ""
+
+vm_onboot: true
+vm_start_after_creation: true
+vm_delete_if_exists: false

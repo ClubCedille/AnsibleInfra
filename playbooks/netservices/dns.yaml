@@ -1,0 +1,14 @@
+---
+- name: Provision DNS VMs on Proxmox
+  hosts: netservices_dns
+  gather_facts: false
+  become: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy netservices DNS
+  hosts: netservices_dns
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.dns

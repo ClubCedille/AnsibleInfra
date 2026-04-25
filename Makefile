@@ -1,5 +1,5 @@
 infra_inventory = inventories/infra/hosts.ini
-staging_inventory = inventories/staging/hosts.ini
+event_inventory = inventories/event/hosts.ini
 inventory ?= $(infra_inventory)
 
 playbook = playbooks

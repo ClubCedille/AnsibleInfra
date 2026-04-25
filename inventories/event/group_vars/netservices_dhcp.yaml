@@ -1,0 +1,23 @@
+---
+vm_cpu_cores: 2
+vm_memory_mb: 4096
+vm_disk_size: 20G
+
+netservices_dhcp:
+  enabled: true
+  ha:
+    enabled: true
+    mode: hot-standby
+    primary:
+      name: primary
+      url: http://10.10.0.11:8000/
+    secondary:
+      name: secondary
+      url: http://10.10.0.12:8000/
+  kea_dhcp4_config:
+    Dhcp4:
+      subnet4:
+        - id: 1
+          subnet: 10.10.0.0/16
+          pools:
+            - pool: 10.10.10.100 - 10.10.10.250

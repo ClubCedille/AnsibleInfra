@@ -1,0 +1,14 @@
+---
+- name: Provision DHCP VMs on Proxmox
+  hosts: netservices_dhcp
+  gather_facts: false
+  become: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy netservices DHCP
+  hosts: netservices_dhcp
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.dhcp

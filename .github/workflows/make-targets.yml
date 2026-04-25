@@ -8,13 +8,13 @@ on:
         required: true
         default: "list-playbooks"
       inventory:
-        description: "Inventory (infra ou staging)"
+        description: "Inventory (infra ou event)"
         required: true
         default: "infra"
         type: choice
         options:
           - infra
-          - staging
+          - event
 
 jobs:
   run-target:

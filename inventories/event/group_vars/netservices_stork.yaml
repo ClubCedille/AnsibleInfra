@@ -1,0 +1,20 @@
+---
+vm_cpu_cores: 2
+vm_memory_mb: 4096
+vm_disk_size: 30G
+
+netservices_stork:
+  enabled: true
+  server:
+    database:
+      host: 127.0.0.1
+      port: 5432
+      name: stork
+      user: stork
+      password: change-me
+  agent:
+    server_url: http://10.10.0.31:8080
+    token: change-me
+    monitored_services:
+      - kea-dhcp4-server
+      - bind9

@@ -2,6 +2,8 @@
 collections:
   - name: .cache/AnsibleRoles/cisco-3850
     type: dir
+  - name: .cache/AnsibleRoles/netservices
+    type: dir
   - name: .cache/AnsibleRoles/opnsense
     type: dir
   - name: .cache/AnsibleRoles/proxmox
