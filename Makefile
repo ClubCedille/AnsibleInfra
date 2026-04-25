@@ -1,6 +1,12 @@
 infra_inventory = inventories/infra/hosts.ini
 event_inventory = inventories/event/hosts.ini
+use_event_inventory ?= 0
+
+ifeq ($(use_event_inventory),1)
+inventory ?= $(event_inventory)
+else
 inventory ?= $(infra_inventory)
+endif
 
 playbook = playbooks
 
