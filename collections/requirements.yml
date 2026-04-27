@@ -8,3 +8,5 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/proxmox
     type: dir
+  - name: .cache/AnsibleRoles/monitoring
+    type: dir

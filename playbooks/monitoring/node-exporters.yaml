@@ -1,0 +1,7 @@
+---
+- name: Deploy node exporters on netservices hosts
+  hosts: netservices_node_exporter
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.monitoring.node_exporter

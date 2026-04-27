@@ -1,0 +1,8 @@
+---
+- name: Deploy network and probe exporters on monitoring host
+  hosts: monitoring_core
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.monitoring.blackbox_exporter
+    - cedille.monitoring.snmp_exporter

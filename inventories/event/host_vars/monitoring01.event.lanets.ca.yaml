@@ -1,0 +1,15 @@
+---
+vm_id: 1401
+vm_name: monitoring01-event
+vm_cpu_cores: 4
+vm_memory_mb: 8192
+vm_disk_size: 40G
+vm_net:
+  bridge: vmbr1
+  vlan: 1
+  device: virtio
+  ip: 10.10.0.41
+  netmask: 16
+  gateway: 10.10.0.1
+  nameservers: 1.1.1.1,8.8.8.8
+  search_domain: event.lanets.ca

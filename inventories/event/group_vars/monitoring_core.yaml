@@ -1,0 +1,120 @@
+---
+monitoring_alertmanager_slack_webhook_url: REPLACE_WITH_VAULTED_SLACK_WEBHOOK_URL
+
+loki_server:
+  http_listen_port: 3100
+  retention_period: 168h
+  bind_address: 0.0.0.0
+
+loki_storage:
+  path_prefix: /var/lib/loki
+  filesystem:
+    chunks_directory: /var/lib/loki/chunks
+    rules_directory: /var/lib/loki/rules
+  schema_config:
+    index_prefix: index_
+
+alertmanager_route:
+  receiver: slack
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+
+alertmanager_receivers:
+  - name: slack
+    webhook_configs:
+      - url: "{{ monitoring_alertmanager_slack_webhook_url }}"
+
+prometheus_server:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  retention_time: 15d
+  external_labels:
+    environment: event
+
+prometheus_rule_files: []
+prometheus_scrape_configs:
+  - job_name: prometheus
+    targets:
+      - 127.0.0.1:9090
+  - job_name: alertmanager
+    targets:
+      - 127.0.0.1:9093
+  - job_name: loki
+    targets:
+      - 127.0.0.1:3100
+  - job_name: dhcp_node_exporter
+    targets:
+      - 10.10.0.11:9100
+      - 10.10.0.12:9100
+  - job_name: dns_node_exporter
+    targets:
+      - 10.10.0.21:9100
+      - 10.10.0.22:9100
+  - job_name: stork_node_exporter
+    targets:
+      - 10.10.0.31:9100
+  - job_name: blackbox_exporter
+    targets:
+      - 127.0.0.1:9115
+  - job_name: snmp_exporter
+    targets:
+      - 127.0.0.1:9116
+  - job_name: blackbox_icmp_opnsense01
+    metrics_path: /probe?module=icmp&target=10.10.0.2
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_opnsense02
+    metrics_path: /probe?module=icmp&target=10.10.0.3
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_dhcp01
+    metrics_path: /probe?module=icmp&target=10.10.0.11
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_dhcp02
+    metrics_path: /probe?module=icmp&target=10.10.0.12
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_dns01
+    metrics_path: /probe?module=icmp&target=10.10.0.21
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_dns02
+    metrics_path: /probe?module=icmp&target=10.10.0.22
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_stork01
+    metrics_path: /probe?module=icmp&target=10.10.0.31
+    targets:
+      - 127.0.0.1:9115
+  - job_name: snmp_if_mib_opnsense01
+    metrics_path: /snmp?module=if_mib&target=10.10.0.2
+    targets:
+      - 127.0.0.1:9116
+  - job_name: snmp_if_mib_opnsense02
+    metrics_path: /snmp?module=if_mib&target=10.10.0.3
+    targets:
+      - 127.0.0.1:9116
+prometheus_alerting:
+  alertmanagers:
+    - targets:
+        - 127.0.0.1:9093
+
+grafana_server:
+  http_port: 3000
+  root_url: http://monitoring01.event.lanets.ca:3000
+
+grafana_datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    is_default: true
+    editable: false
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://127.0.0.1:3100
+    is_default: false
+    editable: false

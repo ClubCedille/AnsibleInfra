@@ -1,0 +1,17 @@
+---
+- name: Provision monitoring VM on Proxmox
+  hosts: monitoring_core
+  gather_facts: false
+  become: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy core monitoring stack
+  hosts: monitoring_core
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.monitoring.loki
+    - cedille.monitoring.alertmanager
+    - cedille.monitoring.prometheus
+    - cedille.monitoring.grafana
