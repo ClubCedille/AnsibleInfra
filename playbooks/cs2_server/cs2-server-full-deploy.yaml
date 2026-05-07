@@ -1,0 +1,21 @@
+- name : Deploying cs2 server with plugin
+  hosts: cs2
+  connection: local
+  tasks:
+    - name: Create vm for the server
+      ansible.builtin.include_role:
+        name: cedille.proxmox.vm
+        apply:
+          delegate_to: localhost
+
+    - name: Installing prerequise for cs2 server deployment
+      ansible.builtin.include_role:
+        name: lanets.cs2.deployment_prerequisites
+
+    - name: Deploying cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.deploy_server
+
+    - name: Adding plugin to cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.plugin_cs2

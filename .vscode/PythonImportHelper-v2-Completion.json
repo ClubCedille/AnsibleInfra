@@ -1,0 +1,232 @@
+[
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "argparse",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "argparse",
+        "description": "argparse",
+        "detail": "argparse",
+        "documentation": {}
+    },
+    {
+        "label": "csv",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "csv",
+        "description": "csv",
+        "detail": "csv",
+        "documentation": {}
+    },
+    {
+        "label": "re",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "re",
+        "description": "re",
+        "detail": "re",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "dataclass",
+        "importPath": "dataclasses",
+        "description": "dataclasses",
+        "isExtraImport": true,
+        "detail": "dataclasses",
+        "documentation": {}
+    },
+    {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
+        "label": "Iterable",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "TemplateDevice",
+        "kind": 6,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "class TemplateDevice:\n    admin_password_block: list[str]\n    mgmt_mask: str | None\n    mgmt_gateway: str | None\n@dataclass\nclass TemplateProfile:\n    admin_password_block: list[str]\ndef parse_args() -> argparse.Namespace:\n    parser = argparse.ArgumentParser(\n        description=\"Generate YAML devices entries from LanETS switch inventory\",",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "TemplateProfile",
+        "kind": 6,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "class TemplateProfile:\n    admin_password_block: list[str]\ndef parse_args() -> argparse.Namespace:\n    parser = argparse.ArgumentParser(\n        description=\"Generate YAML devices entries from LanETS switch inventory\",\n    )\n    parser.add_argument(\n        \"--csv\",\n        default=DEFAULT_CSV,\n        help=f\"Path to CSV inventory (default: {DEFAULT_CSV})\",",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "parse_args",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def parse_args() -> argparse.Namespace:\n    parser = argparse.ArgumentParser(\n        description=\"Generate YAML devices entries from LanETS switch inventory\",\n    )\n    parser.add_argument(\n        \"--csv\",\n        default=DEFAULT_CSV,\n        help=f\"Path to CSV inventory (default: {DEFAULT_CSV})\",\n    )\n    parser.add_argument(",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "read_text",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def read_text(path: Path) -> list[str]:\n    try:\n        return path.read_text(encoding=\"utf-8\").splitlines()\n    except OSError as exc:\n        raise SystemExit(f\"Cannot read {path}: {exc}\") from exc\ndef parse_section_blocks(yaml_lines: list[str], section_name: str) -> list[list[str]]:\n    devices_index = None\n    for i, line in enumerate(yaml_lines):\n        if re.match(rf\"^\\s{{2}}{re.escape(section_name)}:\\s*$\", line):\n            devices_index = i",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "parse_section_blocks",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def parse_section_blocks(yaml_lines: list[str], section_name: str) -> list[list[str]]:\n    devices_index = None\n    for i, line in enumerate(yaml_lines):\n        if re.match(rf\"^\\s{{2}}{re.escape(section_name)}:\\s*$\", line):\n            devices_index = i\n            break\n    if devices_index is None:\n        raise SystemExit(f\"Could not find '  {section_name}:' section in host_vars file\")\n    blocks: list[list[str]] = []\n    current: list[str] = []",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "extract_name",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def extract_name(block: list[str]) -> str | None:\n    for line in block:\n        match = re.match(r\"^\\s{6}name:\\s*(\\S+)\\s*$\", line)\n        if match:\n            return match.group(1).strip()\n    return None\ndef extract_field(block: list[str], field_name: str) -> str | None:\n    for line in block:\n        match = re.match(rf\"^\\s{{6}}{re.escape(field_name)}:\\s*(\\S+)\\s*$\", line)\n        if match:",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "extract_field",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def extract_field(block: list[str], field_name: str) -> str | None:\n    for line in block:\n        match = re.match(rf\"^\\s{{6}}{re.escape(field_name)}:\\s*(\\S+)\\s*$\", line)\n        if match:\n            return match.group(1).strip()\n    return None\ndef extract_template(block: list[str]) -> TemplateDevice:\n    admin_start = None\n    admin_end = None\n    for i, line in enumerate(block):",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "extract_template",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def extract_template(block: list[str]) -> TemplateDevice:\n    admin_start = None\n    admin_end = None\n    for i, line in enumerate(block):\n        if re.match(r\"^\\s{6}admin_password:\\s*!vault\\s*\\|\\s*$\", line):\n            admin_start = i\n            j = i + 1\n            while j < len(block) and re.match(r\"^\\s{10,}\\S\", block[j]):\n                j += 1\n            admin_end = j",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "extract_profile_template",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def extract_profile_template(block: list[str]) -> TemplateProfile:\n    admin_start = None\n    admin_end = None\n    for i, line in enumerate(block):\n        if re.match(r\"^\\s{6}admin_password:\\s*!vault\\s*\\|\\s*$\", line):\n            admin_start = i\n            j = i + 1\n            while j < len(block) and re.match(r\"^\\s{10,}\\S\", block[j]):\n                j += 1\n            admin_end = j",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "normalize_identifier",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def normalize_identifier(raw_id: str) -> str:\n    return raw_id.strip().lower()\ndef build_description(identifier: str) -> str:\n    upper = identifier.upper()\n    if upper.startswith(\"SWM\"):\n        suffix = upper[3:]\n        return f\"Switch M{suffix}\"\n    if upper.startswith(\"SW\"):\n        suffix = upper[2:]\n        return f\"Switch {suffix}\"",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "build_description",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def build_description(identifier: str) -> str:\n    upper = identifier.upper()\n    if upper.startswith(\"SWM\"):\n        suffix = upper[3:]\n        return f\"Switch M{suffix}\"\n    if upper.startswith(\"SW\"):\n        suffix = upper[2:]\n        return f\"Switch {suffix}\"\n    return f\"Switch {upper}\"\ndef infer_ip(identifier: str, offset: int | None) -> str | None:",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "infer_ip",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def infer_ip(identifier: str, offset: int | None) -> str | None:\n    if offset is None:\n        return None\n    digits = \"\".join(ch for ch in identifier if ch.isdigit())\n    if not digits:\n        return None\n    return f\"10.0.21.{int(digits) + offset}\"\ndef read_inventory_rows(csv_path: Path) -> Iterable[dict[str, str]]:\n    try:\n        with csv_path.open(\"r\", encoding=\"utf-8-sig\", newline=\"\") as handle:",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "read_inventory_rows",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def read_inventory_rows(csv_path: Path) -> Iterable[dict[str, str]]:\n    try:\n        with csv_path.open(\"r\", encoding=\"utf-8-sig\", newline=\"\") as handle:\n            reader = csv.DictReader(handle, delimiter=\";\")\n            for row in reader:\n                if not row:\n                    continue\n                yield {k: (v or \"\").strip() for k, v in row.items() if k is not None}\n    except OSError as exc:\n        raise SystemExit(f\"Cannot read CSV {csv_path}: {exc}\") from exc",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "generate_block",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def generate_block(\n    identifier: str,\n    mac: str,\n    serial: str,\n    domain: str,\n    template: TemplateDevice,\n    ip_value: str | None,\n    device_profile: str | None,\n) -> list[str]:\n    host = normalize_identifier(identifier)",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "generate_profile_block",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def generate_profile_block(\n    identifier: str,\n    domain: str,\n    template: TemplateProfile,\n) -> list[str]:\n    name = normalize_identifier(identifier)\n    lines = [\n        f\"    - name: {name}\",\n        f\"      hostname: {name}.{domain}\",\n    ]",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "def main() -> int:\n    args = parse_args()\n    csv_path = Path(args.csv)\n    host_vars_path = Path(args.host_vars)\n    yaml_lines = read_text(host_vars_path)\n    profile_blocks = parse_section_blocks(yaml_lines, \"profiles\")\n    device_blocks = parse_section_blocks(yaml_lines, \"devices\")\n    existing_profile_names = set()\n    existing_device_names = set()\n    template_device_block = None",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "DEFAULT_CSV",
+        "kind": 5,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "DEFAULT_CSV = \"data/raw/lanets-inventaire-switch.csv\"\nDEFAULT_HOST_VARS = \"inventories/infra/host_vars/pnp01.mgmt.etsmtl.club.yaml\"\n@dataclass\nclass TemplateDevice:\n    admin_password_block: list[str]\n    mgmt_mask: str | None\n    mgmt_gateway: str | None\n@dataclass\nclass TemplateProfile:\n    admin_password_block: list[str]",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    },
+    {
+        "label": "DEFAULT_HOST_VARS",
+        "kind": 5,
+        "importPath": "scripts.expand_switch_selection",
+        "description": "scripts.expand_switch_selection",
+        "peekOfCode": "DEFAULT_HOST_VARS = \"inventories/infra/host_vars/pnp01.mgmt.etsmtl.club.yaml\"\n@dataclass\nclass TemplateDevice:\n    admin_password_block: list[str]\n    mgmt_mask: str | None\n    mgmt_gateway: str | None\n@dataclass\nclass TemplateProfile:\n    admin_password_block: list[str]\ndef parse_args() -> argparse.Namespace:",
+        "detail": "scripts.expand_switch_selection",
+        "documentation": {}
+    }
+]
