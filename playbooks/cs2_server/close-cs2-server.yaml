@@ -5,4 +5,4 @@
   tasks:
     - name: Closing cs2 server
       ansible.builtin.include_role:
-        name: lanets.cs2.close_server
+        name: cedille.cs2.close_server

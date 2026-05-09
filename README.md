@@ -11,7 +11,10 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │   └─ event
 ├─ playbooks/
 │   ├─ cisco-pnp
+│   ├─ cs2_server
+│   ├─ netservices
 │   └─ proxmox
+│   
 ├─ scripts/
 │   └─ expand_switch_selection.py
 ├─ data/

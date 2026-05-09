@@ -1,6 +1,6 @@
 ---
 
-- name : Create a vm for a cs2 server
+- name: Create a vm for a cs2 server
   hosts: cs2
   connection: local
   tasks:

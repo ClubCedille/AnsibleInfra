@@ -39,5 +39,5 @@
   "editor.rulers": [
     160
   ],
-  "python-envs.defaultEnvManager": "ms-python.python:system"
+  "python-envs.defaultEnvManager": "ms-python.python:venv"
 }
