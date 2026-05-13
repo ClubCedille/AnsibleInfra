@@ -23,7 +23,7 @@ vm_net:
   vlan: "310"
   ip: "10.110.0.101"
   netmask: "16"
-  gateway: "10.10.0.1"
+  gateway: "10.110.0.1"
   nameservers: "1.1.1.1"
   search_domain: "localdomain"
 
