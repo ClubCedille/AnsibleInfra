@@ -18,7 +18,8 @@ PYTHON = .venv/bin/python3
 VENV_DIR = .venv
 VENV_BIN = $(VENV_DIR)/bin
 ANSIBLE_ROLES_REPO_URL = https://github.com/ClubCedille/AnsibleRoles.git
-ANSIBLE_ROLES_REPO_REF = main
+#ANSIBLE_ROLES_REPO_REF = main
+ANSIBLE_ROLES_REPO_REF = feat/cs2_server_correction_of_steamclient.so
 ANSIBLE_ROLES_REPO_DIR = .cache/AnsibleRoles
 LOCAL_ROLES_DIR = .cache/roles
 
