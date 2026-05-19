@@ -29,7 +29,6 @@ cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/dow
 cs2_matchzy_url: "https://github.com/shobhit-pathak/MatchZy/releases/download/0.8.15/MatchZy-0.8.15.zip"
 
 
-
 # VM specification for cs2 server
 vm_cpu_type: "host"
 vm_cpu_cores: 4
