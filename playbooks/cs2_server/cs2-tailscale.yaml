@@ -5,6 +5,7 @@
   tasks:
     - name: Closing cs2 server
       ansible.builtin.include_role:
+        name: cedille.cs2.close_server
     - name: Add vpn for get5
       ansible.builtin.include_role:
         name: cedille.cs2.tailscale
