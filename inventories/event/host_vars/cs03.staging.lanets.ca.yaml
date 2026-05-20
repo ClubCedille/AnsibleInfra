@@ -1,5 +1,4 @@
 ---
-
 # Specific for the server 3 of the cs2 server.
 
 cs2_steam_token: !vault |
@@ -17,6 +16,7 @@ cs2_hostname: "cs03.lanets.ca"
 
 vm_id: "801100"
 vm_name: "cs03.event.lanets.ca"
+vm_proxmox_node: "pve04"
 
 vm_net:
   bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1

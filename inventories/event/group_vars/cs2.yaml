@@ -34,7 +34,7 @@ vm_cpu_type: "host"
 vm_cpu_cores: 4
 vm_memory_mb: 8192
 vm_disk_size: "100G"
-vm_proxmox_node: "pve04"
+
 
 
 vm_proxmox_api:
