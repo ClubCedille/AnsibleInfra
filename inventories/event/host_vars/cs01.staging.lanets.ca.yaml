@@ -10,12 +10,12 @@ cs2_steam_token: !vault |
           36666664383937643164366362306162333039343238393764626434333063613163386234386239
           6339326635303565653430383034666335363133626561626131
 
-cs2_hostname: "cs03.lanets.ca"
+cs2_hostname: "cs01.lanets.ca"
 
 # Specific detail for the cs2 server 3
 
 vm_id: "801100"
-vm_name: "cs03.event.lanets.ca"
+vm_name: "cs01.event.lanets.ca"
 vm_proxmox_node: "pve04"
 
 vm_net:
