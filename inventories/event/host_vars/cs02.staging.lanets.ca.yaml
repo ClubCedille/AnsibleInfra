@@ -1,5 +1,5 @@
 ---
-# Specific for the server 3 of the cs2 server.
+# Specific for the server 2 of the cs2 server.
 
 cs2_steam_token: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -12,9 +12,9 @@ cs2_steam_token: !vault |
 
 cs2_hostname: "cs02.lanets.ca"
 
-# Specific detail for the cs2 server 3
+# Specific detail for the cs2 server 2
 
-vm_id: "801100"
+vm_id: "801101"
 vm_name: "cs02.event.lanets.ca"
 vm_proxmox_node: "pve04"
 
