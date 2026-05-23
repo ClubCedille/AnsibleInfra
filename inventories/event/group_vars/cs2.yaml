@@ -24,9 +24,9 @@ cs2_ip: 0.0.0.0
 
 
 # URLs for downloading necessary files
-cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1395/mmsource-2.0.0-git1395-linux.tar.gz"
-cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.365/counterstrikesharp-with-runtime-linux-1.0.365.zip"
-cs2_matchzy_url: "https://github.com/shobhit-pathak/MatchZy/releases/download/0.8.15/MatchZy-0.8.15.zip"
+cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/download/1.12.0.1224/mmsource-1.12.0-git1224-linux.tar.gz"
+cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.368/counterstrikesharp-with-runtime-linux-1.0.368.zip"
+cs2_matchzy_url: "https://github.com/sivert-io/MatchZy-Enhanced/releases/download/v1.4.21/MatchZy-1.4.21.zip"
 
 
 # VM specification for cs2 server
