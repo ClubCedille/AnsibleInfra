@@ -8,12 +8,12 @@ vm_proxmox_api:
     39303763623139383862353430303534353566306639303564313065663838643234616661643465
     3662633161633134350a373138613833363434643065616234616131316239343664306233353262
     3939
-  host: pve01.mgmt.etsmtl.club
+  host: 10.0.21.51:8006
 
 vm_proxmox_node: pve01
 vm_cloud_init_storage: local-lvm
 vm_disk_storage: local-lvm
-vm_disk_format: qcow2
+vm_disk_format: raw
 vm_disk_device: virtio0
 vm_disk_image_path: /var/lib/vz/template/iso/ubuntu-24.04-server-cloudimg-amd64.img
 
