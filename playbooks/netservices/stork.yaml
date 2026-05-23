@@ -3,25 +3,8 @@
   hosts: netservices_stork
   gather_facts: false
   become: false
-  pre_tasks:
-    - name: Check SSH reachability before creating the VM
-      ansible.builtin.wait_for:
-        host: "{{ ansible_host | default(inventory_hostname) }}"
-        port: "{{ ansible_port | default(22) }}"
-        timeout: 3
-        state: started
-      delegate_to: localhost
-      register: netservices_stork_reachability
-      ignore_errors: true
-      changed_when: false
-
-    - name: Flag VM creation only when host is unreachable
-      ansible.builtin.set_fact:
-        netservices_stork_create_vm: "{{ netservices_stork_reachability is failed }}"
-      changed_when: false
   roles:
-    - role: cedille.proxmox.vm
-      when: netservices_stork_create_vm | bool
+    - cedille.proxmox.vm
 
 - name: Deploy netservices Stork
   hosts: netservices_stork
