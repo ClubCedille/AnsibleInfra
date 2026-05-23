@@ -3,8 +3,25 @@
   hosts: netservices_dhcp
   gather_facts: false
   become: false
+  pre_tasks:
+    - name: Check SSH reachability before creating the VM
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ ansible_port | default(22) }}"
+        timeout: 3
+        state: started
+      delegate_to: localhost
+      register: netservices_dhcp_reachability
+      ignore_errors: true
+      changed_when: false
+
+    - name: Flag VM creation only when host is unreachable
+      ansible.builtin.set_fact:
+        netservices_dhcp_create_vm: "{{ netservices_dhcp_reachability is failed }}"
+      changed_when: false
   roles:
-    - cedille.proxmox.vm
+    - role: cedille.proxmox.vm
+      when: netservices_dhcp_create_vm | bool
 
 - name: Deploy netservices DHCP
   hosts: netservices_dhcp
