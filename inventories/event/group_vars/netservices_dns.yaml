@@ -1,5 +1,5 @@
 ---
-netservices_dns_network_octet: "{{ (vm_net.vlan | int) - 200 }}"
+netservices_dns_network_octet: "{{ (ansible_host | default(vm_net.ip)).split('.')[1] | int }}"
 
 vm_cpu_cores: 2
 vm_memory_mb: 4096

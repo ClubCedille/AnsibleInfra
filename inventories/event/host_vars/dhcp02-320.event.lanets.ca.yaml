@@ -1,6 +1,7 @@
 ---
 vm_id: 3202
 vm_name: dhcp02-320-event
+netservices_dhcp_network_octet: 120
 vm_net:
   bridge: vmbr1
   vlan: 320
