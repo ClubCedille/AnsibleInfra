@@ -5,6 +5,8 @@ vm_cpu_cores: 2
 vm_memory_mb: 4096
 vm_disk_size: 20G
 
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
 netservices_dns:
   enabled: true
   supported_distribution: Ubuntu

@@ -1,6 +1,8 @@
 ---
 monitoring_snmp_community: REPLACE_WITH_VAULTED_SNMP_COMMUNITY
 
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
 blackbox_exporter_modules:
   http_2xx:
     prober: http
