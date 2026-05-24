@@ -2,6 +2,9 @@
 
 - name: Adding plugin to cs2 server
   hosts: cs2
+  module_defaults:
+    ansible.builtin.get_url:
+      timeout: 300
   tasks:
     - name: Adding plugin to cs2 server
       ansible.builtin.include_role:
