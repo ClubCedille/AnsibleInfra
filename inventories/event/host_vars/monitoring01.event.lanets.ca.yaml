@@ -6,7 +6,7 @@ vm_memory_mb: 8192
 vm_disk_size: 40G
 vm_net:
   bridge: vmbr1
-  vlan: 320
+  vlan: 67
   device: virtio
   ip: 10.120.0.41
   netmask: 16

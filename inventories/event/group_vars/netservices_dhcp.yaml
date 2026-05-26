@@ -63,6 +63,7 @@ netservices_dhcp:
       rebind-timer: 2000
       subnet4:
         - subnet: "10.{{ netservices_dhcp_network_octet }}.0.0/16"
+          id: "{{ netservices_dhcp_network_octet }}"
           pools:
             - pool: "10.{{ netservices_dhcp_network_octet }}.1.0 - 10.{{ netservices_dhcp_network_octet }}.16.255"
           option-data:
@@ -95,7 +96,7 @@ netservices_dhcp:
                   auto-failover: true
       loggers:
         - name: kea-dhcp4
-          output-options:
+          output_options:
             - output: stdout
           severity: INFO
 

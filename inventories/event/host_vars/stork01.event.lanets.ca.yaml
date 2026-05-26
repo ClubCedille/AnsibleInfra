@@ -3,7 +3,7 @@ vm_id: 1301
 vm_name: stork01-event
 vm_net:
   bridge: vmbr1
-  vlan: 320
+  vlan: 67
   device: virtio
   ip: 10.120.0.31
   netmask: 16

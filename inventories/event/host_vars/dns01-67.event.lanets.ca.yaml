@@ -1,12 +1,12 @@
 ---
-vm_id: 4101
-vm_name: dns01-310-event
+vm_id: 4201
+vm_name: dns01-67-event
 vm_net:
   bridge: vmbr1
-  vlan: 310
+  vlan: 67
   device: virtio
-  ip: 10.110.0.21
+  ip: 10.120.0.21
   netmask: 16
-  gateway: 10.110.0.1
+  gateway: 10.120.0.1
   nameservers: 1.1.1.1,8.8.8.8
   search_domain: event.lanets.ca

@@ -1,12 +1,11 @@
 ---
-vm_id: 3202
-vm_name: dhcp02-320-event
-netservices_dhcp_network_octet: 120
+vm_id: 4202
+vm_name: dns02-67-event
 vm_net:
   bridge: vmbr1
-  vlan: 320
+  vlan: 67
   device: virtio
-  ip: 10.120.0.12
+  ip: 10.120.0.22
   netmask: 16
   gateway: 10.120.0.1
   nameservers: 1.1.1.1,8.8.8.8
