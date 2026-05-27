@@ -66,6 +66,7 @@ netservices_dhcp:
           id: "{{ netservices_dhcp_network_octet }}"
           pools:
             - pool: "10.{{ netservices_dhcp_network_octet }}.1.0 - 10.{{ netservices_dhcp_network_octet }}.16.255"
+          reservations: "{{ lookup('pipe', 'python3 ' ~ playbook_dir ~ '/../../scripts/generate_dhcp_reservations.py') | from_yaml }}"
           option-data:
             - name: domain-name-servers
               data: "10.{{ netservices_dhcp_network_octet }}.0.21,10.{{ netservices_dhcp_network_octet }}.0.22,1.1.1.1"
