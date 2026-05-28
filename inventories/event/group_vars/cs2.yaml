@@ -1,13 +1,7 @@
 ---
 # For all cs2 server.
 ansible_user: "lanets"
-ansible_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          32633865613162636532656432363738316535346330323466366163646566363066386437636630
-          3462616162366461303465376430363735363437663065620a343634326564333333643163353133
-          32373261343732393734633831356239303133326364643765666135633261353539316364303961
-          6162346237306231610a393531633235313165326438383665383066626261626163343538363132
-          3933
+ansible_password: "Bacon123"
 
 cs2_server_password: "cs21pass2026"
 
@@ -22,7 +16,7 @@ cs2_rcon_password: !vault |
 cs2_ip: 0.0.0.0
 
 # URLs for downloading necessary files
-cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/download/1.12.0.1224/mmsource-1.12.0-git1224-linux.tar.gz"
+cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1401/mmsource-2.0.0-git1401-linux.tar.gz"
 cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.368/counterstrikesharp-with-runtime-linux-1.0.368.zip"
 cs2_matchzy_url: "https://github.com/sivert-io/MatchZy-Enhanced/releases/download/v1.4.21/MatchZy-1.4.21.zip"
 
@@ -57,7 +51,7 @@ vm_onboot: true
 
 vm_disk_image_path: "/mnt/pve/CephFS/template/iso/noble-server-cloudimg-amd64.img"
 vm_disk_storage: "RBD_Common"
-vm_disk_format: "qcow2"
+vm_disk_format: "raw"
 vm_disk_device: "virtio0"
 vm_cloud_init_storage: "RBD_Common"
 

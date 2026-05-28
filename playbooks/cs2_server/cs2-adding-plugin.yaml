@@ -8,4 +8,4 @@
   tasks:
     - name: Adding plugin to cs2 server
       ansible.builtin.include_role:
-        name: cedille.cs2.plugin_cs2
+        name: lanets.cs2.plugin_cs2

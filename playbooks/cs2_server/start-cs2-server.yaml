@@ -5,4 +5,4 @@
   tasks:
     - name: Starting cs2 server
       ansible.builtin.include_role:
-        name: cedille.cs2.start_server
+        name: lanets.cs2.start_server

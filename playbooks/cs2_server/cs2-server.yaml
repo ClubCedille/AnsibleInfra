@@ -5,7 +5,7 @@
   tasks:
     - name: Installing prerequise for cs2 server deployment
       ansible.builtin.include_role:
-        name: cedille.cs2.deployment_prerequisites
+        name: lanets.cs2.deployment_prerequisites
     - name: Deploying cs2 server
       ansible.builtin.include_role:
-        name: cedille.cs2.deploy_server
+        name: lanets.cs2.deploy_server
