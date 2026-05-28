@@ -1,0 +1,13 @@
+---
+- name: Pull Ubuntu cloud image for Proxmox
+  hosts: pve
+  gather_facts: false
+  become: true
+  vars:
+    pull_disk_image_path: /var/lib/vz/template/iso
+    pull_disk_images:
+      - url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+        dest_filename: ubuntu-24.04-server-cloudimg-amd64.img
+        checksum: sha256:53fdde898feed8b027d94baa9cfe8229867f330a1d9c49dc7d84465ee7f229f7
+  roles:
+    - cedille.proxmox.pull_disk

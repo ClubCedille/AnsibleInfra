@@ -1,0 +1,5 @@
+---
+node_exporter_collectors: []
+node_exporter_extra_args: []
+
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"

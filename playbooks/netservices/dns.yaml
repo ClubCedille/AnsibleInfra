@@ -3,6 +3,11 @@
   hosts: netservices_dns
   gather_facts: false
   become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
   roles:
     - cedille.proxmox.vm
 
@@ -10,5 +15,27 @@
   hosts: netservices_dns
   gather_facts: true
   become: true
+  pre_tasks:
+    - name: Ensure zone file directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - /var/lib/bind
+        - /var/cache/bind
+
+    - name: Render event zone file on authoritative pair
+      ansible.builtin.template:
+        src: templates/event.lanets.ca.zone.j2
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - "{{ netservices_dns.ha.zones[0].master_file }}"
+        - "{{ netservices_dns.ha.zones[0].slave_file }}"
   roles:
     - cedille.netservices.dns

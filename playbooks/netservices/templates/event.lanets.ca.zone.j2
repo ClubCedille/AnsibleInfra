@@ -1,0 +1,20 @@
+{% set vlan_id = inventory_hostname.split('-')[1].split('.')[0] %}
+{% set dns_primary_host = 'dns01-' ~ vlan_id ~ '.event.lanets.ca' %}
+{% set dns_secondary_host = 'dns02-' ~ vlan_id ~ '.event.lanets.ca' %}
+
+$TTL 300
+@ IN SOA {{ dns_primary_host }}. hostmaster.event.lanets.ca. (
+  {{ ansible_date_time.epoch }}
+  3600
+  900
+  604800
+  300
+)
+  IN NS {{ dns_primary_host }}.
+  IN NS {{ dns_secondary_host }}.
+
+{% for inventory_group in ['opnsense', 'netservices_dhcp', 'netservices_dns', 'netservices_stork', 'monitoring_core'] %}
+{% for host in groups.get(inventory_group, []) | sort %}
+{{ host.split('.')[0] }} IN A {{ hostvars[host].ansible_host }}
+{% endfor %}
+{% endfor %}

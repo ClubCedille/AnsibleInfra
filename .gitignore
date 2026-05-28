@@ -12,3 +12,6 @@ out/*
 
 .cache/*
 tmp.yaml
+
+# prompts
+.github
