@@ -1,0 +1,5 @@
+- name: Deploy Day-1 Switch Configurations
+  hosts: switches_event
+  gather_facts: false
+  roles:
+    - cedille.cisco-3850.config
