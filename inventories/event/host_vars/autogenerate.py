@@ -62,7 +62,7 @@ vm_proxmox_node: "pve04"
 
 vm_net:
   bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1
-  vlan: "310"
+  vlan: "66"
   ip: "10.110.0.1{serverid}"
   netmask: "16"
   gateway: "10.110.0.1"
