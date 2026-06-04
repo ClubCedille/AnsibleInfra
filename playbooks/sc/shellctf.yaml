@@ -1,0 +1,19 @@
+---
+- name: Provision ShellCTF VMs on Proxmox
+  hosts: shellctf
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Installing Docker
+  hosts: shellctf
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.docker.install
