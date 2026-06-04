@@ -1,0 +1,8 @@
+---
+
+- name: Closing cs2 server
+  hosts: cs2
+  tasks:
+    - name: Closing cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.close_server

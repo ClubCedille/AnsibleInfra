@@ -1,0 +1,8 @@
+---
+
+- name: Starting cs2 server
+  hosts: cs2
+  tasks:
+    - name: Starting cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.start_server

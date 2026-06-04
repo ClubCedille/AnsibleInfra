@@ -1,0 +1,11 @@
+---
+
+- name: Create a vm for a cs2 server
+  hosts: cs2
+  connection: local
+  tasks:
+    - name: Create vm for the server
+      ansible.builtin.include_role:
+        name: cedille.proxmox.vm
+        apply:
+          delegate_to: localhost

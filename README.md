@@ -11,7 +11,10 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │   └─ event
 ├─ playbooks/
 │   ├─ cisco-pnp
+│   ├─ cs2_server
+│   ├─ netservices
 │   └─ proxmox
+│
 ├─ scripts/
 │   └─ expand_switch_selection.py
 ├─ data/
@@ -41,7 +44,9 @@ make proxmox/update
 Exécuter un playbook avec un inventaire spécifique:
 
 ```bash
-make cisco-pnp/deployment inventory=inventories/event/hosts.ini
+make cisco-pnp/deployment inventory_name=event
+make cisco-pnp/deployment inventory_name=sc
+make cisco-pnp/deployment inventory_name=summercamp
 ```
 
 Valider la qualité YAML/Ansible localement:

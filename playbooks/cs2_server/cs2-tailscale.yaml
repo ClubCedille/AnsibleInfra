@@ -1,0 +1,14 @@
+---
+
+- name: Install Tailscale on CS2 Server
+  hosts: cs2
+  tasks:
+    - name: Closing cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.close_server
+    - name: Add vpn for get5
+      ansible.builtin.include_role:
+        name: lanets.cs2.tailscale
+    - name: Starting cs2 server
+      ansible.builtin.include_role:
+        name: lanets.cs2.start_server
