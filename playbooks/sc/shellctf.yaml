@@ -11,9 +11,9 @@
   roles:
     - cedille.proxmox.vm
 
-- name: Installing Docker
-  hosts: shellctf
-  gather_facts: true
-  become: true
-  roles:
-    - cedille.docker.install
+# - name: Installing Docker
+#   hosts: shellctf
+#   gather_facts: true
+#   become: true
+#   roles:
+#     - cedille.docker.install
