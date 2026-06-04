@@ -9,5 +9,8 @@
       - url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
         dest_filename: ubuntu-24.04-server-cloudimg-amd64.img
         checksum: sha256:53fdde898feed8b027d94baa9cfe8229867f330a1d9c49dc7d84465ee7f229f7
+      - url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/nocloud_alpine-3.23.4-x86_64-bios-cloudinit-r0.qcow2
+        dest_filename: alpine-3.23.4-x86_64-bios-cloudinit-r0.qcow2
+        checksum: sha256:39fc293200534b03cf805620a099f2f68265220215434fde687536f67a955bc3
   roles:
     - cedille.proxmox.pull_disk
