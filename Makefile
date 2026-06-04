@@ -1,9 +1,14 @@
 infra_inventory = inventories/infra/hosts.ini
 event_inventory = inventories/event/hosts.ini
-use_event_inventory ?= 1
+sc_inventory = inventories/summercamp/hosts.ini
+inventory_name ?= infra
 
-ifeq ($(use_event_inventory),1)
+ifeq ($(inventory_name),event)
 inventory ?= $(event_inventory)
+else ifeq ($(inventory_name),sc)
+inventory ?= $(sc_inventory)
+else ifeq ($(inventory_name),summercamp)
+inventory ?= $(sc_inventory)
 else
 inventory ?= $(infra_inventory)
 endif
