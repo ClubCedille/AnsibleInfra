@@ -1,22 +1,70 @@
 ---
+netservices_dns_network_octet: "{{ (ansible_host | default(vm_net.ip)).split('.')[1] | int }}"
+
 vm_cpu_cores: 2
 vm_memory_mb: 4096
 vm_disk_size: 20G
 
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
 netservices_dns:
   enabled: true
+  supported_distribution: Ubuntu
+  supported_distribution_version: "24.04"
+
+  install:
+    update_cache: true
+    package_state: present
+    packages:
+      - bind9
+      - bind9-utils
+      - dnsutils
+
+  service:
+    name: bind9
+    state: started
+    enabled: true
+
+  paths:
+    options_config: /etc/bind/named.conf.options
+    local_config: /etc/bind/named.conf.local
+
+  options:
+    directory: /var/cache/bind
+    recursion: true
+    allow_query:
+      - 127.0.0.1
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+    allow_recursion:
+      - 127.0.0.1
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+    forwarders:
+      - 1.1.1.1
+    dnssec_validation: auto
+    listen_on_v4:
+      - any
+    listen_on_v6:
+      - any
+    extra_statements: []
+
+  local:
+    acl_definitions: []
+    zones: []
+
   ha:
     enabled: true
-    this_server_role: master
-    master_ip: 10.10.0.21
-    slave_ip: 10.10.0.22
+    this_server_role: "{{ 'master' if inventory_hostname.startswith('dns01') else 'slave' }}"
+    master_ip: "10.{{ netservices_dns_network_octet }}.0.21"
+    slave_ip: "10.{{ netservices_dns_network_octet }}.0.22"
+    transfer_acl:
+      - "10.{{ netservices_dns_network_octet }}.0.22"
+    notify:
+      - "10.{{ netservices_dns_network_octet }}.0.22"
     zones:
       - name: event.lanets.ca
         master_file: /var/lib/bind/db.event.lanets.ca
         slave_file: /var/cache/bind/db.event.lanets.ca
-  options:
-    forwarders:
-      - 1.1.1.1
-      - 8.8.8.8
-  local:
-    zones: []

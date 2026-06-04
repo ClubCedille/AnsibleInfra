@@ -1,15 +1,13 @@
 ---
-vm_id: 1301
-vm_name: stork01-event
+vm_id: 3202
+vm_name: dhcp02-67-event
+netservices_dhcp_network_octet: 120
 vm_net:
   bridge: vmbr1
   vlan: 67
   device: virtio
-  ip: 10.120.0.31
+  ip: 10.120.0.12
   netmask: 16
   gateway: 10.120.0.1
   nameservers: 1.1.1.1,8.8.8.8
   search_domain: event.lanets.ca
-
-netservices_stork:
-  enabled: true

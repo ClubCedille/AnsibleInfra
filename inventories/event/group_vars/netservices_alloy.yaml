@@ -1,0 +1,34 @@
+---
+alloy_loki_endpoints:
+  - name: loki
+    url: http://10.10.0.41:3100/loki/api/v1/push
+
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
+alloy_file_sources:
+  - name: system_logs
+    paths:
+      - /var/log/syslog
+      - /var/log/*.log
+    labels:
+      job: system
+      host: "{{ inventory_hostname }}"
+  - name: dhcp_logs
+    paths:
+      - /var/log/kea/*.log
+    labels:
+      job: kea
+      host: "{{ inventory_hostname }}"
+  - name: dns_logs
+    paths:
+      - /var/log/named/*.log
+      - /var/log/bind/*.log
+    labels:
+      job: bind
+      host: "{{ inventory_hostname }}"
+  - name: stork_logs
+    paths:
+      - /var/log/stork/*.log
+    labels:
+      job: stork
+      host: "{{ inventory_hostname }}"

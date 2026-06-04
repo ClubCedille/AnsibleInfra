@@ -1,6 +1,6 @@
 ---
-- name: Provision DHCP VMs on Proxmox
-  hosts: netservices_dhcp
+- name: Provision monitoring VM on Proxmox
+  hosts: monitoring_core
   gather_facts: false
   become: false
   module_defaults:
@@ -11,9 +11,12 @@
   roles:
     - cedille.proxmox.vm
 
-- name: Deploy netservices DHCP
-  hosts: netservices_dhcp
+- name: Deploy core monitoring stack
+  hosts: monitoring_core
   gather_facts: true
   become: true
   roles:
-    - cedille.netservices.dhcp
+    - cedille.monitoring.loki
+    - cedille.monitoring.alertmanager
+    - cedille.monitoring.prometheus
+    - cedille.monitoring.grafana
