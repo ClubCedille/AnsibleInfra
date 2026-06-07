@@ -1,0 +1,28 @@
+---
+- name: Provision DockerCache VMs on Proxmox
+  hosts: dockercache
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Install the docker role on this VM
+  hosts: dockercache
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup dl-cdn.alpinelinux.org
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+  roles:
+    - cedille.docker.install

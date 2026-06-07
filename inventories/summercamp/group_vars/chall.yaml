@@ -1,22 +1,17 @@
-ansible_user: sc
-shellctf_password_csv: "{{ inventory_dir }}/../../data/raw/passwords.csv"
-ansible_password: >-
-  {{
-    lookup(
-      'ansible.builtin.csvfile',
-      (inventory_hostname.split('.')[0] | regex_replace('^shell0*', '')),
-      file=shellctf_password_csv,
-      delimiter=',',
-      col=2
-    )
-  }}
-vm_user: "{{ ansible_user }}"
-vm_password: "{{ ansible_password }}"
+ansible_user: summercamp
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  61366538323232303862336263313132646666643832633166666664333836626531623765346163
+  6333663034363033393437326633613663643033366636340a663738353861353861653663643837
+  36303966343564323233666165306335353637653336323238333962306135663330326236376364
+  6131616435333462330a613730633539323636653364643164343762633138623639633432653930
+  62343430656364373465343438353637636161666166636632363030303230316631623261633361
+  6132616433646161653738313633333838666566323337313531
 
-# VM specification for shellctf
+# VM specification for dockercache
 vm_cpu_type: "host"
-vm_cpu_cores: 1
-vm_memory_mb: 1024
+vm_cpu_cores: 2
+vm_memory_mb: 2048
 vm_disk_size: "10G"
 
 vm_proxmox_api:
@@ -29,12 +24,14 @@ vm_proxmox_api:
     3663633031633861360a333364633036303932346330313137663163643835313531656462633434
     3765
   host: 10.0.21.51:8006
+
+vm_user: "{{ ansible_user }}"
+vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
 
 vm_onboot: true
 
-# The only VMs we provide as Ubuntu
-vm_disk_image_path: "/mnt/pve/CephFS/template/iso/noble-server-cloudimg-amd64.img"
+vm_disk_image_path: "/var/lib/vz/template/iso/ubuntu-24.04-server-cloudimg-amd64.img"
 vm_disk_storage: "RBD_Common"
 vm_disk_format: "raw"
 vm_disk_device: "virtio0"
@@ -44,14 +41,15 @@ vm_delete_if_exists: false
 vm_start_after_creation: true
 
 vm_name: "{{ inventory_hostname }}"
-# Assumes VM IDs are of the form 811XXX, where XXX is a number from 001 to 999
 vm_proxmox_node: "{{ {0: 'pve01', 1: 'pve02', 2: 'pve03', 3: 'pve04', 4: 'pve07'}[(vm_id | int) % 5] }}"
 
 vm_net:
   bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1
-  vlan: "69"
+  vlan: "68"
   ip: "{{ ansible_host }}"
   netmask: "16"
-  gateway: "10.140.0.1"
+  gateway: "10.130.0.1"
   nameservers: "1.1.1.1"
   search_domain: "summercamp.dciets.ca"
+
+docker_registry_mirror_enabled: true

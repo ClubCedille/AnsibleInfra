@@ -1,4 +1,7 @@
 ---
+docker_registry_mirror_host: 10.150.0.100
+apt_proxy_enabled: true
+
 vm_proxmox_api:
   user: root@pam
   password: !vault |
@@ -17,7 +20,7 @@ vm_cloud_init_storage: local-lvm
 vm_disk_storage: RBD_Common
 vm_disk_format: raw
 vm_disk_device: virtio0
-vm_disk_image_path: /var/lib/vz/template/iso/alpine-3.23.4-x86_64-bios-cloudinit-r0.qcow2
+vm_disk_image_path: /var/lib/vz/template/iso/alpine-3.23.4-x86_64-bios-cloudinit-metal-r0.qcow2
 
 vm_user: ansible
 vm_password: !vault |
