@@ -129,6 +129,19 @@ def challenge_fields(challenge_dir: str | None) -> list[str]:
     return fields
 
 
+def load_existing(output_path: str) -> tuple[list[str], dict[int, dict]]:
+    path = Path(output_path)
+    if not path.exists():
+        return [], {}
+
+    with path.open("r", newline="") as f:
+        reader = csv.DictReader(f)
+        fieldnames = list(reader.fieldnames or [])
+        rows = {int(row["team"]): dict(row) for row in reader}
+
+    return fieldnames, rows
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Génère des mots de passe pour les équipes CTF"
@@ -158,25 +171,50 @@ def main():
         print("Erreur: longueur minimale de 4 caractères", file=sys.stderr)
         sys.exit(1)
 
-    extra_fields = challenge_fields(args.challenge_dir)
-    fieldnames = ["team", "vmid", "password", *extra_fields]
-
-    rows = [
-        {
-            "team": team,
-            "vmid": team,
-            "password": generate_password(args.length),
-            **{field: generate_id() for field in extra_fields},
-        }
-        for team in range(1, args.teams + 1)
+    existing_fieldnames, existing_rows = load_existing(args.output)
+    existing_challenge_fields = [
+        f for f in existing_fieldnames if f not in ("team", "vmid", "password")
     ]
+    existing_challenge_set = set(existing_challenge_fields)
+
+    all_challenge_fields = challenge_fields(args.challenge_dir)
+    new_challenge_fields = [f for f in all_challenge_fields if f not in existing_challenge_set]
+
+    fieldnames = ["team", "vmid", "password", *existing_challenge_fields, *new_challenge_fields]
+
+    rows = []
+    new_teams = 0
+
+    for team in range(1, args.teams + 1):
+        if team in existing_rows:
+            row = existing_rows[team]
+            for field in new_challenge_fields:
+                row[field] = generate_id()
+        else:
+            row = {
+                "team": team,
+                "vmid": team,
+                "password": generate_password(args.length),
+                **{field: generate_id() for field in existing_challenge_fields},
+                **{field: generate_id() for field in new_challenge_fields},
+            }
+            new_teams += 1
+        rows.append(row)
 
     with open(args.output, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"[+] {args.teams} mots de passe générés → {args.output}")
+    summary_parts = []
+    if new_teams:
+        summary_parts.append(f"{new_teams} nouvelles équipes")
+    if new_challenge_fields:
+        summary_parts.append(f"{len(new_challenge_fields)} nouveaux challenges ({', '.join(new_challenge_fields)})")
+    if not summary_parts:
+        summary_parts.append("aucun changement")
+
+    print(f"[+] {args.output} mis à jour — {', '.join(summary_parts)}")
 
 
 if __name__ == "__main__":
