@@ -15,7 +15,7 @@ services:
 
   # ── Machine 1 ──────────────────────────────────────────────
   credential_access_server:
-    image: "git.etsmtl.club/nanocontrol-6:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-6:latest"
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -27,7 +27,7 @@ services:
 
   # ── Machine 2 ──────────────────────────────────────────────
   credential_access_client:
-    image: "git.etsmtl.club/nanocontrol-5:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-5:latest"
     ports:
       - "8081:8080"
     networks:
@@ -40,7 +40,7 @@ services:
 
   # ── Machine 3 ──────────────────────────────────────────────
   private_credential_access_server:
-    image: "git.etsmtl.club/nanocontrol-6:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-6:latest"
     expose:
       - "8080"
     networks:
@@ -54,7 +54,7 @@ services:
 
   # ── Machine 4 ──────────────────────────────────────────────
   application_client:
-    image: "git.etsmtl.club/nanocontrol-2:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-2:latest"
     ports:
       - "8082:8080"
     networks:
@@ -68,7 +68,7 @@ services:
 
   # ── Machine 5 ──────────────────────────────────────────────
   application_server:
-    image: "git.etsmtl.club/nanocontrol-3:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-3:latest"
     expose:
       - "9000"
     networks:
@@ -99,7 +99,7 @@ services:
 
   # ── Machine 6 ──────────────────────────────────────────────
   control_server:
-    image: "git.etsmtl.club/nanocontrol-4:latest"
+    image: "10.150.0.100:5003/summercamp/nanocontrol-4:latest"
     expose:
       - "80"
     environment:
