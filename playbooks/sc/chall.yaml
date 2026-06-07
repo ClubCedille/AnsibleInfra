@@ -32,6 +32,17 @@
         group: root
         mode: "0644"
       become: true
+    - name: Configure pip proxy
+      ansible.builtin.copy:
+        content: |
+          [global]
+          index-url = http://{{ docker_registry_mirror_host }}:3141/root/pypi/+simple/
+          trusted-host = {{ docker_registry_mirror_host }}
+        dest: /etc/pip.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
   roles:
     - cedille.docker.install
   post_tasks:

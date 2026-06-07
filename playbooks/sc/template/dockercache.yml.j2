@@ -17,6 +17,25 @@ name: registry-proxies
 services:
 
   # ---------------------------------------------------------------------------
+  # devpi — proxy cache pip/PyPI pull-through
+  # Port 3141 — configurer sur les clients :
+  #   pip install --index-url http://<IP>:3141/root/pypi/+simple/ <package>
+  #   ou via /etc/pip.conf (voir configure_mirror.yaml)
+  # Interface web : http://<IP>:3141
+  # Premier démarrage : initialise automatiquement le root/pypi index
+  # ---------------------------------------------------------------------------
+  proxy-pypi:
+    image: "muccg/devpi:latest"
+    container_name: "proxy-pypi"
+    environment:
+      DEVPI_PASSWORD: {{ devpi_password }}
+    ports:
+      - "3141:3141/tcp"
+    volumes:
+      - "var-pypi:/data"
+    restart: always
+
+  # ---------------------------------------------------------------------------
   # apt-cacher-ng — proxy cache apt pour Ubuntu/Debian
   # Port 3142 — configurer sur les clients :
   #   echo 'Acquire::http::Proxy "http://<IP>:3142";' > /etc/apt/apt.conf.d/00proxy
@@ -251,6 +270,7 @@ services:
     restart: always
 
 volumes:
+  var-pypi:
   var-apt-cache:
   var-dockerhub:
   var-ghcr:
