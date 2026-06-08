@@ -26,6 +26,12 @@
       loop:
         - /var/lib/bind
         - /var/cache/bind
+    - name: Ensure bind owns cache directory
+      ansible.builtin.file:
+        path: /var/cache/bind
+        owner: bind
+        group: bind
+        recurse: true
     - name: Render camp zone file
       ansible.builtin.template:
         src: templates/camp.zone.j2
