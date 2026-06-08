@@ -8,18 +8,22 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 .
 ├─ inventories/
 │   ├─ infra
-│   └─ event
+│   ├─ event
+│   └─ summercamp
 ├─ playbooks/
 │   ├─ cisco-pnp
 │   ├─ cs2_server
 │   ├─ netservices
-│   └─ proxmox
+│   ├─ proxmox
+│   └─ sc/               ← playbooks summercamp (DNS, challenges, shellctf…)
 │
 ├─ scripts/
-│   └─ expand_switch_selection.py
+│   ├─ expand_switch_selection.py
+│   └─ gen_inventory.py  ← génération de l'inventaire summercamp depuis le CSV
 ├─ data/
 │   └─ raw/
-│      └─ lanets-inventaire-switch.csv
+│      ├─ lanets-inventaire-switch.csv
+│      └─ passwords.csv  ← mots de passe et tokens par équipe (non versionné)
 ├─ collections/
 │   └─ requirements.yml
 ├─ ansible.cfg
@@ -55,15 +59,41 @@ Valider la qualité YAML/Ansible localement:
 make lint
 ```
 
-## Script utilitaire inventaire
+## Scripts utilitaires
 
-Le script de génération de snippets PnP est maintenant dans `scripts/expand_switch_selection.py`.
+### Génération de snippets PnP
 
-Exemple:
+`scripts/expand_switch_selection.py` génère des snippets de configuration pour les switches Cisco.
 
 ```bash
 .venv/bin/python3 scripts/expand_switch_selection.py --help
 ```
+
+### Génération de l'inventaire summercamp
+
+`scripts/gen_inventory.py` régénère `inventories/summercamp/hosts.ini` à partir de `data/raw/passwords.csv`.
+
+Le CSV doit avoir les colonnes `team`, `vmid`, `password`, puis une colonne par challenge (ex. `nanocontrol`, `nanocontrol2`). Chaque colonne challenge est détectée automatiquement : son nom devient le slug du groupe Ansible et le suffixe du hostname (`{hash}-{challenge}.ctf`).
+
+```bash
+python3 scripts/gen_inventory.py
+```
+
+Pour ajouter un nouveau challenge :
+
+1. Ajouter une colonne dans `data/raw/passwords.csv` avec le nom du challenge et les tokens par équipe
+2. Relancer `python3 scripts/gen_inventory.py`
+3. Créer `inventories/summercamp/group_vars/{challenge}.yaml` (configuration Proxmox, réseau, docker-compose)
+4. Le challenge apparaît automatiquement dans la zone DNS `.ctf`
+
+> **Prérequis** : `data/raw/passwords.csv` n'est pas versionné. Il doit être présent localement avant de lancer le script ou les playbooks.
+
+### Dépendance CTFd
+
+Les définitions de challenges (flags, catégories, points) sont gérées dans un repo CTFd séparé. Ce repo doit être cloné et configuré avant le déploiement des challenges :
+
+- Le repo CTFd doit être accessible pour peupler les challenges sur la plateforme
+- Les tokens par équipe dans `passwords.csv` correspondent aux identifiants générés côté CTFd
 
 ## Installation
 

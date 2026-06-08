@@ -9,6 +9,6 @@ $TTL 300
   IN NS dns01.camp.
   IN NS dns02.camp.
 
-{% for host in groups.get('shellctf', []) | sort %}
+{% for host in groups['all'] | select('search', '\\.ctf$') | sort %}
 {{ host.split('.')[0] }} IN A {{ hostvars[host].ansible_host }}
 {% endfor %}

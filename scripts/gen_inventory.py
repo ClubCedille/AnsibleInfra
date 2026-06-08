@@ -59,7 +59,7 @@ def build_challenge_section(challenge: str, chall_idx: int, teams: list[dict]) -
         ip = f"10.130.{(chall_idx - 1) * 2}.{100 + team}"
         vm_id = 2000000 + chall_idx * 1000 + 100 + team
         lines.append(
-            f"{hash_val}-{challenge}.camp ansible_host={ip} vm_id={vm_id}"
+            f"{hash_val}-{challenge}.ctf ansible_host={ip} vm_id={vm_id}"
         )
     return "\n".join(lines)
 
