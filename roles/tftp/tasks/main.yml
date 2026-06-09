@@ -1,0 +1,40 @@
+---
+- name: Install tftpd-hpa
+  ansible.builtin.apt:
+    name: tftpd-hpa
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure TFTP root directory exists
+  ansible.builtin.file:
+    path: "{{ tftp_root }}"
+    state: directory
+    owner: tftp
+    group: tftp
+    mode: "0755"
+  become: true
+
+- name: Deploy flag file
+  ansible.builtin.copy:
+    content: "{{ flag_07_tftp }}\n"
+    dest: "{{ tftp_root }}/flag.txt"
+    owner: tftp
+    group: tftp
+    mode: "0644"
+  become: true
+
+- name: Configure tftpd-hpa root directory
+  ansible.builtin.lineinfile:
+    path: /etc/default/tftpd-hpa
+    regexp: '^TFTP_DIRECTORY='
+    line: 'TFTP_DIRECTORY="{{ tftp_root }}"'
+  notify: Restart tftpd-hpa
+  become: true
+
+- name: Ensure tftpd-hpa is enabled and started
+  ansible.builtin.service:
+    name: tftpd-hpa
+    state: started
+    enabled: true
+  become: true

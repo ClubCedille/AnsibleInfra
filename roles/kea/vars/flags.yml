@@ -1,0 +1,27 @@
+---
+# All CTF flag values live here. Never hardcode in templates.
+# Run `python3 scripts/encode_tlv.py "DCI{flag}"` to generate TLV hex for flags 3 & 6.
+
+# Flag #1 — Option 15 (domain-name): visible directly in DHCP OFFER
+flag_01_domain: "DCI.7h15154c7u4lly4fl46-5WJp1jsO.ctf"
+
+# Flag #2 — Option 119 (domain-search): must decode RFC 1035 wire format
+flag_02_domain_search: "DCI.l00k1n6f0rm3-Bu1oBFL9.ctf,search.ctf"
+
+# Flag #3 — Option 43 vendor-specific TLV (default, all clients)
+# DCI{1m7h3v3nd0rn0w-jN5wc9Qf}
+flag_03_tlv_hex: "011c4443497b316d37683376336e6430726e30772d6a4e3577633951667dff"
+
+# Flag #5 — Option 114 captive portal
+flag_05_portal_url: "http://portal01.camp/index.html"
+flag_05_portal: "DCI{1c4u6h7y0un0w-aSvYG5xq}"
+
+# Flag #6 — Option 43 TLV returned only when DISCOVER has option 60 = "summercamp"
+# DCI{l00k1n63v3nh4rd3r-tJqvsQF5}
+flag_06_ctfclient_tlv_hex: "011f4443497b6c30306b316e363376336e6834726433722d744a7176735146357dff"
+
+# Flag #7 — content of /srv/tftp/flag.txt served over TFTP
+flag_07_tftp: "DCI{0fc0ur537h3r3150n3h3r3-64fQGyzU}"
+
+# Flag #9 — DNS TXT record on secret.ctf
+flag_09_dns_txt: "DCI{y0u5h0uldh4v3f0r60773n7h150n-WoH21m2M}"
