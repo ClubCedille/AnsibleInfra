@@ -1,7 +1,10 @@
 ---
-- name: Install tftpd-hpa
+- name: Install tftpd-hpa, ipxe, and nginx
   ansible.builtin.apt:
-    name: tftpd-hpa
+    name:
+    - tftpd-hpa
+    - ipxe
+    - nginx
     state: present
     update_cache: true
   become: true
@@ -15,10 +18,48 @@
     mode: "0755"
   become: true
 
-- name: Deploy flag file
+- name: Copy undionly.kpxe from ipxe package
   ansible.builtin.copy:
-    content: "{{ flag_07_tftp }}\n"
-    dest: "{{ tftp_root }}/flag.txt"
+    src: /usr/lib/ipxe/undionly.kpxe
+    dest: "{{ tftp_root }}/undionly.kpxe"
+    owner: tftp
+    group: tftp
+    mode: "0644"
+    remote_src: true
+  become: true
+
+- name: Copy ipxe.efi from ipxe package
+  ansible.builtin.copy:
+    src: /usr/lib/ipxe/ipxe.efi
+    dest: "{{ tftp_root }}/ipxe.efi"
+    owner: tftp
+    group: tftp
+    mode: "0644"
+    remote_src: true
+  become: true
+
+- name: Deploy netboot.ipxe
+  ansible.builtin.copy:
+    src: netboot.ipxe
+    dest: "{{ tftp_root }}/netboot.ipxe"
+    owner: tftp
+    group: tftp
+    mode: "0644"
+  become: true
+
+- name: Copy PXE kernel
+  ansible.builtin.copy:
+    src: bzImage
+    dest: "{{ tftp_root }}/bzImage"
+    owner: tftp
+    group: tftp
+    mode: "0644"
+  become: true
+
+- name: Copy PXE initrd
+  ansible.builtin.copy:
+    src: initrd
+    dest: "{{ tftp_root }}/initrd"
     owner: tftp
     group: tftp
     mode: "0644"

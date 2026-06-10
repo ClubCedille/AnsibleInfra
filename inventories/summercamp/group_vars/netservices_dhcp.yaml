@@ -87,16 +87,31 @@ netservices_dhcp:
             - name: vendor-encapsulated-options
               data: "{{ flag_06_ctfclient_tlv_hex }}"
               csv-format: false
-        - name: PXEClient
-          test: "substring(option[60].hex, 0, 9) == 'PXEClient'"
+        - name: iPXEClient
+          test: "option[175].exists"
           option-data:
             - name: tftp-server-name
-              data: "10.110.0.41"
+              data: "{{ ansible_host }}"
             - name: boot-file-name
-              data: "flag.txt"
+              data: "netboot.ipxe"
+        - name: EFIClient
+          test: "(option[93].hex == 0x0007 or option[93].hex == 0x0009) and not option[175].exists"
+          option-data:
+            - name: tftp-server-name
+              data: "{{ ansible_host }}"
+            - name: boot-file-name
+              data: "ipxe.efi"
+        - name: PXEClient
+          test: "substring(option[60].hex, 0, 9) == 'PXEClient' and not option[175].exists"
+          option-data:
+            - name: tftp-server-name
+              data: "{{ ansible_host }}"
+            - name: boot-file-name
+              data: "netboot.ipxe"
       subnet4:
         - subnet: "10.110.0.0/16"
           id: 110
+          next-server: "{{ ansible_host }}"
           pools:
             - pool: "10.110.1.10 - 10.110.5.255"
           option-data:
@@ -104,6 +119,10 @@ netservices_dhcp:
               data: "10.110.0.1"
             - name: domain-name-servers
               data: "10.130.0.21,10.130.0.22"
+            - name: tftp-server-name
+              data: "{{ ansible_host }}"
+            - name: boot-file-name
+              data: "netboot.ipxe"
             - name: domain-name
               data: "{{ flag_01_domain }}"
             - name: domain-search
@@ -116,6 +135,7 @@ netservices_dhcp:
               data: "{{ flag_05_portal_url }}"
       option-data: []
       hooks-libraries:
+        - library: /usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so
         - library: /usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_ha.so
           parameters:
             high-availability:

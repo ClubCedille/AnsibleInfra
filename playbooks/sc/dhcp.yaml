@@ -36,6 +36,7 @@
       become: true
   roles:
     - cedille.netservices.dhcp
+    - tftp
   post_tasks:
     - name: Validate Kea config
       ansible.builtin.command:

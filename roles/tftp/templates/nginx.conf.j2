@@ -1,0 +1,9 @@
+server {
+    listen 80 default_server;
+
+    root {{ tftp_root }};
+
+    location / {
+        autoindex on;
+    }
+}

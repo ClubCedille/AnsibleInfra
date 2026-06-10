@@ -21,7 +21,7 @@ flag_05_portal: "DCI{1c4u6h7y0un0w-aSvYG5xq}"
 flag_06_ctfclient_tlv_hex: "011f4443497b6c30306b316e363376336e6834726433722d744a7176735146357dff"
 
 # Flag #7 — content of /srv/tftp/flag.txt served over TFTP
-flag_07_tftp: "DCI{0fc0ur537h3r3150n3h3r3-64fQGyzU}"
+flag_07_tftp: "DCI{LookMomImInTheNetwork-rZmYE9GJ}"
 
 # Flag #9 — DNS TXT record on secret.ctf
 flag_09_dns_txt: "DCI{y0u5h0uldh4v3f0r60773n7h150n-WoH21m2M}"
