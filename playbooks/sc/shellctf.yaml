@@ -11,6 +11,14 @@
   roles:
     - cedille.proxmox.vm
 
+- name: Wait for SSH on ShellCTF VMs
+  hosts: shellctf
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
 - name: Enable password communication for ssh
   hosts: shellctf
   gather_facts: true

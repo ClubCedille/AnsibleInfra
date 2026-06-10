@@ -11,6 +11,14 @@
   roles:
     - cedille.proxmox.vm
 
+- name: Wait for SSH on Challenge VMs
+  hosts: chall
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
 - name: Install the docker role on this VM
   hosts: chall
   gather_facts: true

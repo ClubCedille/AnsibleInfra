@@ -11,10 +11,20 @@
   roles:
     - cedille.proxmox.vm
 
+- name: Wait for SSH on DNS VMs
+  hosts: netservices_dns
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
 - name: Deploy DNS
   hosts: netservices_dns
   gather_facts: true
   become: true
+  vars_files:
+    - ../../roles/kea/vars/flags.yml
   pre_tasks:
     - name: Ensure zone file directories exist
       ansible.builtin.file:
