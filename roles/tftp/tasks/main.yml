@@ -1,10 +1,9 @@
 ---
-- name: Install tftpd-hpa, ipxe, and nginx
+- name: Install tftpd-hpa and ipxe
   ansible.builtin.apt:
     name:
     - tftpd-hpa
     - ipxe
-    - nginx
     state: present
     update_cache: true
   become: true

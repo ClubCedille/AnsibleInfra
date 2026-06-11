@@ -73,12 +73,12 @@ netservices_dns:
   ha:
     enabled: true
     this_server_role: "{{ 'master' if inventory_hostname.startswith('dns01') else 'slave' }}"
-    master_ip: "10.120.0.21"
-    slave_ip: "10.120.0.22"
+    master_ip: "10.130.0.21"
+    slave_ip: "10.130.0.22"
     transfer_acl:
-      - "10.120.0.22"
+      - "10.130.0.22"
     notify:
-      - "10.120.0.22"
+      - "10.130.0.22"
     zones:
       - name: camp
         master_file: /var/lib/bind/db.camp

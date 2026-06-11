@@ -1,7 +1,7 @@
 ---
 vm_cpu_type: "host"
 vm_cpu_cores: 1
-vm_memory_mb: 512
+vm_memory_mb: 2048
 vm_disk_size: "10G"
 
 vm_disk_image_path: "/var/lib/vz/template/iso/ubuntu-24.04-server-cloudimg-amd64.img"

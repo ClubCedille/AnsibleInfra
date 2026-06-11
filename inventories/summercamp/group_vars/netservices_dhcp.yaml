@@ -87,27 +87,12 @@ netservices_dhcp:
             - name: vendor-encapsulated-options
               data: "{{ flag_06_ctfclient_tlv_hex }}"
               csv-format: false
-        - name: iPXEClient
-          test: "option[175].exists"
+        - name: not_summercamp
+          test: "not (option[60].text == 'summercamp')"
           option-data:
-            - name: tftp-server-name
-              data: "{{ ansible_host }}"
-            - name: boot-file-name
-              data: "netboot.ipxe"
-        - name: EFIClient
-          test: "(option[93].hex == 0x0007 or option[93].hex == 0x0009) and not option[175].exists"
-          option-data:
-            - name: tftp-server-name
-              data: "{{ ansible_host }}"
-            - name: boot-file-name
-              data: "ipxe.efi"
-        - name: PXEClient
-          test: "substring(option[60].hex, 0, 9) == 'PXEClient' and not option[175].exists"
-          option-data:
-            - name: tftp-server-name
-              data: "{{ ansible_host }}"
-            - name: boot-file-name
-              data: "netboot.ipxe"
+            - name: vendor-encapsulated-options
+              data: "{{ flag_03_tlv_hex }}"
+              csv-format: false
       subnet4:
         - subnet: "10.110.0.0/16"
           id: 110
@@ -128,9 +113,6 @@ netservices_dhcp:
             - name: domain-search
               csv-format: true
               data: "{{ flag_02_domain_search }}"
-            - name: vendor-encapsulated-options
-              data: "{{ flag_03_tlv_hex }}"
-              csv-format: false
             - name: v4-captive-portal
               data: "{{ flag_05_portal_url }}"
       option-data: []

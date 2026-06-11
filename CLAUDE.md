@@ -10,16 +10,18 @@ The infrastructure is deployed on a **dedicated event network** (no pre-existing
 
 ## Network Topology
 
-| Element         | Value                                                           |
-| --------------- | --------------------------------------------------------------- |
-| Network         | `10.110.0.0/16`                                                 |
-| Gateway         | `10.110.0.1`                                                    |
-| DNS server      | `10.130.0.21-22` (BIND9, redundant)                             |
-| DHCP/Kea server | `10.110.0.31-32`                                                |
-| TFTP server     | `10.110.0.41-42` (same host or separate)                        |
-| HTTP portal     | `10.110.0.51` (nginx)                                           |
-| DHCP pool       | `10.110.1.10 – 10.110.5.255`                                    |
-| Event domain    | `.ctf and .camp` (.camp for the infra, .ctf for the challenges) |
+| Element              | Value                                                           |
+| -------------------- | --------------------------------------------------------------- |
+| Network              | `10.110.0.0/16`                                                 |
+| Gateway              | `10.110.0.1`                                                    |
+| DNS server           | `10.130.0.21-22` (BIND9, redundant, sur VLAN 68)               |
+| DHCP/Kea server      | `10.110.0.31-32` (dhcp01.camp / dhcp02.camp, hot-standby)      |
+| TFTP server          | **co-localisé sur les VMs DHCP** (`10.110.0.31-32`)            |
+| HTTP portal          | `10.110.0.51` (nginx)                                           |
+| DHCP pool            | `10.110.1.10 – 10.110.5.255`                                    |
+| Event domain         | `.ctf and .camp` (.camp for the infra, .ctf for the challenges) |
+
+> **TFTP co-localisé** : le rôle `tftp` est déployé sur les VMs DHCP via `playbooks/sc/dhcp.yaml` (rôles `cedille.netservices.dhcp` + `tftp`). Les options 66/67 et `next-server` pointent vers `{{ ansible_host }}` (IP du serveur DHCP lui-même). Le groupe `netservices_tftp` (`.41-42`) existe encore dans l'inventaire SC mais n'est pas utilisé pour le challenge DHCP.
 
 ---
 
@@ -35,7 +37,8 @@ The infrastructure is deployed on a **dedicated event network** (no pre-existing
 Existing roles already handle: VM creation, Kea install/deploy, BIND9 install/deploy.
 You can look for them in ./.cache/roles (cedille.proxmox.vm, cedille.netservices.dhcp/dns)
 
-Missing a role for the tftp server, http server, pxe image creation
+Rôles locaux existants : `roles/tftp/` (tftpd-hpa + iPXE + PXE files), `roles/http-portal/` (nginx + page portail).
+Manquant : logique de construction de l'image PXE (flag #7).
 
 ---
 
@@ -73,11 +76,9 @@ scripts/
 | 1   | Option 15 — domain-name                 | Read DHCP OFFER directly                                    | Easy        |
 | 2   | Option 119 — domain search list         | Decode DNS-compressed wire format (RFC 1035)                | Medium      |
 | 3   | Option 43 — vendor-specific (TLV)       | Parse TLV sub-options (type+length+value hex)               | Medium      |
-| 4   | Lease timers (valid-lifetime / T1 / T2) | Spot unusual values, decode encoding scheme                 | Medium      |
 | 5   | Option 114 — captive portal URI         | Follow URL to nginx page, find flag in HTML                 | Easy-Medium |
-| 6   | Option 43 — CTFClient class             | Forge DISCOVER with `vendor-class-identifier = "CTFClient"` | Hard        |
-| 7   | Option 66/67 — TFTP bootfile            | Fetch file from TFTP server                                 | Medium      |
-| 8   | PXE bootable image                      | Boot or extract the PXE image, find flag inside             | Hard        |
+| 6   | Option 43 — summercamp class            | Forge DISCOVER avec `vendor-class-identifier = "summercamp"` | Hard        |
+| 7   | Option 66/67 — PXE boot                 | Booter l'image PXE, flag visible dans le wallpaper          | Hard        |
 | 9   | DNS TXT record                          | Follow domain from DHCP option, `dig TXT`                   | Medium      |
 
 ### Flag hiding locations in detail
@@ -106,32 +107,25 @@ python3 scripts/encode_tlv.py "DCI{xxx}"
 # paste output into flag_03_tlv_hex in flags.yml
 ```
 
-**Flag #4 — Lease timers**
-Unusual values for `valid-lifetime`, `renew-timer`, `rebind-timer` that encode something.
-Choose values intentionally in `flags.yml` (`dhcp_lease_time`, `dhcp_t1_time`, `dhcp_t2_time`).
-
 **Flag #5 — Option 114 (captive portal)**
 Points to `http://portal.ctf/index.html`. Flag is hidden in the nginx-served HTML
 (HTML comment, HTTP response header, or body text). Configured in `roles/http-portal`.
 
-**Flag #6 — CTFClient class (active)**
+**Flag #6 — `summercamp` class (active)**
 Kea returns a different option 43 payload only when the DISCOVER contains
-`vendor-class-identifier = "CTFClient"` (option 60). Participant must forge the request:
+`vendor-class-identifier = "summercamp"` (option 60). Participant must forge the request:
 
 ```bash
 # dhclient approach
-dhclient -v -cf <(echo 'send vendor-class-identifier "CTFClient";') eth0
+dhclient -v -cf <(echo 'send vendor-class-identifier "summercamp";') eth0
 
 # or scapy
 ```
 
-**Flag #7 — TFTP bootfile**
-Option 66 = TFTP server IP, option 67 = `image.iso`. The file on the TFTP server
-contains the flag (in a text file, in metadata, or as a comment in the boot config).
-
-**Flag #8 — PXE image**
-The bootable image pointed to by option 67 contains a flag embedded in the
-kernel cmdline, initrd, or filesystem. Image construction is handled separately.
+**Flag #7 — PXE boot (challenges #7 et #8 fusionnés)**
+Options 66 (`tftp-server-name`) et 67 (`boot-file-name`) pointent vers le serveur TFTP co-localisé.
+La chaîne iPXE charge `bzImage` + `initrd` depuis TFTP. Le flag est visible dans le **wallpaper** de l'image bootée.
+Valeur dans `flags.yml` : `flag_07_pxe_wallpaper`. L'image doit être construite pour y intégrer ce flag.
 
 **Flag #9 — DNS TXT record**
 A subdomain referenced in an earlier DHCP option (e.g. option 15 or 119) has a
@@ -149,10 +143,11 @@ secret.ctf.  IN  TXT  "DCI{xxx}"
   - Option 114 (`v4-captive-portal`, type `string`)
   - Option 119 (`domain-search`, type `fqdn`, array)
 - Option 43 uses `"csv-format": false` with raw hex value
-- Client classes use Kea expression language:
-  - PXEClient: `substring(option[60].hex, 0, 9) == 'PXEClient'`
-  - CTFClient: `option[60].text == 'CTFClient'`
-- PXEClient class sets options 66 + 67 only (other clients don't see TFTP options)
+- `next-server` (siaddr) est défini au niveau subnet et pointe vers `{{ ansible_host }}`
+- HA : mode `hot-standby`, rôles `primary` / `standby` (plus `secondary`)
+- Client classes définies dans `group_vars/netservices_dhcp.yaml` :
+  - `summercamp` : `option[60].text == 'summercamp'` → option 43 flag #6
+- Options 66+67 (`tftp-server-name`/`boot-file-name: netboot.ipxe`) et `next-server` définis au niveau subnet — couvrent tous les clients BIOS sans client class dédiée
 
 ---
 
@@ -168,14 +163,16 @@ secret.ctf.  IN  TXT  "DCI{xxx}"
 
 ## What Is NOT Yet Implemented
 
-- [ ] `roles/tftp/` — TFTP server setup and file deployment
-- [ ] `roles/http-portal/` — nginx install + portal page template
-- [ ] BIND9 zone files `ctf.j2` and `camp.j2` with TXT record
-- [ ] PXE image construction (flag #8) — deferred
-- [ ] `scripts/encode_tlv.py` — helper to generate option 43 hex values
-- [ ] Actual flag values in `flags.yml` (all placeholders currently)
-- [ ] Lease time values chosen to encode flag #4
+- [ ] PXE image construction (flag #7) — intégrer `flag_07_pxe_wallpaper` dans le wallpaper de l'image (`bzImage`/`initrd`)
 - [ ] DHCP snooping config on switches (out of Ansible scope, done on Cisco gear)
+
+## What Is Implemented
+
+- [x] `roles/tftp/` — tftpd-hpa + iPXE (undionly.kpxe, ipxe.efi, netboot.ipxe, bzImage, initrd)
+- [x] `roles/http-portal/` — nginx + page portail (flag #5)
+- [x] `scripts/encode_tlv.py` — génération hex TLV option 43
+- [x] Flags #1–#3, #5–#7, #9 définis dans `roles/kea/vars/flags.yml`
+- [x] BIND9 zone files `playbooks/sc/templates/ctf.zone.j2` et `camp.zone.j2`
 
 ---
 

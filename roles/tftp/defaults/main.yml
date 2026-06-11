@@ -1,3 +1,2 @@
 ---
 tftp_root: /srv/tftp
-tftp_http_server: "{{ ansible_host }}"
