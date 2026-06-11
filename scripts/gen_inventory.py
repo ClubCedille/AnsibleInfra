@@ -33,6 +33,9 @@ pve08.mgmt.etsmtl.club ansible_host=10.0.21.58
 
 [dockercache]
 dockercache01.camp ansible_host=10.150.0.100 vm_id=812101
+
+[ctfd]
+ctfd.summercamp.dciets.com ansible_host=142.137.247.107
 """
 
 NETSERVICES_DNS_SECTION = """\
