@@ -6,7 +6,7 @@
 flag_01_domain: "DCI.7h15154c7u4lly4fl46-5WJp1jsO.ctf"
 
 # Flag #2 — Option 119 (domain-search): must decode RFC 1035 wire format
-flag_02_domain_search: "DCI.l00k1n6f0rm3-Bu1oBFL9.ctf,search.ctf"
+flag_02_domain_search: "DCI.l00k1n6f0rm3-Bu1oBFL9.ctf,secret.ctf"
 
 # Flag #3 — Option 43 vendor-specific TLV (default, all clients)
 # DCI{1m7h3v3nd0rn0w-jN5wc9Qf}
