@@ -1,0 +1,10 @@
+---
+- name: Copy Summercamp infrastructure dashboard
+  ansible.builtin.copy:
+    src: summercamp-infra.json
+    dest: /etc/grafana/provisioning/dashboards/summercamp-infra.json
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: Restart Grafana
+  become: true

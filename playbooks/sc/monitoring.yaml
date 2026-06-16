@@ -1,0 +1,201 @@
+---
+- name: Provision monitoring VM
+  hosts: monitoring_core
+  gather_facts: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy node_exporter on service hosts
+  hosts: monitoring_exporters
+  become: true
+  pre_tasks:
+    - name: Ensure /tmp has correct permissions
+      ansible.builtin.file:
+        path: /tmp
+        mode: "1777"
+        owner: root
+        group: root
+
+    - name: Ensure local archive staging directory exists
+      ansible.builtin.file:
+        path: /tmp/monitoring-archives
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Download node_exporter archive on controller
+      ansible.builtin.get_url:
+        url: "{{ node_exporter_install.archive_url }}"
+        dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Ensure remote archive download directory exists
+      ansible.builtin.file:
+        path: "{{ node_exporter_paths.archive_download_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push node_exporter archive to host
+      ansible.builtin.copy:
+        src: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        dest: "{{ node_exporter_paths.archive_download_dir }}/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+
+  roles:
+    - cedille.monitoring.node_exporter
+
+- name: Deploy monitoring stack
+  hosts: monitoring_core
+  become: true
+  pre_tasks:
+    - name: Ensure /tmp has correct permissions
+      ansible.builtin.file:
+        path: /tmp
+        mode: "1777"
+        owner: root
+        group: root
+
+    - name: Ensure local archive staging directory exists
+      ansible.builtin.file:
+        path: /tmp/monitoring-archives
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Download all monitoring archives on controller
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "/tmp/monitoring-archives/{{ item.name }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      become: false
+      loop:
+        - url: "{{ node_exporter_install.archive_url }}"
+          name: "{{ node_exporter_install.archive_name }}"
+        - url: "{{ blackbox_exporter_install.archive_url }}"
+          name: "{{ blackbox_exporter_install.archive_name }}"
+        - url: "{{ snmp_exporter_install.archive_url }}"
+          name: "{{ snmp_exporter_install.archive_name }}"
+        - url: "{{ prometheus_install.archive_url }}"
+          name: "{{ prometheus_install.archive_name }}"
+
+    - name: Ensure remote archive download directory exists
+      ansible.builtin.file:
+        path: "{{ node_exporter_paths.archive_download_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push all monitoring archives to host
+      ansible.builtin.copy:
+        src: "/tmp/monitoring-archives/{{ item }}"
+        dest: "{{ node_exporter_paths.archive_download_dir }}/{{ item }}"
+        mode: "0644"
+      loop:
+        - "{{ node_exporter_install.archive_name }}"
+        - "{{ blackbox_exporter_install.archive_name }}"
+        - "{{ snmp_exporter_install.archive_name }}"
+        - "{{ prometheus_install.archive_name }}"
+
+    - name: Build ICMP blackbox jobs from inventory groups
+      ansible.builtin.set_fact:
+        _icmp_jobs: >-
+          {{ _icmp_jobs | default([]) + [{
+            'job_name': 'blackbox_icmp_' + item.split('.')[0],
+            'metrics_path': '/probe?module=icmp&target=' + hostvars[item]['ansible_host'],
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: >-
+        {{ groups['netservices_dhcp'] + groups['netservices_dns'] +
+           groups['http_portal'] + groups['dockercache'] + groups['ctfd'] }}
+
+    - name: Build TCP jobs for Kea ctrl-agent (port 8000)
+      ansible.builtin.set_fact:
+        _tcp_kea_jobs: >-
+          {{ _tcp_kea_jobs | default([]) + [{
+            'job_name': 'blackbox_tcp_kea_' + item.split('.')[0],
+            'metrics_path': '/probe?module=tcp_connect&target=' + hostvars[item]['ansible_host'] + ':8000',
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: "{{ groups['netservices_dhcp'] }}"
+
+    - name: Build TCP jobs for DNS (port 53)
+      ansible.builtin.set_fact:
+        _tcp_dns_jobs: >-
+          {{ _tcp_dns_jobs | default([]) + [{
+            'job_name': 'blackbox_tcp_dns_' + item.split('.')[0],
+            'metrics_path': '/probe?module=tcp_connect&target=' + hostvars[item]['ansible_host'] + ':53',
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: "{{ groups['netservices_dns'] }}"
+
+    - name: Build node_exporter job from monitoring_exporters group
+      ansible.builtin.set_fact:
+        _node_job:
+          - job_name: node_exporter
+            targets: >-
+              {{ groups['monitoring_exporters']
+                 | map('extract', hostvars, 'ansible_host')
+                 | map('regex_replace', '^(.*)$', '\1:9100')
+                 | list }}
+
+    - name: Assemble final prometheus_scrape_configs
+      ansible.builtin.set_fact:
+        prometheus_scrape_configs: >-
+          {{ monitoring_base_scrape_configs
+             + (_icmp_jobs | default([]))
+             + (_tcp_kea_jobs | default([]))
+             + (_tcp_dns_jobs | default([]))
+             + _node_job }}
+
+    # The cedille.monitoring.prometheus role is missing the service unit task.
+    # Write it here so "Ensure Prometheus service state" in the role succeeds.
+    - name: Write Prometheus systemd service unit
+      ansible.builtin.copy:
+        dest: "{{ prometheus_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ prometheus_service.user }}
+          Group={{ prometheus_service.group }}
+          ExecStart={{ prometheus_paths.binary_dir }}/prometheus \
+            --config.file={{ prometheus_paths.config }} \
+            --storage.tsdb.path={{ prometheus_paths.data_dir }} \
+            --storage.tsdb.retention.time={{ prometheus_server.retention_time }} \
+            --web.listen-address=0.0.0.0:9090
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd daemon after service unit write
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+  roles:
+    - cedille.monitoring.node_exporter
+    - cedille.monitoring.blackbox_exporter
+    - cedille.monitoring.snmp_exporter
+    - cedille.monitoring.prometheus
+    - cedille.monitoring.grafana
+    - monitoring-dashboard
