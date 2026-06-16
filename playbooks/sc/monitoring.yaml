@@ -235,6 +235,27 @@
     - monitoring-dashboard
 
   post_tasks:
+    # cedille.monitoring.grafana datasource template does not write uid — dashboard
+    # panels reference datasource by uid: 'prometheus', so without it nothing renders.
+    - name: Write Grafana datasources with uid
+      ansible.builtin.copy:
+        dest: "{{ grafana_paths.datasources_dir }}/{{ grafana_paths.datasources_file }}"
+        owner: root
+        group: grafana
+        mode: "0640"
+        content: |
+          apiVersion: 1
+          datasources:
+            - name: Prometheus
+              type: prometheus
+              uid: prometheus
+              access: proxy
+              url: http://127.0.0.1:9090
+              isDefault: true
+              editable: false
+      notify: Restart Grafana
+      become: true
+
     # snmp_exporter v0.30 removed version/auth from modules — role template still writes
     # them, causing a parse error on startup. Overwrite with the correct v0.30 format.
     - name: Write snmp_exporter configuration (v0.30 format)
