@@ -1,0 +1,41 @@
+---
+- name: Reset challenge
+  hosts: chall
+  gather_facts: false
+  vars:
+    team: ""
+    chall: ""
+  tasks:
+    - name: Read challenge CSV
+      community.general.read_csv:
+        path: ../../data/raw/passwords.csv
+      register: challenges
+
+    - name: Find challenge IP
+      set_fact:
+        challenge_ip: >-
+          {{
+            (
+              challenges.list
+              | selectattr('team', 'equalto', team|string)
+              | first
+            )[chall]
+          }}
+
+    - debug:
+      var: challenge_ip
+
+    - name: Stop challenge and remove volumes
+      community.docker.docker_compose_v2:
+      project_src: "{{ install_docker_compose_target_dir }}"
+      state: absent
+      remove_volumes: true
+
+    - name: Start challenge
+      community.docker.docker_compose_v2:
+      project_src: "{{ install_docker_compose_target_dir }}"
+      state: present
+
+    - name: Show completion message
+      ansible.builtin.debug:
+      msg: "Challenge has been reset successfully."
