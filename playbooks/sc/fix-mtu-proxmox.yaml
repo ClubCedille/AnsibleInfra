@@ -1,0 +1,13 @@
+---
+- name: Set mtu=1 (inherit from bridge) on all Proxmox VM network interfaces
+  hosts: "all:!pve:!switch:!ctfd"
+  gather_facts: false
+  tasks:
+    - name: Set net0 mtu=1 via qm set on the Proxmox node
+      ansible.builtin.command:
+        cmd: >-
+          qm set {{ vm_id }}
+          --net0 {{ vm_net.device | default('virtio') }},bridge={{ vm_net.bridge }},tag={{ vm_net.vlan | default('1') }},mtu={{ vm_net.mtu | default(1500) }}
+      delegate_to: "{{ vm_proxmox_node }}.mgmt.etsmtl.club"
+      when: vm_id is defined and vm_net is defined
+      changed_when: true

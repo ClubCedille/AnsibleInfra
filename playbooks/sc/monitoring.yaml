@@ -54,6 +54,37 @@
   roles:
     - cedille.monitoring.node_exporter
 
+  post_tasks:
+    # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:
+    # when node_exporter_extra_args is empty, Restart=on-failure gets concatenated
+    # to the --collector.textfile.directory argument, causing node_exporter to hang.
+    - name: Fix node_exporter service unit
+      ansible.builtin.copy:
+        dest: "{{ node_exporter_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ node_exporter_service.user }}
+          Group={{ node_exporter_service.group }}
+          ExecStart={{ node_exporter_paths.binary_dir }}/node_exporter \
+            --collector.textfile.directory={{ node_exporter_paths.textfile_collector_dir }}
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+      become: true
+
 - name: Deploy monitoring stack
   hosts: monitoring_core
   become: true
@@ -114,7 +145,8 @@
         _icmp_jobs: >-
           {{ _icmp_jobs | default([]) + [{
             'job_name': 'blackbox_icmp_' + item.split('.')[0],
-            'metrics_path': '/probe?module=icmp&target=' + hostvars[item]['ansible_host'],
+            'metrics_path': '/probe',
+            'params': {'module': ['icmp'], 'target': [hostvars[item]['ansible_host']]},
             'targets': ['127.0.0.1:9115']
           }] }}
       loop: >-
@@ -126,7 +158,8 @@
         _tcp_kea_jobs: >-
           {{ _tcp_kea_jobs | default([]) + [{
             'job_name': 'blackbox_tcp_kea_' + item.split('.')[0],
-            'metrics_path': '/probe?module=tcp_connect&target=' + hostvars[item]['ansible_host'] + ':8000',
+            'metrics_path': '/probe',
+            'params': {'module': ['tcp_connect'], 'target': [hostvars[item]['ansible_host'] + ':8000']},
             'targets': ['127.0.0.1:9115']
           }] }}
       loop: "{{ groups['netservices_dhcp'] }}"
@@ -136,7 +169,8 @@
         _tcp_dns_jobs: >-
           {{ _tcp_dns_jobs | default([]) + [{
             'job_name': 'blackbox_tcp_dns_' + item.split('.')[0],
-            'metrics_path': '/probe?module=tcp_connect&target=' + hostvars[item]['ansible_host'] + ':53',
+            'metrics_path': '/probe',
+            'params': {'module': ['tcp_connect'], 'target': [hostvars[item]['ansible_host'] + ':53']},
             'targets': ['127.0.0.1:9115']
           }] }}
       loop: "{{ groups['netservices_dns'] }}"
@@ -199,3 +233,56 @@
     - cedille.monitoring.prometheus
     - cedille.monitoring.grafana
     - monitoring-dashboard
+
+  post_tasks:
+    # snmp_exporter v0.30 removed version/auth from modules — role template still writes
+    # them, causing a parse error on startup. Overwrite with the correct v0.30 format.
+    - name: Write snmp_exporter configuration (v0.30 format)
+      ansible.builtin.template:
+        src: templates/snmp.yml.j2
+        dest: "{{ snmp_exporter_paths.config }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart SNMP Exporter
+      become: true
+
+    - name: Fix node_exporter service unit (trim_blocks bug in role template)
+      ansible.builtin.copy:
+        dest: "{{ node_exporter_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ node_exporter_service.user }}
+          Group={{ node_exporter_service.group }}
+          ExecStart={{ node_exporter_paths.binary_dir }}/node_exporter \
+            --collector.textfile.directory={{ node_exporter_paths.textfile_collector_dir }}
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+      become: true
+
+    # The cedille.monitoring.prometheus template does not support params: — Prometheus v3
+    # requires params: for blackbox probes instead of query strings in metrics_path.
+    # Overwrite with our corrected template after the role has run.
+    - name: Write Prometheus configuration with params support
+      ansible.builtin.template:
+        src: templates/prometheus.yml.j2
+        dest: "{{ prometheus_paths.config }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Prometheus
+      become: true

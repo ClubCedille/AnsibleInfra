@@ -29,19 +29,32 @@ monitoring_base_scrape_configs:
     targets:
       - 127.0.0.1:9100
   - job_name: blackbox_http_portal
-    metrics_path: /probe?module=http_2xx&target=http%3A%2F%2Fportal01.camp%2Findex.html
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://portal01.camp/index.html"]
     targets:
       - 127.0.0.1:9115
   - job_name: blackbox_http_ctfd
-    metrics_path: /probe?module=http_2xx&target=http%3A%2F%2Fctfd.summercamp.dciets.com
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://ctfd.summercamp.dciets.com"]
     targets:
       - 127.0.0.1:9115
   - job_name: blackbox_icmp_opnsense
-    metrics_path: /probe?module=icmp&target=10.110.0.1
+    metrics_path: /probe
+    params:
+      module: [icmp]
+      target: ["10.110.0.1"]
     targets:
       - 127.0.0.1:9115
   - job_name: snmp_if_mib_opnsense
-    metrics_path: /snmp?module=if_mib&target=10.110.0.1
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+      auth: [public_v2]
+      target: ["10.110.0.1"]
     targets:
       - 127.0.0.1:9116
 

@@ -1,0 +1,37 @@
+---
+- name: Hard-stop and reboot all VMs via Proxmox API
+  hosts: "all:!pve:!switch:!ctfd"
+  gather_facts: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+      api_user: "{{ vm_proxmox_api.user }}"
+      api_password: "{{ vm_proxmox_api.password }}"
+      api_host: "{{ vm_proxmox_api.host }}"
+  tasks:
+    - name: Hard-stop VM
+      community.proxmox.proxmox_kvm:
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        state: stopped
+        force: true
+      delegate_to: localhost
+      when: vm_id is defined
+
+    - name: Wait 30 seconds before starting VMs
+      ansible.builtin.pause:
+        seconds: 30
+      run_once: true
+
+    - name: Start VM
+      community.proxmox.proxmox_kvm:
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        state: started
+      delegate_to: localhost
+      when: vm_id is defined
+
+    - name: Wait for SSH to come back up
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+        delay: 10

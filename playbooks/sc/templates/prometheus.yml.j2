@@ -1,0 +1,27 @@
+global:
+  scrape_interval: {{ prometheus_server.scrape_interval }}
+  evaluation_interval: {{ prometheus_server.evaluation_interval }}
+{% if prometheus_server.external_labels | length > 0 %}
+  external_labels:
+{% for key, value in prometheus_server.external_labels.items() %}
+    {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+
+scrape_configs:
+{% for job in prometheus_scrape_configs %}
+  - job_name: {{ job.job_name }}
+    scrape_interval: {{ job.scrape_interval | default(prometheus_server.scrape_interval) }}
+    metrics_path: {{ job.metrics_path | default('/metrics') }}
+{% if job.params is defined %}
+    params:
+{% for k, v in job.params.items() %}
+      {{ k }}: {{ v | to_json }}
+{% endfor %}
+{% endif %}
+    static_configs:
+      - targets:
+{% for target in job.targets %}
+          - {{ target }}
+{% endfor %}
+{% endfor %}
