@@ -6,11 +6,12 @@ Usage: python genpass.py [--teams 50] [--length 8] [--output data/raw/passwords.
 
 import argparse
 import csv
-import re
 import secrets
 import string
 import sys
 from pathlib import Path
+
+from challenge_name import format_challenge_name
 
 
 def generate_password(length: int) -> str:
@@ -20,13 +21,6 @@ def generate_password(length: int) -> str:
 
 def generate_id() -> str:
     return secrets.token_hex(16)
-
-
-def sanitize_field_name(name: str) -> str:
-    field_name = re.sub(r"\s+", "_", name.strip())
-    field_name = re.sub(r"[^A-Za-z0-9_]", "", field_name)
-    field_name = re.sub(r"_+", "_", field_name).strip("_")
-    return field_name
 
 
 def strip_yaml_comment(value: str) -> str:
@@ -60,6 +54,26 @@ def unquote_yaml_string(value: str) -> str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
         return value[1:-1]
     return value
+
+
+def load_challenge_yml(compose_path: Path) -> dict:
+    challenge_yml = compose_path.parent / "challenge.yml"
+    if not challenge_yml.exists():
+        return {}
+    try:
+        import yaml
+        with challenge_yml.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def is_individual_instance(challenge_data: dict) -> bool:
+    try:
+        return bool(challenge_data["extra"]["deployment_info"]["individual_instance"])
+    except (KeyError, TypeError):
+        return False
 
 
 def load_compose_name(compose_path: Path) -> str | None:
@@ -108,11 +122,14 @@ def challenge_fields(challenge_dir: str | None) -> list[str]:
     seen: set[str] = set()
 
     for compose_path in sorted(root.rglob("docker-compose.yml")):
-        compose_name = load_compose_name(compose_path)
-        if compose_name is None:
+        challenge_data = load_challenge_yml(compose_path)
+        if not is_individual_instance(challenge_data):
             continue
 
-        field_name = sanitize_field_name(compose_name)
+        raw_name = challenge_data.get("name") if challenge_data else None
+        if not raw_name:
+            raw_name = compose_path.parent.name
+        field_name = format_challenge_name(raw_name)
         if not field_name:
             continue
 
@@ -162,6 +179,11 @@ def main():
         default="data/raw/passwords.csv",
         help="Fichier CSV de sortie",
     )
+    parser.add_argument(
+        "--prune",
+        action="store_true",
+        help="Supprimer du CSV les challenges absents du repo externe (ou sans individual_instance)",
+    )
     args = parser.parse_args()
 
     if args.teams < 1:
@@ -175,9 +197,18 @@ def main():
     existing_challenge_fields = [
         f for f in existing_fieldnames if f not in ("team", "vmid", "password")
     ]
-    existing_challenge_set = set(existing_challenge_fields)
 
     all_challenge_fields = challenge_fields(args.challenge_dir)
+    current_challenge_set = set(all_challenge_fields)
+
+    pruned_fields: list[str] = []
+    if args.prune:
+        pruned_fields = [f for f in existing_challenge_fields if f not in current_challenge_set]
+        existing_challenge_fields = [f for f in existing_challenge_fields if f in current_challenge_set]
+        if pruned_fields:
+            print(f"[!] Challenges supprimés (--prune): {', '.join(pruned_fields)}")
+
+    existing_challenge_set = set(existing_challenge_fields)
     new_challenge_fields = [f for f in all_challenge_fields if f not in existing_challenge_set]
 
     fieldnames = ["team", "vmid", "password", *existing_challenge_fields, *new_challenge_fields]
@@ -188,6 +219,8 @@ def main():
     for team in range(1, args.teams + 1):
         if team in existing_rows:
             row = existing_rows[team]
+            for field in pruned_fields:
+                row.pop(field, None)
             for field in new_challenge_fields:
                 row[field] = generate_id()
         else:
@@ -211,6 +244,8 @@ def main():
         summary_parts.append(f"{new_teams} nouvelles équipes")
     if new_challenge_fields:
         summary_parts.append(f"{len(new_challenge_fields)} nouveaux challenges ({', '.join(new_challenge_fields)})")
+    if pruned_fields:
+        summary_parts.append(f"{len(pruned_fields)} challenges purgés ({', '.join(pruned_fields)})")
     if not summary_parts:
         summary_parts.append("aucun changement")
 

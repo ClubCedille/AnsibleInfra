@@ -3,16 +3,31 @@
 
 Challenge columns are auto-detected as every column after 'password'.
 Challenge index (1-based, left-to-right) drives IP subnet and vm_id:
-  ansible_host = 10.130.{(n-1)*2}.{100+team}
-  vm_id        = 2000000 + n*1000 + 100 + team
+  ansible_host = 10.130.{chall_idx}.{team}   (teams 1-50, one /24 per challenge)
+  vm_id        = 2000000 + n*1000 + team
+
+Single-instance challenges (individual_instance=false in challenge.yml) are placed
+in their own group with a single host, all on the 10.130.0.0/24:
+  ansible_host = 10.130.0.{100 + idx}        (range .101–.250)
+  vm_id        = 5000000 + idx*100
+
+--sync-compose copies each deployable challenge's docker-compose.yml into
+  group_vars/{challenge_name}/main.yml as the variable 'challenge_docker_compose'.
 """
 
+import argparse
 import csv
+import difflib
+import sys
+from dataclasses import dataclass
 from pathlib import Path
+
+from challenge_name import format_challenge_name
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CSV_PATH = REPO_ROOT / "data/raw/passwords.csv"
 INVENTORY_PATH = REPO_ROOT / "inventories/summercamp/hosts.ini"
+GROUP_VARS_DIR = REPO_ROOT / "inventories/summercamp/group_vars"
 
 SHELLCTF_COUNT = 50
 
@@ -81,6 +96,73 @@ monitoring_core
 """
 
 
+@dataclass
+class ChallengeInfo:
+    name: str                      # sanitized, used as Ansible group name
+    compose_path: Path             # absolute path to docker-compose.yml
+    # None  → no deployment_info (not to be deployed)
+    # True  → individual_instance (per-team, driven by CSV)
+    # False → single-instance (one VM total)
+    individual_instance: bool | None
+
+
+
+def load_compose_name(compose_path: Path) -> str | None:
+    """Read the top-level `name:` field from a docker-compose.yml (no full YAML parse needed)."""
+    try:
+        import yaml
+        with compose_path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        name = data.get("name") if isinstance(data, dict) else None
+        return name if isinstance(name, str) and name else None
+    except Exception:
+        return None
+
+
+def load_challenge_yml(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        import yaml
+        with path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def scan_challenges(challenge_dir: Path) -> list[ChallengeInfo]:
+    """Scan challenge_dir and return a ChallengeInfo for every docker-compose.yml found."""
+    results: list[ChallengeInfo] = []
+    seen: set[str] = set()
+
+    for compose_path in sorted(challenge_dir.rglob("docker-compose.yml")):
+        data = load_challenge_yml(compose_path.parent / "challenge.yml")
+
+        # Use challenge.yml `name:` — matches genpass.py and CTFd challenge names.
+        raw_name = (data.get("name") if data else None) or compose_path.parent.name
+        name = format_challenge_name(raw_name)
+        if not name or name in seen:
+            continue
+        seen.add(name)
+
+        individual_instance: bool | None = None
+        try:
+            deployment_info = data["extra"]["deployment_info"]
+            if isinstance(deployment_info, dict):
+                individual_instance = bool(deployment_info.get("individual_instance", True))
+        except (KeyError, TypeError):
+            pass
+
+        results.append(ChallengeInfo(
+            name=name,
+            compose_path=compose_path.resolve(),
+            individual_instance=individual_instance,
+        ))
+
+    return results
+
+
 def build_shellctf_section(count: int) -> str:
     lines = [
         "# --- Shell CTF challenge VMs ---",
@@ -98,23 +180,128 @@ def build_challenge_section(challenge: str, chall_idx: int, teams: list[dict]) -
     for row in teams:
         team = int(row["team"])
         hash_val = row[challenge]
-        ip = f"10.130.{(chall_idx - 1) * 2}.{100 + team}"
-        vm_id = 2000000 + chall_idx * 1000 + 100 + team
+        ip = f"10.130.{chall_idx}.{team}"
+        vm_id = 2000000 + chall_idx * 1000 + team
         lines.append(
             f"{hash_val}-{challenge}.ctf ansible_host={ip} vm_id={vm_id}"
         )
     return "\n".join(lines)
 
 
+def build_single_instance_sections(challenges: list[ChallengeInfo]) -> str:
+    if not challenges:
+        return ""
+    lines = ["# --- Single-instance challenges (one VM per challenge) ---"]
+    for idx, ch in enumerate(challenges, start=1):
+        ip = f"10.130.0.{100 + idx}"
+        vm_id = 5000000 + idx * 100
+        lines.append(f"[{ch.name}]")
+        lines.append(f"{ch.name}.ctf ansible_host={ip} vm_id={vm_id}")
+        lines.append("")
+
+    lines.append("[single_instance_challenges:children]")
+    lines.extend(ch.name for ch in challenges)
+    return "\n".join(lines)
+
+
+def _show_diff(path: Path, new_content: str) -> bool:
+    """Print a unified diff between the current file and new_content. Returns True if changed."""
+    old_lines = path.read_text(encoding="utf-8").splitlines(keepends=True) if path.exists() else []
+    new_lines = new_content.splitlines(keepends=True)
+    diff = list(difflib.unified_diff(
+        old_lines, new_lines,
+        fromfile=f"{path} (current)",
+        tofile=f"{path} (new)",
+    ))
+    if diff:
+        print("".join(diff))
+        return True
+    print(f"  (no changes)")
+    return False
+
+
+def _write_or_diff(path: Path, content: str, dry_run: bool) -> None:
+    if dry_run:
+        print(f"\n[DRY RUN] {path}")
+        _show_diff(path, content)
+    else:
+        path.write_text(content, encoding="utf-8")
+
+
+def sync_compose(challenges: list[ChallengeInfo], group_vars_dir: Path, dry_run: bool) -> None:
+    """Write each challenge's docker-compose.yml into group_vars as a YAML variable."""
+    label = "[DRY RUN] sync-compose" if dry_run else "sync-compose"
+    print(f"\n[{label}] {len(challenges)} challenges → {group_vars_dir}")
+
+    for ch in challenges:
+        compose_content = ch.compose_path.read_text(encoding="utf-8")
+        dest_dir = group_vars_dir / ch.name
+        dest_file = dest_dir / "main.yml"
+
+        # Indent each line of the compose so it's a valid YAML literal block scalar
+        indented = "\n".join("  " + line if line.strip() else "" for line in compose_content.splitlines())
+        file_content = (
+            "# Generated by scripts/gen_inventory.py --sync-compose — do not edit manually\n"
+            f"challenge_docker_compose: |\n{indented}\n"
+        )
+
+        if not dry_run:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+        _write_or_diff(dest_file, file_content, dry_run)
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Génère inventories/summercamp/hosts.ini depuis data/raw/passwords.csv"
+    )
+    parser.add_argument(
+        "--challenge-dir",
+        metavar="DIR",
+        help="Répertoire racine des challenges (repo externe). "
+             "Requis pour inclure les challenges single-instance et --sync-compose.",
+    )
+    parser.add_argument(
+        "--sync-compose",
+        action="store_true",
+        help="Synchronise les docker-compose.yml dans group_vars/{challenge}/main.yml "
+             "(variable challenge_docker_compose). Requiert --challenge-dir.",
+    )
+    parser.add_argument(
+        "--group-vars-dir",
+        metavar="DIR",
+        default=str(GROUP_VARS_DIR),
+        help=f"Destination des group_vars (défaut: {GROUP_VARS_DIR})",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Affiche les changements (diff) sans écrire aucun fichier.",
+    )
+    args = parser.parse_args()
+
+    if args.sync_compose and not args.challenge_dir:
+        parser.error("--sync-compose requiert --challenge-dir")
+
     with CSV_PATH.open(newline="") as f:
         reader = csv.DictReader(f)
         teams = list(reader)
 
     fieldnames = reader.fieldnames or []
-    # Challenges are every column after 'password'
     password_idx = fieldnames.index("password")
-    challenges = fieldnames[password_idx + 1:]
+    per_team_challenges = fieldnames[password_idx + 1:]
+
+    all_challenges: list[ChallengeInfo] = []
+
+    if args.challenge_dir:
+        challenge_dir = Path(args.challenge_dir)
+        if not challenge_dir.is_dir():
+            print(f"Erreur: répertoire introuvable: {challenge_dir}", file=sys.stderr)
+            sys.exit(1)
+        all_challenges = scan_challenges(challenge_dir)
+
+    single_instance = [c for c in all_challenges if c.individual_instance is False]
+    not_deployed    = [c for c in all_challenges if c.individual_instance is None]
+    # individual_instance=True → per-team, not listed separately here
 
     sections = [
         STATIC_HEADER,
@@ -126,20 +313,38 @@ def main() -> None:
         NETSERVICES_SECTIONS,
     ]
 
-    for idx, challenge in enumerate(challenges, start=1):
+    for idx, challenge in enumerate(per_team_challenges, start=1):
         sections.append(build_challenge_section(challenge, idx, teams))
         sections.append("")
 
-    chall_children = "# --- CTF challenge group (all per-team sections) ---\n[chall:children]\n" + "\n".join(challenges)
+    chall_children = (
+        "# --- CTF challenge group (all per-team sections) ---\n"
+        "[chall:children]\n"
+        + "\n".join(per_team_challenges)
+    )
     sections.append(chall_children)
     sections.append("")
 
+    if single_instance:
+        sections.append(build_single_instance_sections(single_instance))
+        sections.append("")
+
     sections.append(MONITORING_SECTIONS)
 
-    INVENTORY_PATH.write_text("\n".join(sections))
-    print(f"Wrote {INVENTORY_PATH}")
-    print(f"Challenges: {', '.join(f'{c} (idx={i})' for i, c in enumerate(challenges, 1))}")
-    print(f"Teams: {len(teams)}")
+    inventory_content = "\n".join(sections)
+    _write_or_diff(INVENTORY_PATH, inventory_content, args.dry_run)
+    if not args.dry_run:
+        print(f"Wrote {INVENTORY_PATH}")
+    print(f"Per-team challenges : {', '.join(f'{c} (idx={i})' for i, c in enumerate(per_team_challenges, 1))}")
+    print(f"Teams               : {len(teams)}")
+    if single_instance:
+        print(f"Single-instance     : {', '.join(c.name for c in single_instance)}")
+    if not_deployed:
+        print(f"[not to be deployed]: {', '.join(c.name for c in not_deployed)}")
+
+    if args.sync_compose:
+        deployable = [c for c in all_challenges if c.individual_instance is not None]
+        sync_compose(deployable, Path(args.group_vars_dir), args.dry_run)
 
 
 if __name__ == "__main__":

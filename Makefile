@@ -82,3 +82,51 @@ endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))
 
+# ---------------------------------------------------------------------------
+# Summercamp — génération des credentials et de l'inventaire
+# ---------------------------------------------------------------------------
+
+CHALLENGE_DIR ?= ../../DCISummerCamp2026
+SC_CSV        = data/raw/passwords.csv
+
+# PRUNE=1 pour supprimer du CSV les challenges absents/non-individuels
+PRUNE ?= 0
+PRUNE_FLAG =
+ifeq ($(PRUNE),1)
+PRUNE_FLAG = --prune
+endif
+
+# DRY_RUN=1 s'applique aussi aux scripts Python (affiche les diffs sans écrire)
+PY_DRY_RUN_FLAG =
+ifeq ($(DRY_RUN),1)
+PY_DRY_RUN_FLAG = --dry-run
+endif
+
+# Génère/met à jour le CSV des credentials.
+# Usage normal : make gen-passwords
+# Avec purge    : make gen-passwords PRUNE=1
+# Repo custom   : make gen-passwords CHALLENGE_DIR=/autre/chemin
+.PHONY: gen-passwords
+gen-passwords: venv
+	$(PYTHON) scripts/genpass.py $(CHALLENGE_DIR) --output $(SC_CSV) $(PRUNE_FLAG)
+
+# Génère l'inventaire Ansible depuis le CSV + le repo challenges.
+# Les challenges single-instance (individual_instance=false) sont inclus.
+# Les challenges sans deployment_info sont loggés [not to be deployed].
+.PHONY: gen-inventory
+gen-inventory: venv
+	$(PYTHON) scripts/gen_inventory.py --challenge-dir $(CHALLENGE_DIR) $(PY_DRY_RUN_FLAG)
+
+# Synchronise les docker-compose.yml des challenges dans group_vars/.
+# Écrit challenge_docker_compose dans group_vars/{challenge}/main.yml.
+# GROUP_VARS_DIR optionnel (défaut: inventories/summercamp/group_vars).
+.PHONY: sync-compose
+sync-compose: venv
+	$(PYTHON) scripts/gen_inventory.py --challenge-dir $(CHALLENGE_DIR) --sync-compose \
+		$(if $(GROUP_VARS_DIR),--group-vars-dir $(GROUP_VARS_DIR),) \
+		$(PY_DRY_RUN_FLAG)
+
+# Régénération complète : passwords, inventaire, sync des composes.
+.PHONY: regen
+regen: gen-passwords gen-inventory sync-compose
+

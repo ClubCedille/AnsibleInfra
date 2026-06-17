@@ -256,6 +256,14 @@
       notify: Restart Grafana
       become: true
 
+    - name: Grant blackbox_exporter cap_net_raw for ICMP probes
+      community.general.capabilities:
+        path: /usr/local/bin/blackbox_exporter
+        capability: cap_net_raw+ep
+        state: present
+      notify: Restart Blackbox Exporter
+      become: true
+
     # snmp_exporter v0.30 removed version/auth from modules — role template still writes
     # them, causing a parse error on startup. Overwrite with the correct v0.30 format.
     - name: Write snmp_exporter configuration (v0.30 format)
