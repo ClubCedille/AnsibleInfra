@@ -1,6 +1,12 @@
 ---
-- name: Provision Challenge VMs on Proxmox
-  hosts: chall
+# Déploie les challenges "single-instance" (extra.deployment_info.individual_instance: false
+# dans challenge.yml) — une seule VM partagée par tout l'événement, par opposition aux
+# challenges par-équipe déployés par playbooks/sc/chall.yaml (groupe `chall`).
+# Voir le tableau dans README.md (« Génération de l'inventaire summercamp ») pour la
+# distinction complète entre les deux groupes.
+
+- name: Provision Single-Instance Challenge VMs on Proxmox
+  hosts: single_instance_challenges
   gather_facts: false
   become: false
   module_defaults:
@@ -11,8 +17,8 @@
   roles:
     - cedille.proxmox.vm
 
-- name: Wait for SSH on Challenge VMs
-  hosts: chall
+- name: Wait for SSH on Single-Instance Challenge VMs
+  hosts: single_instance_challenges
   gather_facts: false
   tasks:
     - name: Wait for SSH to be available
@@ -20,7 +26,7 @@
         timeout: 120
 
 - name: Install the docker role on this VM
-  hosts: chall
+  hosts: single_instance_challenges
   gather_facts: true
   become: true
   pre_tasks:
@@ -64,20 +70,15 @@
         state: present
       when: pull_result.changed
 
-- name: Deploy Docker container state exporter on Challenge VMs
-  hosts: chall
+- name: Deploy Docker container state exporter on Single-Instance Challenge VMs
+  hosts: single_instance_challenges
   gather_facts: true
   become: true
   pre_tasks:
-    # IMPORTANT (scale: this group can grow to 600-700+ VMs as more per-team
-    # challenges are added): delegate_to: localhost + run_once: true means
-    # GitHub is hit exactly ONCE for the whole play, regardless of host count.
-    # The archive is then pushed host-by-host over SSH (copy). The role's own
-    # "Download Node Exporter archive" get_url task targets this exact same
-    # dest path — since the file already exists with a matching checksum, it
-    # short-circuits locally and never re-downloads from GitHub. Do NOT remove
-    # this staging step or per-host count growth will start tripping GitHub's
-    # unauthenticated rate limit (60 req/h per source IP).
+    # Même précaution que playbooks/sc/chall.yaml : delegate_to: localhost +
+    # run_once: true pour ne télécharger l'archive node_exporter qu'une seule fois
+    # depuis GitHub, peu importe le nombre de challenges single-instance, puis la
+    # pousser host-par-host par SSH. Ne pas retirer cette étape de staging.
     - name: Ensure local archive staging directory exists
       ansible.builtin.file:
         path: /tmp/monitoring-archives

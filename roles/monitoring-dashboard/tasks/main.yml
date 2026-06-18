@@ -8,3 +8,13 @@
     mode: "0640"
   notify: Restart Grafana
   become: true
+
+- name: Copy Summercamp per-team challenge status dashboard
+  ansible.builtin.copy:
+    src: summercamp-challenges.json
+    dest: /etc/grafana/provisioning/dashboards/summercamp-challenges.json
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: Restart Grafana
+  become: true
