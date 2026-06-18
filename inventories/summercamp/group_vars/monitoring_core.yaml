@@ -3,6 +3,19 @@
 # ansible-vault encrypt_string 'public' --name 'monitoring_snmp_community'
 monitoring_snmp_community: public
 
+loki_server:
+  http_listen_port: 3100
+  retention_period: 168h
+  bind_address: 0.0.0.0
+
+loki_storage:
+  path_prefix: /var/lib/loki
+  filesystem:
+    chunks_directory: /var/lib/loki/chunks
+    rules_directory: /var/lib/loki/rules
+  schema_config:
+    index_prefix: index_
+
 prometheus_server:
   scrape_interval: 60s
   evaluation_interval: 60s
@@ -19,6 +32,9 @@ monitoring_base_scrape_configs:
   - job_name: prometheus
     targets:
       - 127.0.0.1:9090
+  - job_name: loki
+    targets:
+      - 127.0.0.1:3100
   - job_name: blackbox_exporter
     targets:
       - 127.0.0.1:9115

@@ -53,3 +53,23 @@ vm_net:
   search_domain: "summercamp.dciets.com"
 
 docker_registry_mirror_enabled: true
+
+# node_exporter (textfile collector for ctf_docker_state_exporter) — same overrides
+# as inventories/summercamp/group_vars/monitoring_hosts.yaml: avoid the role's
+# recursive-template archive_url and the /tmp sticky-bit-stripping mode=0755 default.
+node_exporter_paths:
+  install_dir: /opt/node_exporter
+  archive_download_dir: /opt/monitoring-downloads
+  binary_dir: /usr/local/bin
+  textfile_collector_dir: /var/lib/node_exporter/textfile_collector
+  service_unit: /etc/systemd/system/node_exporter.service
+
+node_exporter_install:
+  update_cache: true
+  prereq_packages:
+    - tar
+  version: "1.11.1"
+  archive_url: "https://github.com/prometheus/node_exporter/releases/download/v1.11.1/node_exporter-1.11.1.linux-amd64.tar.gz"
+  archive_checksum: "9f5ea48e5bc7b656f8a91a32e7d7deb89f70f73dabd0d974418aca15f37d6810"
+  archive_name: "node_exporter-1.11.1.linux-amd64.tar.gz"
+  extracted_dir: "node_exporter-1.11.1.linux-amd64"
