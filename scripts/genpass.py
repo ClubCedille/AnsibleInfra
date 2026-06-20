@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Génère un CSV de mots de passe pour les équipes CTF.
-Usage: python genpass.py [--teams 50] [--length 8] [--output data/raw/passwords.csv] [challenge_dir]
+Usage: python genpass.py [--teams 35] [--length 8] [--output data/raw/passwords.csv] [challenge_dir]
 """
 
 import argparse
@@ -57,8 +57,11 @@ def unquote_yaml_string(value: str) -> str:
 
 
 def load_challenge_yml(compose_path: Path) -> dict:
-    challenge_yml = compose_path.parent / "challenge.yml"
-    if not challenge_yml.exists():
+    for name in ("challenge.yml", "challenge.yaml"):
+        challenge_yml = compose_path.parent / name
+        if challenge_yml.exists():
+            break
+    else:
         return {}
     try:
         import yaml
@@ -121,7 +124,11 @@ def challenge_fields(challenge_dir: str | None) -> list[str]:
     fields: list[str] = []
     seen: set[str] = set()
 
-    for compose_path in sorted(root.rglob("docker-compose.yml")):
+    compose_paths: set[Path] = set()
+    for pattern in ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"):
+        compose_paths.update(root.rglob(pattern))
+
+    for compose_path in sorted(compose_paths):
         challenge_data = load_challenge_yml(compose_path)
         if not is_individual_instance(challenge_data):
             continue
@@ -168,7 +175,7 @@ def main():
         help="Répertoire contenant les docker-compose.yml des challenges",
     )
     parser.add_argument(
-        "--teams", type=int, default=50, help="Nombre d'équipes (défaut: 50)"
+        "--teams", type=int, default=35, help="Nombre d'équipes (défaut: 35)"
     )
     parser.add_argument(
         "--length", type=int, default=8, help="Longueur du mot de passe (défaut: 8)"

@@ -34,6 +34,15 @@ ifeq ($(DRY_RUN),1)
 ANSIBLE_MODE_FLAGS += --check --diff
 endif
 
+# EXTRA_VARS="key=value ..." est passé à ansible-playbook via --extra-vars sur
+# toutes les cibles (ex. EXTRA_VARS="vm_delete_if_exists=true" pour forcer la
+# suppression d'une VM dans cedille.proxmox.vm avant de la recréer).
+EXTRA_VARS ?=
+EXTRA_VARS_FLAG =
+ifneq ($(strip $(EXTRA_VARS)),)
+EXTRA_VARS_FLAG = --extra-vars "$(EXTRA_VARS)"
+endif
+
 .PHONY: venv
 venv:
 	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
@@ -76,11 +85,33 @@ lint: galaxy-install lint-tools
 
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
-$(1): galaxy-install $(playbook)/$(1).yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS)
+$(1): $(playbook)/$(1).yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))
+
+# ---------------------------------------------------------------------------
+# Summercamp — déploiement d'un challenge spécifique (évite de surcharger
+# l'infra en lançant les ~300 VMs de tous les challenges d'un coup).
+#
+# Usage : make sc/chall/<NomDuChallenge> inventory_name=sc
+#   ex.  make sc/chall/MITM inventory_name=sc
+#   ex.  make sc/chall/NanoControl_Credentials_1,Acces_Interdit inventory_name=sc
+# <NomDuChallenge> doit correspondre à un nom de groupe de l'inventaire
+# (voir [chall:children] dans inventories/summercamp/hosts.ini), et accepte
+# tout ce que comprend --limit d'Ansible (liste séparée par virgules, motifs).
+# ---------------------------------------------------------------------------
+
+.PHONY: sc/chall/%
+sc/chall/%: $(playbook)/sc/chall.yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
+# Même principe pour playbooks/sc/reset_chall.yaml (docker compose down/up sur
+# des hosts précis) : make sc/reset_chall/<hosts ou groupe> inventory_name=sc
+.PHONY: sc/reset_chall/%
+sc/reset_chall/%: $(playbook)/sc/reset_chall.yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reset_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # ---------------------------------------------------------------------------
 # Summercamp — génération des credentials et de l'inventaire
