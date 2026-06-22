@@ -42,20 +42,25 @@ Manquant : logique de construction de l'image PXE (flag #7).
 
 ---
 
-## Ansible Repository Structure (to be created)
+## Ansible Repository Structure
 
 ```txt
 roles/
-├── tftp/
-│   ├── files/
-│   │   └── pxe/                   # PXE files served over TFTP
-│   └── tasks/
-│       └── main.yml
-├── http-portal/
-│   ├── templates/
-│   │   └── index.html.j2          # Portal page containing flag #5
-│   └── tasks/
-│       └── main.yml
+├── tftp/                          # tftpd-hpa + iPXE; files/: bzImage, initrd, netboot.ipxe
+├── http-portal/                   # nginx + page portail (flag #5 en commentaire HTML)
+├── secret-portal/                 # nginx + page narrative (secret.ctf)
+├── docker-state-exporter/         # Prometheus textfile exporter for Docker Compose challenges
+├── monitoring-dashboard/          # Grafana dashboards summercamp
+└── kea/vars/flags.yml             # Toutes les valeurs de flags CTF (source de vérité unique)
+playbooks/sc/
+├── dhcp.yaml                      # VMs DHCP (Kea + TFTP co-localisé)
+├── dns.yaml                       # VMs DNS (BIND9 + zones camp/ctf)
+├── http-portal.yaml               # VM portail captif
+├── secret_portal.yaml             # VM secret.ctf
+├── chall.yaml                     # Challenges par équipe (Docker Compose sur VM)
+├── single_instance_chall.yaml     # Challenges à instance unique
+├── monitoring.yaml                # Stack Prometheus/Grafana/Loki
+└── includes/                      # Fragments réutilisables (apt_proxy, pip_proxy)
 scripts/
 └── encode_tlv.py                  # Encodes a flag string to TLV hex for option 43
 ```
@@ -161,18 +166,18 @@ secret.ctf.  IN  TXT  "DCI{xxx}"
 
 ---
 
-## What Is NOT Yet Implemented
+## Status
 
-- [ ] PXE image construction (flag #7) — intégrer `flag_07_pxe_wallpaper` dans le wallpaper de l'image (`bzImage`/`initrd`)
-- [ ] DHCP snooping config on switches (out of Ansible scope, done on Cisco gear)
+**Implémenté :**
+- `roles/tftp/` — tftpd-hpa + iPXE (undionly.kpxe, ipxe.efi, netboot.ipxe, bzImage, initrd)
+- `roles/http-portal/` — nginx + page portail (flag #5)
+- `scripts/encode_tlv.py` — génération hex TLV option 43
+- Flags #1–#3, #5–#7, #9 définis dans `roles/kea/vars/flags.yml`
+- BIND9 zone files `playbooks/sc/templates/ctf.zone.j2` et `camp.zone.j2`
 
-## What Is Implemented
-
-- [x] `roles/tftp/` — tftpd-hpa + iPXE (undionly.kpxe, ipxe.efi, netboot.ipxe, bzImage, initrd)
-- [x] `roles/http-portal/` — nginx + page portail (flag #5)
-- [x] `scripts/encode_tlv.py` — génération hex TLV option 43
-- [x] Flags #1–#3, #5–#7, #9 définis dans `roles/kea/vars/flags.yml`
-- [x] BIND9 zone files `playbooks/sc/templates/ctf.zone.j2` et `camp.zone.j2`
+**Non implémenté / hors scope Ansible :**
+- Construction de l'image PXE (flag #7) — intégrer `flag_07_pxe_wallpaper` dans le wallpaper de `bzImage`/`initrd` (à faire hors repo)
+- DHCP snooping sur les switches (Cisco gear, hors scope Ansible)
 
 ---
 

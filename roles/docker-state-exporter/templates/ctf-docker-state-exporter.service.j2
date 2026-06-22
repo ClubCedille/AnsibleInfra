@@ -1,9 +1,0 @@
-[Unit]
-Description=CTF per-challenge Docker container state exporter (textfile collector)
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=oneshot
-EnvironmentFile={{ docker_state_exporter_env_file }}
-ExecStart=/usr/bin/python3 {{ docker_state_exporter_script_path }}

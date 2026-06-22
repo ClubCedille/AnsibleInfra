@@ -16,7 +16,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "query": "label_values(ctf_container_state, challenge)",
+        "query": "label_values(docker_container_state, challenge)",
         "refresh": 2,
         "sort": 1,
         "multi": false,
@@ -30,7 +30,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "query": "label_values(ctf_container_state{challenge=\"$challenge\"}, team)",
+        "query": "label_values(docker_container_state{challenge=\"$challenge\"}, team)",
         "refresh": 2,
         "sort": 3,
         "multi": true,
@@ -118,7 +118,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "ctf_container_state{challenge=\"$challenge\", team=~\"$team\"}",
+          "expr": "docker_container_state{challenge=\"$challenge\", team=~\"$team\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -216,7 +216,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "ctf_container_restart_count{challenge=\"$challenge\", team=~\"$team\"}",
+          "expr": "docker_container_restart_count{challenge=\"$challenge\", team=~\"$team\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -307,7 +307,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "time() - ctf_container_start_time_seconds{challenge=\"$challenge\", team=~\"$team\"}",
+          "expr": "time() - docker_container_start_time_seconds{challenge=\"$challenge\", team=~\"$team\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -418,7 +418,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "ctf_container_port_open{challenge=\"$challenge\", team=~\"$team\"}",
+          "expr": "docker_container_port_open{challenge=\"$challenge\", team=~\"$team\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -528,7 +528,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "ctf_docker_state_exporter_up{challenge=\"$challenge\", team=~\"$team\"}",
+          "expr": "docker_state_exporter_up{challenge=\"$challenge\", team=~\"$team\"}",
           "format": "table",
           "instant": true,
           "refId": "A"

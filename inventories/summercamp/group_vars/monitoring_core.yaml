@@ -62,7 +62,7 @@ monitoring_base_scrape_configs:
     metrics_path: /probe
     params:
       module: [http_2xx]
-      target: ["http://ctfd.summercamp.dciets.com"]
+      target: ["http://ctfd.summercamp.etsmtl.club"]
     targets:
       - 127.0.0.1:9115
   - job_name: blackbox_icmp_opnsense

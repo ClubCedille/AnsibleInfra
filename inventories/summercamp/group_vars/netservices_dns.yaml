@@ -24,7 +24,7 @@ vm_net:
   netmask: "16"
   gateway: "10.130.0.1"
   nameservers: "1.1.1.1"
-  search_domain: "summercamp.dciets.ca"
+  search_domain: "summercamp.etsmtl.club"
 
 netservices_dns:
   enabled: true
@@ -69,6 +69,14 @@ netservices_dns:
   local:
     acl_definitions: []
     zones: []
+
+  wait_for_ready: true
+
+  zone_files:
+    - src: "{{ playbook_dir }}/templates/camp.zone.j2"
+      dest: "{{ netservices_dns.ha.zones[0].master_file if netservices_dns.ha.this_server_role == 'master' else netservices_dns.ha.zones[0].slave_file }}"
+    - src: "{{ playbook_dir }}/templates/ctf.zone.j2"
+      dest: "{{ netservices_dns.ha.zones[1].master_file if netservices_dns.ha.this_server_role == 'master' else netservices_dns.ha.zones[1].slave_file }}"
 
   ha:
     enabled: true
