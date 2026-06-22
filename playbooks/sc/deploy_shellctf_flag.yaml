@@ -1,0 +1,17 @@
+---
+- name: Deploy the ShellCTF flag file
+  hosts: shellctf
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ensure /home/sc exists
+      ansible.builtin.file:
+        path: /home/sc
+        state: directory
+        mode: "0755"
+
+    - name: Write flag file in /home/sc
+      ansible.builtin.copy:
+        content: "DCI{MY_5H3LL_C7F_1S_W0RK1NG_Y1PP3EEE3}\n"
+        dest: /home/sc/flag
+        mode: "0644"

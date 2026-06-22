@@ -1,0 +1,26 @@
+---
+- name: Update and install qemu-guest-agent on all VMs
+  hosts: "all:!pve:!switch"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+    - name: Run apt upgrade
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        autoremove: true
+
+    - name: Install qemu-guest-agent
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Ensure qemu-guest-agent is enabled and started
+      ansible.builtin.service:
+        name: qemu-guest-agent
+        state: started
+        enabled: true

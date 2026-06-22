@@ -6,19 +6,24 @@
     "editor.autoIndent": "keep",
     "diffEditor.ignoreTrimWhitespace": false,
     "editor.defaultColorDecorators": "never",
+    "yaml.customTags": ["!vault scalar"],
+    "yaml.schemas": {
+      "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/vars.json": [
+        "inventories/**/group_vars/*.yml",
+        "inventories/**/group_vars/*.yaml",
+        "inventories/**/host_vars/*.yml",
+        "inventories/**/host_vars/*.yaml"
+      ]
+    },
     "editor.quickSuggestions": {
       "strings": true,
       "other": true,
       "comments": false
     },
-    "gitlens.codeLens.scopes": [
-      "document"
-    ]
+    "gitlens.codeLens.scopes": ["document"]
   },
   "[ansible]": {
-    "gitlens.codeLens.scopes": [
-      "document"
-    ],
+    "gitlens.codeLens.scopes": ["document"],
     "editor.detectIndentation": false,
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
@@ -36,9 +41,7 @@
     "*.yml": "yaml"
   },
   // Ansible default settings
-  "editor.rulers": [
-    160
-  ],
+  "editor.rulers": [160],
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"

@@ -1,0 +1,145 @@
+---
+# Déploie les challenges "single-instance" (extra.deployment_info.individual_instance: false
+# dans challenge.yml) — une seule VM partagée par tout l'événement, par opposition aux
+# challenges par-équipe déployés par playbooks/sc/chall.yaml (groupe `chall`).
+# Voir le tableau dans README.md (« Génération de l'inventaire summercamp ») pour la
+# distinction complète entre les deux groupes.
+
+- name: Provision Single-Instance Challenge VMs on Proxmox
+  hosts: single_instance_challenges
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on Single-Instance Challenge VMs
+  hosts: single_instance_challenges
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Install the docker role on this VM
+  hosts: single_instance_challenges
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup archive.ubuntu.com
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+    - name: Configure apt proxy
+      ansible.builtin.copy:
+        content: 'Acquire::http::Proxy "http://{{ docker_registry_mirror_host }}:3142";'
+        dest: /etc/apt/apt.conf.d/00proxy
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+    - name: Configure pip proxy
+      ansible.builtin.copy:
+        content: |
+          [global]
+          index-url = http://{{ docker_registry_mirror_host }}:3141/root/pypi/+simple/
+          trusted-host = {{ docker_registry_mirror_host }}
+        dest: /etc/pip.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+  roles:
+    - cedille.docker.install
+  post_tasks:
+    - name: Pull the latest images for the challenge
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ install_docker_compose_target_dir }}"
+      register: pull_result
+    - name: If images were pulled, recreate the containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: present
+      when: pull_result.changed
+
+- name: Deploy Docker container state exporter on Single-Instance Challenge VMs
+  hosts: single_instance_challenges
+  gather_facts: true
+  become: true
+  pre_tasks:
+    # Même précaution que playbooks/sc/chall.yaml : delegate_to: localhost +
+    # run_once: true pour ne télécharger l'archive node_exporter qu'une seule fois
+    # depuis GitHub, peu importe le nombre de challenges single-instance, puis la
+    # pousser host-par-host par SSH. Ne pas retirer cette étape de staging.
+    - name: Ensure local archive staging directory exists
+      ansible.builtin.file:
+        path: /tmp/monitoring-archives
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Download node_exporter archive on controller
+      ansible.builtin.get_url:
+        url: "{{ node_exporter_install.archive_url }}"
+        dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Ensure remote archive download directory exists
+      ansible.builtin.file:
+        path: "{{ node_exporter_paths.archive_download_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push node_exporter archive to host
+      ansible.builtin.copy:
+        src: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        dest: "{{ node_exporter_paths.archive_download_dir }}/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+
+  roles:
+    - cedille.monitoring.node_exporter
+    - docker-state-exporter
+
+  post_tasks:
+    # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:
+    # when node_exporter_extra_args is empty, Restart=on-failure gets concatenated
+    # to the --collector.textfile.directory argument, causing node_exporter to hang.
+    - name: Fix node_exporter service unit
+      ansible.builtin.copy:
+        dest: "{{ node_exporter_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ node_exporter_service.user }}
+          Group={{ node_exporter_service.group }}
+          ExecStart={{ node_exporter_paths.binary_dir }}/node_exporter \
+            --collector.textfile.directory={{ node_exporter_paths.textfile_collector_dir }}
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+      become: true

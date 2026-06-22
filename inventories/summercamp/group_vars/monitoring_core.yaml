@@ -1,0 +1,121 @@
+---
+# SNMP community for OPNSense — vault this once SNMP is configured on OPNSense
+# ansible-vault encrypt_string 'public' --name 'monitoring_snmp_community'
+monitoring_snmp_community: public
+
+loki_server:
+  http_listen_port: 3100
+  retention_period: 168h
+  bind_address: 0.0.0.0
+
+loki_storage:
+  path_prefix: /var/lib/loki
+  filesystem:
+    chunks_directory: /var/lib/loki/chunks
+    rules_directory: /var/lib/loki/rules
+  schema_config:
+    index_prefix: index_
+
+prometheus_server:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  retention_time: 15d
+  external_labels:
+    environment: summercamp
+
+prometheus_rule_files: []
+prometheus_alerting:
+  alertmanagers: []
+
+# Static scrape jobs — dynamic jobs are built in playbooks/sc/monitoring.yaml pre_tasks
+monitoring_base_scrape_configs:
+  - job_name: prometheus
+    targets:
+      - 127.0.0.1:9090
+  - job_name: loki
+    targets:
+      - 127.0.0.1:3100
+  - job_name: blackbox_exporter
+    targets:
+      - 127.0.0.1:9115
+  - job_name: snmp_exporter
+    targets:
+      - 127.0.0.1:9116
+  - job_name: node_exporter_monitoring
+    targets:
+      - 127.0.0.1:9100
+  - job_name: blackbox_http_portal
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://portal01.camp/index.html"]
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_secret_portal
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://secret.ctf/index.html"]
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_http_ctfd
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://ctfd.summercamp.dciets.com"]
+    targets:
+      - 127.0.0.1:9115
+  - job_name: blackbox_icmp_opnsense
+    metrics_path: /probe
+    params:
+      module: [icmp]
+      target: ["10.110.0.1"]
+    targets:
+      - 127.0.0.1:9115
+  - job_name: snmp_if_mib_opnsense
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+      auth: [public_v2]
+      target: ["10.110.0.1"]
+    targets:
+      - 127.0.0.1:9116
+
+grafana_server:
+  http_port: 3000
+  root_url: "http://{{ ansible_host }}:3000"
+
+grafana_datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    is_default: true
+    editable: false
+
+blackbox_exporter_modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+  icmp:
+    prober: icmp
+    timeout: 5s
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+
+snmp_exporter_auths:
+  public_v2:
+    community: "{{ monitoring_snmp_community }}"
+    version: 2
+
+snmp_exporter_modules:
+  if_mib:
+    walk:
+      - 1.3.6.1.2.1.2
+      - 1.3.6.1.2.1.31
+    version: 2
+    auth: public_v2

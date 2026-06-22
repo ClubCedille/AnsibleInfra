@@ -1,0 +1,46 @@
+---
+- name: Provision DockerCache VMs on Proxmox
+  hosts: dockercache
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on DockerCache VM
+  hosts: dockercache
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Install the docker role on this VM
+  hosts: dockercache
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup dl-cdn.alpinelinux.org
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+  roles:
+    - cedille.docker.install
+  post_tasks:
+    - name: Pull the latest images for the challenge
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ install_docker_compose_target_dir }}"
+      register: pull_result
+    - name: If images were pulled, recreate the containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: present
+      when: pull_result.changed

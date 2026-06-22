@@ -1,0 +1,44 @@
+---
+- name: Provision DHCP VMs on Proxmox
+  hosts: netservices_dhcp
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on DHCP VMs
+  hosts: netservices_dhcp
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Deploy CTF DHCP
+  hosts: netservices_dhcp
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../roles/kea/vars/flags.yml
+  pre_tasks:
+    - name: Configure apt proxy
+      ansible.builtin.copy:
+        content: 'Acquire::http::Proxy "http://{{ docker_registry_mirror_host }}:3142";'
+        dest: /etc/apt/apt.conf.d/00proxy
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+  roles:
+    - cedille.netservices.dhcp
+    - tftp
+  post_tasks:
+    - name: Validate Kea config
+      ansible.builtin.command:
+        cmd: kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+      changed_when: false

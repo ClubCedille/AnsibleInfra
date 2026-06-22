@@ -1,0 +1,57 @@
+ansible_user: sc
+shellctf_password_csv: "{{ inventory_dir }}/../../data/raw/passwords.csv"
+ansible_password: >-
+  {{
+    lookup(
+      'ansible.builtin.csvfile',
+      (inventory_hostname.split('.')[0] | regex_replace('^shell0*', '')),
+      file=shellctf_password_csv,
+      delimiter=',',
+      col=2
+    )
+  }}
+vm_user: "{{ ansible_user }}"
+vm_password: "{{ ansible_password }}"
+
+# VM specification for shellctf
+vm_cpu_type: "host"
+vm_cpu_cores: 1
+vm_memory_mb: 1024
+vm_disk_size: "10G"
+
+vm_proxmox_api:
+  user: "root@pam"
+  password: !vault |
+    $ANSIBLE_VAULT;1.1;AES256
+    35366131393839316432326430306631323531356637636636393662313433623831323465643834
+    6534343662663834613036613665653862343435633335620a633262303132613462643665333065
+    30646461306363396266613564373834333661346561336631376665383039313565303065666639
+    3663633031633861360a333364633036303932346330313137663163643835313531656462633434
+    3765
+  host: 10.0.21.51:8006
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
+vm_onboot: true
+
+# The only VMs we provide as Ubuntu
+vm_disk_image_path: "/mnt/pve/CephFS/template/iso/noble-server-cloudimg-amd64.img"
+vm_disk_storage: "RBD_Common"
+vm_disk_format: "raw"
+vm_disk_device: "virtio0"
+vm_cloud_init_storage: "RBD_Common"
+
+vm_delete_if_exists: false
+vm_start_after_creation: true
+
+vm_name: "{{ inventory_hostname }}"
+# Assumes VM IDs are of the form 811XXX, where XXX is a number from 001 to 999
+vm_proxmox_node: "{{ {0: 'pve01', 1: 'pve02', 2: 'pve03', 3: 'pve04', 4: 'pve07'}[(vm_id | int) % 5] }}"
+
+vm_net:
+  bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1
+  vlan: "69"
+  ip: "{{ ansible_host }}"
+  netmask: "16"
+  gateway: "10.140.0.1"
+  nameservers: "10.130.0.21,10.130.0.22"
+  search_domain: "summercamp.dciets.ca"

@@ -1,0 +1,95 @@
+---
+- name: Provision DNS VMs on Proxmox
+  hosts: netservices_dns
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on DNS VMs
+  hosts: netservices_dns
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Deploy DNS
+  hosts: netservices_dns
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../roles/kea/vars/flags.yml
+  pre_tasks:
+    - name: Ensure zone file directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - /var/lib/bind
+        - /var/cache/bind
+    - name: Ensure bind owns cache directory
+      ansible.builtin.file:
+        path: /var/cache/bind
+        owner: bind
+        group: bind
+        recurse: true
+    - name: Render camp zone file
+      ansible.builtin.template:
+        src: templates/camp.zone.j2
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - "{{ netservices_dns.ha.zones[0].master_file }}"
+        - "{{ netservices_dns.ha.zones[0].slave_file }}"
+      notify: Restart bind9
+    - name: Render ctf zone file
+      ansible.builtin.template:
+        src: templates/ctf.zone.j2
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - "{{ netservices_dns.ha.zones[1].master_file }}"
+        - "{{ netservices_dns.ha.zones[1].slave_file }}"
+      notify: Restart bind9
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup archive.ubuntu.com
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+    - name: Configure apt proxy
+      ansible.builtin.copy:
+        content: 'Acquire::http::Proxy "http://{{ docker_registry_mirror_host }}:3142";'
+        dest: /etc/apt/apt.conf.d/00proxy
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+    - name: Configure pip proxy
+      ansible.builtin.copy:
+        content: |
+          [global]
+          index-url = http://{{ docker_registry_mirror_host }}:3141/root/pypi/+simple/
+          trusted-host = {{ docker_registry_mirror_host }}
+        dest: /etc/pip.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+  roles:
+    - cedille.netservices.dns

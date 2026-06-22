@@ -1,0 +1,378 @@
+---
+- name: Provision monitoring VM
+  hosts: monitoring_core
+  gather_facts: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy node_exporter on service hosts
+  hosts: monitoring_exporters
+  become: true
+  pre_tasks:
+    - name: Ensure /tmp has correct permissions
+      ansible.builtin.file:
+        path: /tmp
+        mode: "1777"
+        owner: root
+        group: root
+
+    - name: Ensure local archive staging directory exists
+      ansible.builtin.file:
+        path: /tmp/monitoring-archives
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Download node_exporter archive on controller
+      ansible.builtin.get_url:
+        url: "{{ node_exporter_install.archive_url }}"
+        dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Ensure remote archive download directory exists
+      ansible.builtin.file:
+        path: "{{ node_exporter_paths.archive_download_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push node_exporter archive to host
+      ansible.builtin.copy:
+        src: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
+        dest: "{{ node_exporter_paths.archive_download_dir }}/{{ node_exporter_install.archive_name }}"
+        mode: "0644"
+
+  roles:
+    - cedille.monitoring.node_exporter
+
+  post_tasks:
+    # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:
+    # when node_exporter_extra_args is empty, Restart=on-failure gets concatenated
+    # to the --collector.textfile.directory argument, causing node_exporter to hang.
+    - name: Fix node_exporter service unit
+      ansible.builtin.copy:
+        dest: "{{ node_exporter_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ node_exporter_service.user }}
+          Group={{ node_exporter_service.group }}
+          ExecStart={{ node_exporter_paths.binary_dir }}/node_exporter \
+            --collector.textfile.directory={{ node_exporter_paths.textfile_collector_dir }}
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+      become: true
+
+- name: Deploy monitoring stack
+  hosts: monitoring_core
+  become: true
+  pre_tasks:
+    # The Grafana apt "loki" package does not reliably create the loki system
+    # user/group on install (cedille.monitoring.loki role assumes it does), which
+    # makes "Ensure Loki directories exist" fail with "chgrp failed: failed to
+    # look up group loki". Create them ourselves before the role runs.
+    # A system user (useradd -r) does not get an auto-created private group on
+    # Ubuntu, so the group must be created explicitly and passed to the user task.
+    - name: Ensure loki system group exists
+      ansible.builtin.group:
+        name: loki
+        system: true
+
+    - name: Ensure loki system user exists
+      ansible.builtin.user:
+        name: loki
+        group: loki
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Ensure /tmp has correct permissions
+      ansible.builtin.file:
+        path: /tmp
+        mode: "1777"
+        owner: root
+        group: root
+
+    - name: Ensure local archive staging directory exists
+      ansible.builtin.file:
+        path: /tmp/monitoring-archives
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      become: false
+
+    - name: Download all monitoring archives on controller
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "/tmp/monitoring-archives/{{ item.name }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      become: false
+      loop:
+        - url: "{{ node_exporter_install.archive_url }}"
+          name: "{{ node_exporter_install.archive_name }}"
+        - url: "{{ blackbox_exporter_install.archive_url }}"
+          name: "{{ blackbox_exporter_install.archive_name }}"
+        - url: "{{ snmp_exporter_install.archive_url }}"
+          name: "{{ snmp_exporter_install.archive_name }}"
+        - url: "{{ prometheus_install.archive_url }}"
+          name: "{{ prometheus_install.archive_name }}"
+
+    - name: Ensure remote archive download directory exists
+      ansible.builtin.file:
+        path: "{{ node_exporter_paths.archive_download_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push all monitoring archives to host
+      ansible.builtin.copy:
+        src: "/tmp/monitoring-archives/{{ item }}"
+        dest: "{{ node_exporter_paths.archive_download_dir }}/{{ item }}"
+        mode: "0644"
+      loop:
+        - "{{ node_exporter_install.archive_name }}"
+        - "{{ blackbox_exporter_install.archive_name }}"
+        - "{{ snmp_exporter_install.archive_name }}"
+        - "{{ prometheus_install.archive_name }}"
+
+    - name: Build ICMP blackbox jobs from inventory groups
+      ansible.builtin.set_fact:
+        _icmp_jobs: >-
+          {{ _icmp_jobs | default([]) + [{
+            'job_name': 'blackbox_icmp_' + item.split('.')[0],
+            'metrics_path': '/probe',
+            'params': {'module': ['icmp'], 'target': [hostvars[item]['ansible_host']]},
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: >-
+        {{ groups['netservices_dhcp'] + groups['netservices_dns'] +
+           groups['http_portal'] + groups['secret_portal'] + groups['dockercache'] + groups['ctfd'] }}
+
+    - name: Build TCP jobs for Kea ctrl-agent (port 8000)
+      ansible.builtin.set_fact:
+        _tcp_kea_jobs: >-
+          {{ _tcp_kea_jobs | default([]) + [{
+            'job_name': 'blackbox_tcp_kea_' + item.split('.')[0],
+            'metrics_path': '/probe',
+            'params': {'module': ['tcp_connect'], 'target': [hostvars[item]['ansible_host'] + ':8000']},
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: "{{ groups['netservices_dhcp'] }}"
+
+    - name: Build TCP jobs for DNS (port 53)
+      ansible.builtin.set_fact:
+        _tcp_dns_jobs: >-
+          {{ _tcp_dns_jobs | default([]) + [{
+            'job_name': 'blackbox_tcp_dns_' + item.split('.')[0],
+            'metrics_path': '/probe',
+            'params': {'module': ['tcp_connect'], 'target': [hostvars[item]['ansible_host'] + ':53']},
+            'targets': ['127.0.0.1:9115']
+          }] }}
+      loop: "{{ groups['netservices_dns'] }}"
+
+    - name: Build node_exporter job from monitoring_exporters group
+      ansible.builtin.set_fact:
+        _node_job:
+          - job_name: node_exporter
+            targets: >-
+              {{ groups['monitoring_exporters']
+                 | map('extract', hostvars, 'ansible_host')
+                 | map('regex_replace', '^(.*)$', '\1:9100')
+                 | list }}
+
+    # Per-team challenge VMs (NanoControl_*, etc.) — each exposes its own node_exporter
+    # with the ctf_container_state/* textfile metrics from the docker-state-exporter
+    # role. All challenge/team/service labels live on the metrics themselves (baked in
+    # per-host by docker-state-exporter), so this job is just a flat target list —
+    # no per-challenge relabeling needed here, which is what makes new challenges
+    # show up automatically without touching this playbook.
+    - name: Build node_exporter job from chall group (per-team challenge VMs)
+      ansible.builtin.set_fact:
+        _chall_node_job:
+          - job_name: node_exporter_chall
+            targets: >-
+              {{ groups['chall']
+                 | map('extract', hostvars, 'ansible_host')
+                 | map('regex_replace', '^(.*)$', '\1:9100')
+                 | list }}
+      when: groups['chall'] | default([]) | length > 0
+
+    # Single-instance challenge VMs (playbooks/sc/single_instance_chall.yaml) — same
+    # docker-state-exporter role, same self-describing metrics (TEAM=shared here
+    # instead of a team number), so this is the same flat-target-list pattern as
+    # node_exporter_chall above.
+    - name: Build node_exporter job from single_instance_challenges group
+      ansible.builtin.set_fact:
+        _single_instance_node_job:
+          - job_name: node_exporter_single_instance
+            targets: >-
+              {{ groups['single_instance_challenges']
+                 | map('extract', hostvars, 'ansible_host')
+                 | map('regex_replace', '^(.*)$', '\1:9100')
+                 | list }}
+      when: groups['single_instance_challenges'] | default([]) | length > 0
+
+    - name: Assemble final prometheus_scrape_configs
+      ansible.builtin.set_fact:
+        prometheus_scrape_configs: >-
+          {{ monitoring_base_scrape_configs
+             + (_icmp_jobs | default([]))
+             + (_tcp_kea_jobs | default([]))
+             + (_tcp_dns_jobs | default([]))
+             + _node_job
+             + (_chall_node_job | default([]))
+             + (_single_instance_node_job | default([])) }}
+
+    # The cedille.monitoring.prometheus role is missing the service unit task.
+    # Write it here so "Ensure Prometheus service state" in the role succeeds.
+    - name: Write Prometheus systemd service unit
+      ansible.builtin.copy:
+        dest: "{{ prometheus_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ prometheus_service.user }}
+          Group={{ prometheus_service.group }}
+          ExecStart={{ prometheus_paths.binary_dir }}/prometheus \
+            --config.file={{ prometheus_paths.config }} \
+            --storage.tsdb.path={{ prometheus_paths.data_dir }} \
+            --storage.tsdb.retention.time={{ prometheus_server.retention_time }} \
+            --web.listen-address=0.0.0.0:9090
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd daemon after service unit write
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+  roles:
+    - cedille.monitoring.loki
+    - cedille.monitoring.node_exporter
+    - cedille.monitoring.blackbox_exporter
+    - cedille.monitoring.snmp_exporter
+    - cedille.monitoring.prometheus
+    - cedille.monitoring.grafana
+    - monitoring-dashboard
+
+  post_tasks:
+    # cedille.monitoring.grafana datasource template does not write uid — dashboard
+    # panels reference datasources by uid: 'prometheus' / 'loki', so without it nothing renders.
+    - name: Write Grafana datasources with uid
+      ansible.builtin.copy:
+        dest: "{{ grafana_paths.datasources_dir }}/{{ grafana_paths.datasources_file }}"
+        owner: root
+        group: grafana
+        mode: "0640"
+        content: |
+          apiVersion: 1
+          datasources:
+            - name: Prometheus
+              type: prometheus
+              uid: prometheus
+              access: proxy
+              url: http://127.0.0.1:9090
+              isDefault: true
+              editable: false
+            - name: Loki
+              type: loki
+              uid: loki
+              access: proxy
+              url: http://127.0.0.1:3100
+              isDefault: false
+              editable: false
+      notify: Restart Grafana
+      become: true
+
+    - name: Grant blackbox_exporter cap_net_raw for ICMP probes
+      community.general.capabilities:
+        path: /usr/local/bin/blackbox_exporter
+        capability: cap_net_raw+ep
+        state: present
+      notify: Restart Blackbox Exporter
+      become: true
+
+    # snmp_exporter v0.30 removed version/auth from modules — role template still writes
+    # them, causing a parse error on startup. Overwrite with the correct v0.30 format.
+    - name: Write snmp_exporter configuration (v0.30 format)
+      ansible.builtin.template:
+        src: templates/snmp.yml.j2
+        dest: "{{ snmp_exporter_paths.config }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart SNMP Exporter
+      become: true
+
+    - name: Fix node_exporter service unit (trim_blocks bug in role template)
+      ansible.builtin.copy:
+        dest: "{{ node_exporter_paths.service_unit }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User={{ node_exporter_service.user }}
+          Group={{ node_exporter_service.group }}
+          ExecStart={{ node_exporter_paths.binary_dir }}/node_exporter \
+            --collector.textfile.directory={{ node_exporter_paths.textfile_collector_dir }}
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+      become: true
+
+    # The cedille.monitoring.prometheus template does not support params: — Prometheus v3
+    # requires params: for blackbox probes instead of query strings in metrics_path.
+    # Overwrite with our corrected template after the role has run.
+    - name: Write Prometheus configuration with params support
+      ansible.builtin.template:
+        src: templates/prometheus.yml.j2
+        dest: "{{ prometheus_paths.config }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Prometheus
+      become: true

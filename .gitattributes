@@ -1,0 +1,2 @@
+roles/tftp/files/kernel filter=lfs diff=lfs merge=lfs -text
+roles/tftp/files/initrd filter=lfs diff=lfs merge=lfs -text

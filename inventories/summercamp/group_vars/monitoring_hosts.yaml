@@ -1,0 +1,85 @@
+---
+# Override *_install variables to avoid Ansible recursive template evaluation.
+# Several cedille.monitoring roles define archive_url/archive_name/extracted_dir
+# using Jinja2 templates that self-reference the parent dict (e.g.
+# blackbox_exporter_install.archive_url references blackbox_exporter_install.version).
+# Newer Ansible versions detect this as a recursive loop. Flattening all URLs here fixes it.
+
+# Override *_paths to avoid the roles setting mode=0755 on /tmp (strips sticky bit).
+# All roles use archive_download_dir=/tmp by default — redirect to a dedicated dir instead.
+_monitoring_download_dir: /opt/monitoring-downloads
+
+node_exporter_paths:
+  install_dir: /opt/node_exporter
+  archive_download_dir: /opt/monitoring-downloads
+  binary_dir: /usr/local/bin
+  textfile_collector_dir: /var/lib/node_exporter/textfile_collector
+  service_unit: /etc/systemd/system/node_exporter.service
+
+blackbox_exporter_paths:
+  install_dir: /opt/blackbox_exporter
+  archive_download_dir: /opt/monitoring-downloads
+  binary_dir: /usr/local/bin
+  config_dir: /etc/blackbox_exporter
+  config: /etc/blackbox_exporter/blackbox.yml
+  config_template: blackbox.yml.j2
+  service_unit: /etc/systemd/system/blackbox_exporter.service
+
+snmp_exporter_paths:
+  install_dir: /opt/snmp_exporter
+  archive_download_dir: /opt/monitoring-downloads
+  binary_dir: /usr/local/bin
+  config_dir: /etc/snmp_exporter
+  config: /etc/snmp_exporter/snmp.yml
+  config_template: snmp.yml.j2
+  service_unit: /etc/systemd/system/snmp_exporter.service
+
+prometheus_paths:
+  install_dir: /opt/prometheus
+  archive_download_dir: /opt/monitoring-downloads
+  binary_dir: /usr/local/bin
+  config: /etc/prometheus/prometheus.yml
+  rules_dir: /etc/prometheus/rules
+  data_dir: /var/lib/prometheus
+  config_template: prometheus.yml.j2
+  service_unit: /etc/systemd/system/prometheus.service
+
+node_exporter_install:
+  update_cache: true
+  prereq_packages:
+    - tar
+  version: "1.11.1"
+  archive_url: "https://github.com/prometheus/node_exporter/releases/download/v1.11.1/node_exporter-1.11.1.linux-amd64.tar.gz"
+  archive_checksum: "9f5ea48e5bc7b656f8a91a32e7d7deb89f70f73dabd0d974418aca15f37d6810"
+  archive_name: "node_exporter-1.11.1.linux-amd64.tar.gz"
+  extracted_dir: "node_exporter-1.11.1.linux-amd64"
+
+blackbox_exporter_install:
+  update_cache: true
+  prereq_packages:
+    - tar
+  version: "0.28.0"
+  archive_url: "https://github.com/prometheus/blackbox_exporter/releases/download/v0.28.0/blackbox_exporter-0.28.0.linux-amd64.tar.gz"
+  archive_checksum: "caf5d242fb1cf6d5cb678f3f799f22703d4fafea26b03dcbbd7e1f1825e06329"
+  archive_name: "blackbox_exporter-0.28.0.linux-amd64.tar.gz"
+  extracted_dir: "blackbox_exporter-0.28.0.linux-amd64"
+
+snmp_exporter_install:
+  update_cache: true
+  prereq_packages:
+    - tar
+  version: "0.30.1"
+  archive_url: "https://github.com/prometheus/snmp_exporter/releases/download/v0.30.1/snmp_exporter-0.30.1.linux-amd64.tar.gz"
+  archive_checksum: "026aac4e23447ed593a783eccab9089cd41d77d17c9d2a0ab84398e45a0bb93e"
+  archive_name: "snmp_exporter-0.30.1.linux-amd64.tar.gz"
+  extracted_dir: "snmp_exporter-0.30.1.linux-amd64"
+
+prometheus_install:
+  update_cache: true
+  prereq_packages:
+    - tar
+  version: "3.5.2"
+  archive_url: "https://github.com/prometheus/prometheus/releases/download/v3.5.2/prometheus-3.5.2.linux-amd64.tar.gz"
+  archive_checksum: "sha256:552c6d701e27d3c77983bb8a76e61953cb60021f6e10f17a929546a6dedc436a"
+  archive_name: "prometheus-3.5.2.linux-amd64.tar.gz"
+  extracted_dir: "prometheus-3.5.2.linux-amd64"

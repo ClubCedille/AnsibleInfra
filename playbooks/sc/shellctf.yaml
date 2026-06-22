@@ -1,0 +1,55 @@
+---
+- name: Provision ShellCTF VMs on Proxmox
+  hosts: shellctf
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on ShellCTF VMs
+  hosts: shellctf
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Enable password communication for ssh
+  hosts: shellctf
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup archive.ubuntu.com
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+    - name: Configure apt proxy
+      ansible.builtin.copy:
+        content: 'Acquire::http::Proxy "http://{{ docker_registry_mirror_host }}:3142";'
+        dest: /etc/apt/apt.conf.d/00proxy
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+    - name: Configure pip proxy
+      ansible.builtin.copy:
+        content: |
+          [global]
+          index-url = http://{{ docker_registry_mirror_host }}:3141/root/pypi/+simple/
+          trusted-host = {{ docker_registry_mirror_host }}
+        dest: /etc/pip.conf
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+  roles:
+    - cedille.proxmox.pwdssh

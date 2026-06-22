@@ -1,0 +1,278 @@
+name: registry-proxies
+
+# =============================================================================
+# Registry Pull-Through Proxy — 4 upstreams
+#   5000 → registry-1.docker.io  (Docker Hub)       ← registry-mirrors
+#   5001 → ghcr.io               (GitHub Container Registry)
+#   5002 → registry.gitlab.com   (GitLab)
+#   5003 → git.etsmtl.club       (Forgejo ETS)
+#
+# Docker Hub (5000) : configurable via daemon.json "registry-mirrors"
+# Autres (5001-5003) : via buildkitd.toml ou containerd config
+#
+# Secrets : copier .env.example → .env et remplir les valeurs
+# Accès réseau : restreindre aux VLANs internes uniquement
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # devpi — proxy cache pip/PyPI pull-through
+  # Port 3141 — configurer sur les clients :
+  #   pip install --index-url http://<IP>:3141/root/pypi/+simple/ <package>
+  #   ou via /etc/pip.conf (voir configure_mirror.yaml)
+  # Interface web : http://<IP>:3141
+  # Premier démarrage : initialise automatiquement le root/pypi index
+  # ---------------------------------------------------------------------------
+  proxy-pypi:
+    image: "muccg/devpi:latest"
+    container_name: "proxy-pypi"
+    environment:
+      DEVPI_PASSWORD: {{ devpi_password }}
+    ports:
+      - "3141:3141/tcp"
+    volumes:
+      - "var-pypi:/data"
+    restart: always
+
+  # ---------------------------------------------------------------------------
+  # apt-cacher-ng — proxy cache apt pour Ubuntu/Debian
+  # Port 3142 — configurer sur les clients :
+  #   echo 'Acquire::http::Proxy "http://<IP>:3142";' > /etc/apt/apt.conf.d/00proxy
+  # Interface web de stats : http://<IP>:3142/acng-report.html
+  # ---------------------------------------------------------------------------
+  apt-cache:
+    image: "sameersbn/apt-cacher-ng:3.7.4-20220421"
+    container_name: "apt-cache"
+    environment:
+      CACHE_MAX_SIZE: "50g"
+    ports:
+      - "3142:3142/tcp"
+    volumes:
+      - "var-apt-cache:/var/cache/apt-cacher-ng"
+    restart: always
+
+  # ---------------------------------------------------------------------------
+  # Docker Hub (registry-1.docker.io)
+  # Port 5000 — utilisable via daemon.json "registry-mirrors" sur les clients
+  # Optionnel : DOCKERHUB_USER/TOKEN pour augmenter les rate limits
+  #   (anonyme = 100 pulls/6h par IP, authentifié = 200 pulls/6h par compte)
+  # ---------------------------------------------------------------------------
+  proxy-dockerhub:
+    image: "11notes/registry-proxy:2.8.3"
+    container_name: "proxy-dockerhub"
+    environment:
+      TZ: America/Toronto
+      REGISTRY_PROXY_CONFIG: |-
+        version: 0.1
+        log:
+          accesslog:
+            disabled: false
+          level: warn
+          formatter: json
+          fields:
+            service: proxy-dockerhub
+        storage:
+          cache:
+            blobdescriptor: inmemory
+            blobdescriptorsize: 0
+          filesystem:
+            rootdirectory: /registry-proxy/var
+          maintenance:
+            uploadpurging:
+              enabled: true
+              age: 168h
+              interval: 24h
+              dryrun: false
+        http:
+          addr: 0.0.0.0:5000
+          net: tcp
+          tls:
+            certificate: /registry-proxy/ssl/default.crt
+            key: /registry-proxy/ssl/default.key
+          headers:
+            X-Content-Type-Options: [nosniff]
+        health:
+          storagedriver:
+            enabled: true
+            interval: 10s
+            threshold: 3
+        proxy:
+          remoteurl: https://registry-1.docker.io
+          ttl: 168h
+    ports:
+      - "5000:5000/tcp"
+    volumes:
+      - "var-dockerhub:/registry-proxy/var"
+    restart: always
+
+  # ---------------------------------------------------------------------------
+  # GitHub Container Registry (ghcr.io)
+  # PAT requis : scope read:packages
+  # ---------------------------------------------------------------------------
+  proxy-ghcr:
+    image: "11notes/registry-proxy:2.8.3"
+    container_name: "proxy-ghcr"
+    environment:
+      TZ: America/Toronto
+      REGISTRY_PROXY_CONFIG: |-
+        version: 0.1
+        log:
+          accesslog:
+            disabled: false
+          level: warn
+          formatter: json
+          fields:
+            service: proxy-ghcr
+        storage:
+          cache:
+            blobdescriptor: inmemory
+            blobdescriptorsize: 0
+          filesystem:
+            rootdirectory: /registry-proxy/var
+          maintenance:
+            uploadpurging:
+              enabled: true
+              age: 168h
+              interval: 24h
+              dryrun: false
+        http:
+          addr: 0.0.0.0:5000
+          net: tcp
+          tls:
+            certificate: /registry-proxy/ssl/default.crt
+            key: /registry-proxy/ssl/default.key
+          headers:
+            X-Content-Type-Options: [nosniff]
+        health:
+          storagedriver:
+            enabled: true
+            interval: 10s
+            threshold: 3
+        proxy:
+          remoteurl: https://ghcr.io
+          username: {{ ghcr_user }}
+          password: {{ ghcr_token }}
+          ttl: 168h
+    ports:
+      - "5001:5000/tcp"
+    volumes:
+      - "var-ghcr:/registry-proxy/var"
+    restart: always
+
+  # ---------------------------------------------------------------------------
+  # GitLab Container Registry (registry.gitlab.com)
+  # PAT requis : scope read_registry
+  # ---------------------------------------------------------------------------
+  proxy-gitlab:
+    image: "11notes/registry-proxy:2.8.3"
+    container_name: "proxy-gitlab"
+    environment:
+      TZ: America/Toronto
+      REGISTRY_PROXY_CONFIG: |-
+        version: 0.1
+        log:
+          accesslog:
+            disabled: false
+          level: warn
+          formatter: json
+          fields:
+            service: proxy-gitlab
+        storage:
+          cache:
+            blobdescriptor: inmemory
+            blobdescriptorsize: 0
+          filesystem:
+            rootdirectory: /registry-proxy/var
+          maintenance:
+            uploadpurging:
+              enabled: true
+              age: 168h
+              interval: 24h
+              dryrun: false
+        http:
+          addr: 0.0.0.0:5000
+          net: tcp
+          tls:
+            certificate: /registry-proxy/ssl/default.crt
+            key: /registry-proxy/ssl/default.key
+          headers:
+            X-Content-Type-Options: [nosniff]
+        health:
+          storagedriver:
+            enabled: true
+            interval: 10s
+            threshold: 3
+        proxy:
+          remoteurl: https://registry.gitlab.com
+          username: {{ gitlab_user }}
+          password: {{ gitlab_token }}
+          ttl: 168h
+    ports:
+      - "5002:5000/tcp"
+    volumes:
+      - "var-gitlab:/registry-proxy/var"
+    restart: always
+
+  # ---------------------------------------------------------------------------
+  # Forgejo ETS (git.etsmtl.club)
+  # PAT requis : scope read:package
+  # Valider que /v2/ répond 200 : curl -u user:token https://git.etsmtl.club/v2/
+  # ---------------------------------------------------------------------------
+  proxy-etsmtl:
+    image: "11notes/registry-proxy:2.8.3"
+    container_name: "proxy-etsmtl"
+    environment:
+      TZ: America/Toronto
+      REGISTRY_PROXY_CONFIG: |-
+        version: 0.1
+        log:
+          accesslog:
+            disabled: false
+          level: warn
+          formatter: json
+          fields:
+            service: proxy-etsmtl
+        storage:
+          cache:
+            blobdescriptor: inmemory
+            blobdescriptorsize: 0
+          filesystem:
+            rootdirectory: /registry-proxy/var
+          maintenance:
+            uploadpurging:
+              enabled: true
+              age: 168h
+              interval: 24h
+              dryrun: false
+        http:
+          addr: 0.0.0.0:5000
+          net: tcp
+          tls:
+            certificate: /registry-proxy/ssl/default.crt
+            key: /registry-proxy/ssl/default.key
+          headers:
+            X-Content-Type-Options: [nosniff]
+        health:
+          storagedriver:
+            enabled: true
+            interval: 10s
+            threshold: 3
+        proxy:
+          remoteurl: https://git.etsmtl.club
+          username: {{ etsmtl_user }}
+          password: {{ etsmtl_token }}
+          ttl: 168h
+    ports:
+      - "5003:5000/tcp"
+    volumes:
+      - "var-etsmtl:/registry-proxy/var"
+    restart: always
+
+volumes:
+  var-pypi:
+  var-apt-cache:
+  var-dockerhub:
+  var-ghcr:
+  var-gitlab:
+  var-etsmtl:

@@ -1,0 +1,6 @@
+#!ipxe
+# Use the cmdline variable to allow the user to specify custom kernel params
+# when chainloading this script from other iPXE scripts like netboot.xyz
+kernel bzImage init=/nix/store/6bn3pcg45c56i15am3543c109xig71b8-nixos-system-cedille-pxe-kexec-25.11.20260608.e820eb4/init initrd=initrd nohibernate loglevel=4 lsm=landlock,yama,bpf ${cmdline}
+initrd initrd
+boot

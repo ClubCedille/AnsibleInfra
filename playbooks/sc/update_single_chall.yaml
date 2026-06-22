@@ -1,0 +1,38 @@
+---
+# Update a Single-Instance Challenge's docker compose deployment: push the
+# latest docker-compose.yml (from install_docker_compose_content, refreshed
+# via `make sync-compose`), pull the latest images, then down/up the project
+# only if the compose file or an image actually changed (forces containers
+# to pick up a new image tag, since a plain `up` won't recreate a container
+# whose config didn't change).
+#
+# Unlike playbooks/sc/update_chall.yaml (per-team `chall` group), the down
+# never removes volumes: single-instance challenges are shared by the whole
+# event, so wiping volumes here would nuke state for everyone instead of
+# just one team.
+- name: Update Single-Instance Challenge docker compose deployment
+  hosts: single_instance_challenges
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Push the latest docker-compose file for this challenge
+      ansible.builtin.include_role:
+        name: cedille.docker.install
+        tasks_from: setup_compose
+      register: compose_push_result
+
+    - name: Pull the latest images for the challenge
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ install_docker_compose_target_dir }}"
+      register: pull_result
+
+    - name: Tear down the challenge's docker compose project (containers only, volumes preserved)
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: absent
+      when: compose_push_result.changed or pull_result.changed
+
+    - name: Bring the challenge's docker compose project back up with the latest compose file and images
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: present
