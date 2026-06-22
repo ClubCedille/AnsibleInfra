@@ -170,7 +170,7 @@
           }] }}
       loop: >-
         {{ groups['netservices_dhcp'] + groups['netservices_dns'] +
-           groups['http_portal'] + groups['dockercache'] + groups['ctfd'] }}
+           groups['http_portal'] + groups['secret_portal'] + groups['dockercache'] + groups['ctfd'] }}
 
     - name: Build TCP jobs for Kea ctrl-agent (port 8000)
       ansible.builtin.set_fact:

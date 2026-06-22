@@ -1,0 +1,20 @@
+---
+- name: Update a per-team challenge instance (docker compose pull + down/up, volumes inclus)
+  hosts: chall
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Pull the latest images for the challenge
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ install_docker_compose_target_dir }}"
+
+    - name: Tear down the challenge's docker compose project (containers + volumes)
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: absent
+        remove_volumes: true
+
+    - name: Bring the challenge's docker compose project back up (fresh volumes, updated image)
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: present

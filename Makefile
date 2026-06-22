@@ -113,6 +113,42 @@ sc/chall/%: $(playbook)/sc/chall.yaml
 sc/reset_chall/%: $(playbook)/sc/reset_chall.yaml
 	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reset_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
+# Même principe pour playbooks/sc/update_chall.yaml (docker compose pull puis
+# down/up, pour forcer la mise à jour d'une image plus récente) :
+# make sc/update_chall/<hosts ou groupe> inventory_name=sc
+.PHONY: sc/update_chall/%
+sc/update_chall/%: $(playbook)/sc/update_chall.yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
+# Met à jour les challenges single-instance (playbooks/sc/update_single_chall.yaml) :
+# resynchronise install_docker_compose_content depuis CHALLENGE_DIR (sync-compose),
+# pousse le docker-compose.yml résultant sur les VMs, puis pull + reconcile
+# (pas de down/up ni de suppression de volumes : ce sont des VMs partagées
+# par tout l'événement, contrairement au groupe `chall` par équipe).
+# Usage : make sc/update_single_chall/<hosts ou groupe> inventory_name=sc
+.PHONY: sc/update_single_chall/%
+sc/update_single_chall/%: $(playbook)/sc/update_single_chall.yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_single_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
+# Même principe pour playbooks/sc/reboot.yaml (hard-stop + start via l'API
+# Proxmox, ex. apt/dpkg lock coincé après un boot cloud-init) :
+# make sc/reboot/<hosts ou groupe> inventory_name=sc
+.PHONY: sc/reboot/%
+sc/reboot/%: $(playbook)/sc/reboot.yaml
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reboot.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
+# Déploie le fichier flag dans /home/sc sur toutes les VMs shellctf :
+# make deploy-shellctf-flag
+.PHONY: deploy-shellctf-flag
+deploy-shellctf-flag: $(playbook)/sc/deploy_shellctf_flag.yaml
+	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/deploy_shellctf_flag.yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
+# Provisionne et déploie le host secret.ctf (nginx + page narrative) :
+# make deploy-secret-portal
+.PHONY: deploy-secret-portal
+deploy-secret-portal: $(playbook)/sc/secret_portal.yaml
+	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/secret_portal.yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+
 # ---------------------------------------------------------------------------
 # Summercamp — génération des credentials et de l'inventaire
 # ---------------------------------------------------------------------------
@@ -139,7 +175,7 @@ endif
 # Repo custom   : make gen-passwords CHALLENGE_DIR=/autre/chemin
 .PHONY: gen-passwords
 gen-passwords: venv
-	$(PYTHON) scripts/genpass.py $(CHALLENGE_DIR) --output $(SC_CSV) $(PRUNE_FLAG)
+	$(PYTHON) scripts/genpass.py $(CHALLENGE_DIR) --output $(SC_CSV) $(PRUNE_FLAG) $(PY_DRY_RUN_FLAG)
 
 # Génère l'inventaire Ansible depuis le CSV + le repo challenges.
 # Les challenges single-instance (individual_instance=false) sont inclus.
@@ -154,6 +190,17 @@ gen-inventory: venv
 .PHONY: sync-compose
 sync-compose: venv
 	$(PYTHON) scripts/gen_inventory.py --challenge-dir $(CHALLENGE_DIR) --sync-compose \
+		$(if $(GROUP_VARS_DIR),--group-vars-dir $(GROUP_VARS_DIR),) \
+		$(PY_DRY_RUN_FLAG)
+
+# Supprime les group_vars/{challenge}/ obsolètes générés par --sync-compose
+# (challenge renommé/retiré, ou déplacé entre per-team et single-instance).
+# Ne touche jamais un group_vars écrit à la main.
+# Usage : make prune-group-vars CHALLENGE_DIR=...
+#         make prune-group-vars DRY_RUN=1   (valide la liste sans rien supprimer)
+.PHONY: prune-group-vars
+prune-group-vars: venv
+	$(PYTHON) scripts/gen_inventory.py --challenge-dir $(CHALLENGE_DIR) --prune-group-vars \
 		$(if $(GROUP_VARS_DIR),--group-vars-dir $(GROUP_VARS_DIR),) \
 		$(PY_DRY_RUN_FLAG)
 

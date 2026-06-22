@@ -4,7 +4,7 @@ install_docker_compose_filename: docker-compose.yml
 install_docker_compose_content: |
   services:
     trex:
-      image: 10.150.0.100:5002/dci-summer-camp/summercamp/pwn-trex-runner-trex:latest
+      image: 10.150.0.100:5002/dci-summer-camp/summercamp/pwn-trex-runner-server:latest
       environment:
         - FLAG=DCI{fr1d4_g1v3s_sup3rhuman_r3fl3x3s}
       ports:

@@ -4,7 +4,7 @@ install_docker_compose_filename: docker-compose.yml
 install_docker_compose_content: |
   services:
     web:
-      image: 10.150.0.100:5002/dci-summer-camp/summercamp/web-camp-pass-reset-web:latest
+      image: 10.150.0.100:5002/dci-summer-camp/summercamp/web-camp-pass-reset:latest
       environment:
         SECRET_KEY_BASE: 9834403884562bafaf5866f8392f3f5541d7751d09825989d62b0449ef49a0a84e02348b33e9ca14
       labels:

@@ -7,7 +7,7 @@ install_docker_compose_content: |
   #
   # Environment variables (set in .env or override at deploy time):
   #   EXTERNAL_HOST     — hostname/IP players use to reach this container
-  #                       (default: localhost, works for local dev)
+  #                       (set to the Ansible inventory_hostname at deploy time)
   #   KAFKA_PORT        — external Kafka port players connect to (default: 19092)
   #   SCHEMA_PORT       — external Schema Registry port, served via nginx (default: 18081)
   #   DASHBOARD_PORT    — dashboard HTTP port (default: 8080)
@@ -32,7 +32,7 @@ install_docker_compose_content: |
     redpanda:
       image: 10.150.0.100:5002/dci-summer-camp/summercamp/web-camp-maintenance-1-src-redpanda:latest
       environment:
-        - EXTERNAL_HOST=${EXTERNAL_HOST:-localhost}
+        - EXTERNAL_HOST={{ inventory_hostname }}
         - KAFKA_PORT=${KAFKA_PORT:-19092}
         - INTERNAL_PASSWORD=${INTERNAL_PASSWORD:-rp-schema-2026}
       ports:
@@ -77,10 +77,8 @@ install_docker_compose_content: |
         - PLAYER_PASSWORD=${PLAYER_PASSWORD:-camp2026}
 
     caddy:
-      image: caddy:alpine
+      image: 10.150.0.100:5002/dci-summer-camp/summercamp/web-camp-maintenance-1-src-caddy:latest
       restart: unless-stopped
-      volumes:
-        - ./src/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       ports:
         - "18081:18081"
       depends_on:
@@ -106,7 +104,7 @@ install_docker_compose_content: |
           condition: service_completed_successfully
       environment:
         - KAFKA_BOOTSTRAP=redpanda:9092   # INTERNAL — no auth
-        - EXTERNAL_HOST=${EXTERNAL_HOST:-localhost}
+        - EXTERNAL_HOST={{ inventory_hostname }}
         - KAFKA_PORT=${KAFKA_PORT:-19092}
         - SCHEMA_PORT=${SCHEMA_PORT:-18081}
         - PLAYER_PASSWORD=${PLAYER_PASSWORD:-camp2026}

@@ -51,6 +51,13 @@ monitoring_base_scrape_configs:
       target: ["http://portal01.camp/index.html"]
     targets:
       - 127.0.0.1:9115
+  - job_name: blackbox_secret_portal
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+      target: ["http://secret.ctf/index.html"]
+    targets:
+      - 127.0.0.1:9115
   - job_name: blackbox_http_ctfd
     metrics_path: /probe
     params:

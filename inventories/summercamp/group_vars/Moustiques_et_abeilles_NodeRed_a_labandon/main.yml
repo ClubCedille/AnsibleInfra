@@ -8,16 +8,11 @@ install_docker_compose_content: |
       container_name: chall02-hivemq
       ports:
         - "8884:1883"
-      volumes:
-        - ./hivemq/config:/opt/hivemq/conf
       restart: unless-stopped
 
     publisher:
-      image: eclipse-mosquitto:2
+      image: 10.150.0.100:5002/dci-summer-camp/summercamp/iot-moustiques-abeilles-ma2-publisher
       container_name: chall02-publisher
       depends_on:
         - hivemq
-      volumes:
-        - ./publish_secure.sh:/publish.sh
-      entrypoint: ["/bin/sh", "/publish.sh"]
       restart: unless-stopped

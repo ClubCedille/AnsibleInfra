@@ -4,14 +4,15 @@ install_docker_compose_filename: docker-compose.yml
 install_docker_compose_content: |
   services:
     nanolog:
-      image: 10.150.0.100:5002/dci-summer-camp/summercamp/pwn-unsound-memories-nanolog:latest
+      image: 10.150.0.100:5002/dci-summer-camp/summercamp/pwn-unsound-memories:latest
       restart: unless-stopped
       ports:
         - "1337:1337"
       environment:
         - FLAG1=DCI{N4n0L0g_Adm1n_Byp4ss_b14b12bbcc2b}
+        - FLAG2=DCI{N4n0L0g_Opt1on_fn_F0rg3d_UdSHxt7n4eM95H4i}
       # pid: host   # Container escape vulnerability | Waiting on greenlight from infrastructure team
-      read_only: true
+      # read_only: true
       tmpfs:
         - /tmp
       cap_drop:

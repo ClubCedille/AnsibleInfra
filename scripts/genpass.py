@@ -6,6 +6,8 @@ Usage: python genpass.py [--teams 35] [--length 8] [--output data/raw/passwords.
 
 import argparse
 import csv
+import difflib
+import io
 import secrets
 import string
 import sys
@@ -191,6 +193,11 @@ def main():
         action="store_true",
         help="Supprimer du CSV les challenges absents du repo externe (ou sans individual_instance)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Affiche le diff du CSV sans écrire le fichier.",
+    )
     args = parser.parse_args()
 
     if args.teams < 1:
@@ -241,10 +248,24 @@ def main():
             new_teams += 1
         rows.append(row)
 
-    with open(args.output, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+    new_content = buf.getvalue()
+
+    output_path = Path(args.output)
+    if args.dry_run:
+        old_lines = output_path.read_text(encoding="utf-8").splitlines(keepends=True) if output_path.exists() else []
+        diff = list(difflib.unified_diff(
+            old_lines, new_content.splitlines(keepends=True),
+            fromfile=f"{output_path} (current)",
+            tofile=f"{output_path} (new)",
+        ))
+        print(f"[DRY RUN] {output_path}")
+        print("".join(diff) if diff else "  (no changes)")
+    else:
+        output_path.write_text(new_content, newline="", encoding="utf-8")
 
     summary_parts = []
     if new_teams:
@@ -256,7 +277,8 @@ def main():
     if not summary_parts:
         summary_parts.append("aucun changement")
 
-    print(f"[+] {args.output} mis à jour — {', '.join(summary_parts)}")
+    label = "[DRY RUN] serait mis à jour" if args.dry_run else "mis à jour"
+    print(f"[+] {args.output} {label} — {', '.join(summary_parts)}")
 
 
 if __name__ == "__main__":
