@@ -28,9 +28,17 @@
   pre_tasks:
     - name: Configure apt proxy
       ansible.builtin.include_tasks: includes/apt_proxy.yaml
+  vars:
+    tftp_extra_files:
+      - src: "{{ playbook_dir }}/../../files/sc/pxe/netboot.ipxe"
+        dest: netboot.ipxe
+      - src: "{{ playbook_dir }}/../../files/sc/pxe/bzImage"
+        dest: bzImage
+      - src: "{{ playbook_dir }}/../../files/sc/pxe/initrd"
+        dest: initrd
   roles:
     - cedille.netservices.dhcp
-    - tftp
+    - cedille.netservices.tftp
   post_tasks:
     - name: Validate Kea config
       ansible.builtin.command:

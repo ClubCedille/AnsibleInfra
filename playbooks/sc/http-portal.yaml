@@ -28,5 +28,7 @@
   pre_tasks:
     - name: Configure apt proxy
       ansible.builtin.include_tasks: includes/apt_proxy.yaml
+  vars:
+    nginx_portal_html_template: "{{ playbook_dir }}/templates/http_portal.html.j2"
   roles:
-    - http-portal
+    - cedille.netservices.nginx_portal

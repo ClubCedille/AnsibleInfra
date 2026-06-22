@@ -73,3 +73,7 @@ node_exporter_install:
   archive_checksum: "9f5ea48e5bc7b656f8a91a32e7d7deb89f70f73dabd0d974418aca15f37d6810"
   archive_name: "node_exporter-1.11.1.linux-amd64.tar.gz"
   extracted_dir: "node_exporter-1.11.1.linux-amd64"
+
+docker_state_exporter_extra_env:
+  LABEL_CHALLENGE: "{{ (group_names | difference(['chall', 'single_instance_challenges'])) | first }}"
+  LABEL_TEAM: "{{ ansible_host.split('.')[-1] }}"

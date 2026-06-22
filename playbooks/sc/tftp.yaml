@@ -23,10 +23,8 @@
   hosts: netservices_tftp
   gather_facts: true
   become: true
-  vars_files:
-    - ../../roles/kea/vars/flags.yml
   pre_tasks:
     - name: Configure apt proxy
       ansible.builtin.include_tasks: includes/apt_proxy.yaml
   roles:
-    - tftp
+    - cedille.netservices.tftp

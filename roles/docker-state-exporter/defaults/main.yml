@@ -1,5 +1,0 @@
----
-docker_state_exporter_interval: 30s
-docker_state_exporter_script_path: /usr/local/bin/ctf_docker_state_exporter.py
-docker_state_exporter_env_file: /etc/default/ctf-docker-state-exporter
-docker_state_exporter_output_path: "{{ node_exporter_paths.textfile_collector_dir }}/ctf_docker_state.prom"

@@ -95,7 +95,7 @@
 
   roles:
     - cedille.monitoring.node_exporter
-    - docker-state-exporter
+    - cedille.monitoring.docker_state_exporter
 
   post_tasks:
     # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:

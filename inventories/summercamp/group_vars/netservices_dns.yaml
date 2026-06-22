@@ -70,6 +70,14 @@ netservices_dns:
     acl_definitions: []
     zones: []
 
+  wait_for_ready: true
+
+  zone_files:
+    - src: "{{ playbook_dir }}/templates/camp.zone.j2"
+      dest: "{{ netservices_dns.ha.zones[0].master_file if netservices_dns.ha.this_server_role == 'master' else netservices_dns.ha.zones[0].slave_file }}"
+    - src: "{{ playbook_dir }}/templates/ctf.zone.j2"
+      dest: "{{ netservices_dns.ha.zones[1].master_file if netservices_dns.ha.this_server_role == 'master' else netservices_dns.ha.zones[1].slave_file }}"
+
   ha:
     enabled: true
     this_server_role: "{{ 'master' if inventory_hostname.startswith('dns01') else 'slave' }}"
