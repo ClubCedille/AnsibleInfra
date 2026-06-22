@@ -19,7 +19,7 @@ install_docker_compose_content: |
         - ALL
   #     labels:
   #       - "traefik.enable=true"
-  #       - "traefik.http.routers.site_${CHALL_NAME:?}_${USER_NAME:?}.rule=Host(`${CHALL_NAME:?}_${USER_NAME:?}.summercamp.dciets.com`)"
+  #       - "traefik.http.routers.site_${CHALL_NAME:?}_${USER_NAME:?}.rule=Host(`${CHALL_NAME:?}_${USER_NAME:?}.summercamp.etsmtl.club`)"
   #     networks:
   #       - traefik
 

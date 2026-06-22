@@ -50,7 +50,7 @@ vm_net:
   netmask: "16"
   gateway: "10.130.0.1"
   nameservers: "10.130.0.21,10.130.0.22"
-  search_domain: "summercamp.dciets.com"
+  search_domain: "summercamp.etsmtl.club"
 
 docker_registry_mirror_enabled: true
 

@@ -24,7 +24,7 @@ vm_net:
   netmask: "16"
   gateway: "10.130.0.1"
   nameservers: "1.1.1.1"
-  search_domain: "summercamp.dciets.ca"
+  search_domain: "summercamp.etsmtl.club"
 
 netservices_dns:
   enabled: true
