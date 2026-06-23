@@ -1,0 +1,39 @@
+---
+# Supprime toutes les VMs de challenge post-événement.
+# Groupes ciblés : chall (per-team), single_instance_challenges, shellctf.
+# Ne touche PAS à l'infra réseau (DHCP, DNS, monitoring, dockercache).
+#
+# Usage :
+#   ansible-playbook -i inventories/summercamp/ --ask-vault-pass -f 20 playbooks/sc/teardown_chall.yaml
+#
+# Ajouter --limit '<groupe>' pour ne supprimer qu'un sous-ensemble.
+
+- name: Teardown challenge VMs
+  hosts: chall:single_instance_challenges:shellctf
+  gather_facts: false
+  become: false
+  module_defaults:
+    community.proxmox.proxmox_kvm:
+      validate_certs: false
+    community.proxmox.proxmox_disk:
+      validate_certs: false
+  tasks:
+    - name: Stop VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        state: stopped
+        force: true
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Delete VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        state: absent
+      delegate_to: localhost
