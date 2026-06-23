@@ -64,85 +64,102 @@ point-à-point étiqueté **"Eclipse"**.
 
 ## Audit d'usage réel — VLANs/interfaces candidats au nettoyage
 
-Méthode : compteurs `netstat -i` depuis le boot (~4h17) **et** historique RRD sur
-30 jours (`rrdtool fetch ... -s -30d`) pour éviter de qualifier un VLAN de mort à
-cause d'un simple redémarrage récent d'un nœud.
+Méthode : compteurs `netstat -i` depuis le boot (~4h17), historique RRD sur 30 jours
+(`rrdtool fetch ... -s -30d`), **et croisement avec l'inventaire complet des VMs du
+cluster Proxmox** (voir [`ProxmoxVMInventory.md`](ProxmoxVMInventory.md)) — cette
+dernière source est la plus fiable : un VLAN sans aucune VM assignée nulle part dans
+le cluster ne peut pas avoir de trafic réel, peu importe ce que montrent les compteurs.
 
-### Morts confirmés (0 octet de trafic sur 30 jours)
+### Morts confirmés (0 trafic 30j **et** 0 VM dans tout le cluster Proxmox)
 
-| VLAN               | Interface | Constat                                                                                                                                                  |
-| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| k8s01 (1001)       | opt1      | 0 trafic 30j (1 seul échantillon non-nul sur toute la fenêtre)                                                                                           |
-| k8s02 (1002)       | opt2      | 0 trafic 30j                                                                                                                                             |
-| k8s04 (1004)       | opt4      | 0 trafic 30j                                                                                                                                             |
-| k8s06 (1006)       | opt7      | 0 trafic 30j                                                                                                                                             |
-| k8s07 (1007)       | opt8      | 0 trafic 30j                                                                                                                                             |
-| Eclipse (65)       | opt14     | 0 trafic 30j — **et aucune règle pare-feu définie pour cette interface** (cf. audit pf ci-dessous), donc bloqué par défaut même si le lien était utilisé |
-| OpenVPN (`ovpns1`) | openvpn   | 0 trafic 30j — serveur configuré ("sysadmin") mais aucun client connecté depuis au moins un mois                                                         |
+| VLAN               | Interface | Constat                                                                                                                                                  | Décision |
+| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| k8s01 (1001)       | opt1      | 0 trafic 30j (1 seul échantillon non-nul sur toute la fenêtre)                                                                                           | **Désassignée (2026-06-23)** |
+| k8s02 (1002)       | opt2      | 0 trafic 30j                                                                                                                                             | **Désassignée (2026-06-23)** |
+| k8s04 (1004)       | opt4      | 0 trafic 30j, **0 VM** dans tout le cluster Proxmox sur ce tag                                                                                           | **Désassignée (2026-06-23)** |
+| k8s05 (1005)       | opt6      | Trafic résiduel observé (228.9 octets/échantillon) mais **0 VM** sur ce tag — bruit de trunk, pas un hôte réel. Reclassé "mort" suite au croisement Proxmox | **Désassignée (2026-06-23)** |
+| k8s06 (1006)       | opt7      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Désassignée (2026-06-23)** |
+| k8s07 (1007)       | opt8      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Désassignée (2026-06-23)** |
+| k8s08 (1008)       | opt9      | Trafic résiduel observé (779.7 octets/échantillon) mais **0 VM** sur ce tag — même cas que k8s05, reclassé "mort"                                         | **Désassignée (2026-06-23)** |
+| Eclipse (65)       | opt14     | 0 trafic 30j, **0 VM**, et aucune règle pare-feu définie pour cette interface (cf. audit pf ci-dessous) — bloqué par défaut de toute façon                | **Conservé** — décision explicite de l'utilisateur (2026-06-23), malgré l'absence de trafic mesuré ; cohérent avec le commentaire "pls don't delete" déjà présent dans la config |
+| Tag 1011           | *(non assigné)* | 0 trafic, **0 VM** — VLAN orphelin, jamais utilisé                                                                                                  | **Tag supprimé (2026-06-23)** |
+| OpenVPN (`ovpns1`) | openvpn   | 0 trafic 30j — serveur configuré ("sysadmin") mais aucun client connecté depuis au moins un mois                                                         | À confirmer séparément (hors décision VLAN) |
 
-**Recommandation** : ces 6 VLANs k8s + le lien Eclipse sont de bons candidats à
-retirer (désassignation d'interface OPNsense, puis suppression du tag VLAN si
-confirmé inutile). Le serveur OpenVPN peut être désactivé si WireGuard
-("breakingglass") couvre déjà tous les besoins d'accès admin distant — **à
-confirmer avec l'utilisateur avant toute action**, certains de ces nœuds peuvent être
-simplement éteints/en attente de réutilisation plutôt que définitivement abandonnés.
+**Décision (2026-06-23)** : le VLAN 65 ("Eclipse") est **conservé tel quel**. Les 7
+VLANs k8s morts (k8s01/02/04/05/06/07/08) + le tag orphelin 1011 ont été
+**entièrement orphelinés côté OPNsense** : interfaces désassignées, règles pare-feu
+retirées, tags VLAN supprimés et interfaces VLAN OS détruites — voir le détail complet
+dans [`VLANRegistry.md`](VLANRegistry.md) §"Orphelinage exécuté". Reste à faire :
+valider/pruner ces tags côté switch (hors périmètre OPNsense). Le statut OpenVPN reste
+une question séparée, à trancher indépendamment de ce nettoyage VLAN.
 
 ### Actifs confirmés
 
-| VLAN         | Interface | Constat                                                         |
-| ------------ | --------- | --------------------------------------------------------------- |
-| k8s03 (1003) | opt3      | Actif, 4 baux DHCP actifs, trafic régulier                      |
-| k8s09 (1009) | opt10     | Le plus chargé — 10 baux actifs, ~1.9 MB/échantillon en moyenne |
-| k8s10 (1010) | opt13     | Actif — 8 baux actifs, ~990 KB/échantillon en moyenne           |
-| LAN (21)     | lan       | Interface de management — trafic web/SSH admin réel             |
+| VLAN                               | Interface | Constat                                                                                                                                                          |
+| ----------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| k8s03 (1003)                       | opt3      | 4 VMs Proxmox (cluster "cedille-sandbox"), 4 baux DHCP actifs, trafic régulier                                                                                  |
+| k8s09 (1009)                       | opt10     | 10 VMs Proxmox (cluster "shared"), le plus chargé — ~1.9 MB/échantillon en moyenne                                                                              |
+| k8s10 (1010)                       | opt13     | 10 VMs Proxmox (cluster "cedille-production-v2"), 8 baux actifs                                                                                                 |
+| services (500)                     | opt5      | **25 VMs Proxmox** — NIC `net0` partagé par quasiment tous les nœuds k8s. Trafic OPNsense faible car surtout inter-nœuds, pas WAN. Reclassé "actif"            |
+| Lan ETS (20)                       | opt12     | **11 VMs Proxmox** (k3sm1-3, k3sa1-6 — cluster k3s) malgré un trafic OPNsense quasi nul — probable trafic east-west/CNI hors gateway. Reclassé "actif"          |
+| LAN (21)                           | lan       | 8 VMs Proxmox (cisco-pnp, eclipse-vm, clonezilla, forgejo-runner01-03, test-ubuntu, ...) + trafic web/SSH admin réel                                            |
+| WireGuard "breakingglass" (opt11)  | opt11     | Usage léger mais réel (120.5 octets/échantillon, 7 peers nommés : Cydrick, aime, Louis, Max, Matai2, Max2, Julien2)                                             |
 
-### Cas ambigus — faible trafic, pas clairement morts
+**Note** : le croisement avec l'inventaire Proxmox (voir
+[`ProxmoxVMInventory.md`](ProxmoxVMInventory.md)) a corrigé deux faux-négatifs
+(services/500 et Lan ETS/20, classés "ambigus" sur la seule base du trafic OPNsense) et
+deux faux-positifs (k8s05/1005, k8s08/1008 — déplacés dans "Morts confirmés" ci-dessus,
+leur trafic résiduel n'étant corrélé à aucune VM réelle).
 
-| VLAN                              | Interface | Constat                                                                                                                                                 |
-| --------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| services (500)                    | opt5      | 438.7 octets/échantillon en moyenne — non nul mais très faible (probable trafic de heartbeat/monitoring, pas de charge réelle)                          |
-| k8s05 (1005)                      | opt6      | 228.9 octets/échantillon — idem, faible mais non nul                                                                                                    |
-| k8s08 (1008)                      | opt9      | 779.7 octets/échantillon — idem                                                                                                                         |
-| Lan ETS (20)                      | opt12     | 4.9 octets/échantillon — quasiment nul, probablement juste du bruit ARP/broadcast, pas d'hôte réellement actif dessus malgré l'absence de scope DHCP    |
-| WireGuard "breakingglass" (opt11) | opt11     | 120.5 octets/échantillon — usage léger, cohérent avec un VPN d'accès admin ponctuel (7 peers nommés : Cydrick, aime, Louis, Max, Matai2, Max2, Julien2) |
+### VLAN orphelin avec trafic suspect — élucidé
 
-**Recommandation** : ne pas retirer ces VLANs sans vérification active (demander aux
-porteurs des nœuds k8s05/k8s08/services si ces machines sont censées tourner) — le
-trafic est trop faible pour conclure à un abandon, mais trop faible aussi pour
-justifier le maintien sans confirmation explicite.
-
-### VLANs orphelins (tag défini mais jamais assigné à une interface)
-
-- **Tag 1011** : aucune interface OPNsense associée, 0 trafic. Candidat direct à la
-  suppression du tag si aucun usage futur n'est prévu.
-- **Tag 247** : aucune interface OPNsense associée, mais reçoit du trafic entrant
-  (61 765 paquets en ~4h, 0 paquet sortant) — **comportement suspect**, possible
-  mistrunk/bruit d'un switch en amont. À investiguer côté switch avant de supprimer
-  le tag (ne pas juste l'ignorer).
+- **Tag 247** : aucune interface OPNsense dédiée côté `opnsense.internal` (le tag existe
+  dans la liste des VLANs mais n'est assigné à aucune interface), pourtant ce tag reçoit
+  du trafic entrant (61 765 paquets en ~4h côté OPNsense) **et porte 33 VMs dans le
+  cluster Proxmox** — dont le NIC WAN de cette instance OPNsense elle-même et celui de
+  l'autre OPNsense (`opnsense01/02.event.lanets.ca`). **Ce n'est pas un VLAN mort ni un
+  mistrunk** : c'est le VLAN de livraison WAN/Internet partagé au niveau Proxmox
+  (`vmbr1`), utilisé par les deux pare-feux pour leur uplink ET par une vingtaine
+  d'autres VMs/services qui ont une IP publique directe sur ce même segment (jumpbox,
+  uploadbox, ctfd, plusieurs workers k8s avec un 3e NIC tag 247 — voir
+  [`ProxmoxVMInventory.md`](ProxmoxVMInventory.md) pour le détail complet). **Point de
+  sécurité notable** : plusieurs workers k8s ont un accès WAN direct qui bypasse
+  complètement le pare-feu OPNsense.
 
 ---
 
 ## Audit des règles de pare-feu
 
-Source : section `<filter>` de `/conf/config.xml` (25 règles), recoupée avec
-`pfctl -sr` (131 règles actives — l'écart vient des règles auto-générées par
-interface : anti-lockout, NAT outbound implicite, etc., non présentes telles quelles
-dans `config.xml`).
+Source : section `<filter>` de `/conf/config.xml` (25 règles à l'origine, **18
+depuis le nettoyage du 2026-06-23**), recoupée avec `pfctl -sr` (131 règles actives à
+l'origine, **108 après nettoyage** — l'écart vient des règles auto-générées par
+interface : anti-lockout, DHCP, etc., non présentes telles quelles dans `config.xml`,
+et qui disparaissent aussi quand une interface est désactivée).
 
-### Constat principal — absence totale de microsegmentation inter-VLAN
+### ✅ Nettoyage exécuté (2026-06-23)
 
-**Chaque interface optionnelle (`opt1` à `opt13`, soit tous les VLANs k8s + services +
-Lan ETS + WireGuard) porte une règle `pass <interface> any any`** — source `any`,
-destination `any`, tout protocole. Concrètement :
+Les 7 règles `pass any any` orphelines correspondant aux interfaces désassignées
+(`opt1, opt2, opt4, opt6, opt7, opt8, opt9` — k8s01,02,04,05,06,07,08) ont été
+**retirées** de `config.xml` (par UUID, donc sans ambiguïté) et le changement a été
+appliqué en live via `configctl filter reload` (mécanisme officiel "Apply changes" du
+firewall). Vérifié après coup : `pfctl -sr` ne référence plus aucune de ces 7
+interfaces, et le ruleset complet de chaque VLAN actif (k8s03, services, k8s09, Lan
+ETS, k8s10) est resté intact. Sauvegarde prise avant modification :
+`/conf/backup/config-pre-pfrule-cleanup-1782244859.xml`.
 
-- N'importe quel hôte sur n'importe quel VLAN (y compris les VLANs **morts** comme
-  k8s01/02/04/06/07) peut atteindre n'importe quel autre VLAN, y compris le LAN de
-  management (10.0.21.0/24) et le WAN.
+### Constat principal (historique) — absence totale de microsegmentation inter-VLAN
+
+**Chaque interface optionnelle active (`opt3, opt5, opt10, opt12, opt13` — k8s03,
+services, k8s09, Lan ETS, k8s10) porte encore une règle `pass <interface> any any`**
+— source `any`, destination `any`, tout protocole. Ce constat reste valable pour les
+VLANs **actifs** restants (les VLANs morts ont été traités ci-dessus) :
+
+- N'importe quel hôte sur un de ces VLANs actifs peut atteindre n'importe quel autre
+  VLAN, y compris le LAN de management (10.0.21.0/24) et le WAN.
 - Il n'existe **aucune règle qui isole le cluster k8s du reste du réseau**, ni qui
   isole les VLANs entre eux.
-- Risque concret : si un de ces VLANs "morts" est un jour réactivé par erreur
-  (reconnexion d'un câble, redémarrage d'une VM oubliée), l'hôte aura un accès complet
-  à tout le réseau interne sans aucune restriction.
+- **Reste à faire** (hors périmètre de ce nettoyage) : remplacer ces `pass any any`
+  par des règles explicites par VLAN actif.
 
 ### Règles dupliquées
 
@@ -170,13 +187,13 @@ directement sur le WAN. Bon point de sécurité de base.
 
 ### Recommandations résumées
 
-| Constat                                                 | Action recommandée                                                                                                                                      |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pass any any` sur tous les VLANs k8s/services/Lan ETS  | Définir des règles explicites par VLAN (ex. k8s ne devrait parler qu'au LAN de management + entre nœuds k8s, pas au WAN directement ni aux VLANs morts) |
-| VLANs morts avec accès total au reste du réseau         | Retirer l'accès (ou retirer le VLAN entièrement, cf. section précédente) avant toute réactivation accidentelle                                          |
-| Règles dupliquées sur `opt11`/`wireguard`               | Supprimer les doublons                                                                                                                                  |
-| Description "Default allow LAN to any rule" sur `opt12` | Renommer pour éviter la confusion                                                                                                                       |
-| Tag VLAN 247 recevant du trafic sans interface assignée | Investiguer côté switch avant suppression                                                                                                               |
+| Constat                                                 | Action recommandée                                                                                                                                      | Statut |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `pass any any` sur les VLANs k8s/services/Lan ETS encore actifs | Définir des règles explicites par VLAN (ex. k8s ne devrait parler qu'au LAN de management + entre nœuds k8s, pas au WAN directement)            | À faire |
+| VLANs morts avec accès total au reste du réseau         | Retirer l'accès                                                                                                                                          | ✅ Fait le 2026-06-23 (interfaces désassignées + règles retirées pour opt1,2,4,6,7,8,9) |
+| Règles dupliquées sur `opt11`/`wireguard`                | Supprimer les doublons                                                                                                                                  | À faire (hors périmètre de ce nettoyage) |
+| Description "Default allow LAN to any rule" sur `opt12` | Renommer pour éviter la confusion                                                                                                                        | À faire |
+| Tag VLAN 247 recevant du trafic sans interface assignée  | Élucidé — c'est le VLAN de livraison WAN partagé, pas une anomalie (voir `ProxmoxVMInventory.md`)                                                       | ✅ Élucidé, aucune action requise |
 
 Ces recommandations ne sont **pas appliquées** dans ce document — audit uniquement,
 en attente de validation.
@@ -246,9 +263,10 @@ raisons de sécurité) :
   collection Ansible orientée API REST OPNsense (ex. `ansibleguy.opnsense`), à
   intégrer dans ce repo comme un nouveau rôle — travail non démarré, à planifier une
   fois ce document validé.
-- **VLANs à recréer** : se limiter aux VLANs confirmés actifs (21, 1003, 1009, 1010,
-  1009...) plutôt que de copier l'historique complet "mort" (1001,1002,1004,1006,
-  1007,500,1005,1008,20,65,1011,247) — l'occasion de partir sur une base plus propre.
+- **VLANs à recréer** : les actifs confirmés (21, 20, 500, 1003, 1009, 1010) plus le
+  VLAN 65 ("Eclipse", conservé par décision explicite). Ne pas recréer 1001, 1002,
+  1004, 1005, 1006, 1007, 1008, 1011 — orphelinés (cf. décision du 2026-06-23 et
+  [`VLANRegistry.md`](VLANRegistry.md)).
 
 ---
 
