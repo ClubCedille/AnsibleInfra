@@ -37,32 +37,32 @@
 
 | Tag             | Réseau                           | Nom/rôle                                | Statut | Géré par                                                                           | Détail                                                                                                                                                |
 | --------------- | -------------------------------- | --------------------------------------- | ------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 20              | 172.16.0.0/16                    | Lan ETS (cluster k3s)                   | 🟢     | `opnsense.internal` (opt12)                                                        | 11 VMs Proxmox (k3sm1-3, k3sa1-6)                                                                                                                     |
-| 21              | 10.0.21.0/24                     | LAN / management                        | 🟢     | `opnsense.internal` (lan)                                                          | 8 VMs (forgejo-runners, clonezilla, cisco-pnp, eclipse-vm, test-ubuntu)                                                                               |
-| 30              | 10.0.30.0/24                     | Déploiement/CI (?)                      | 🔵     | Inconnu — gw déclaré `10.0.30.2`, pas une IP d'un OPNsense inspecté                | 2 VMs (LXC `dhcp.deployment.etsmtl.club`)                                                                                                             |
-| 65              | 10.255.255.252/30                | Lien "Eclipse"                          | 🟠     | `opnsense.internal` (opt14)                                                        | 0 trafic/0 VM mesurés, mais conservé — commentaire config "pls don't delete" + décision explicite utilisateur 2026-06-23                              |
-| 66              | 10.110.0.0/16                    | CLIENT (réseau joueurs CTF)             | ⚫     | `opnsense01/02.event.lanets.ca`                                                    | 44 VMs Proxmox — réseau DHCP/Kea du challenge, voir `CLAUDE.md`                                                                                       |
-| 67              | 10.120.0.0/16                    | AP-MGMT (WiFi + mgmt event)             | ⚫     | `opnsense01/02.event.lanets.ca`                                                    | 10 VMs — inclut `monitoring01-camp`                                                                                                                   |
-| 68              | 10.130.0.0/16                    | DNS (BIND9 redondant)                   | ⚫     | `opnsense01/02.event.lanets.ca`                                                    | **100 VMs** — la quasi-totalité des challenges `*.ctf`                                                                                                |
-| 69              | 10.140.0.0/16                    | Non documenté                           | 🔵     | `opnsense01/02.event.lanets.ca` (interface existe) mais rôle absent de `CLAUDE.md` | Trafic quasi nul (juste les deux CARP entre eux) — usage à clarifier ou VLAN de réserve                                                               |
-| 70              | 10.150.0.0/16                    | Non documenté — probable cache/registre | 🔵     | `opnsense01/02.event.lanets.ca` (interface existe) mais rôle absent de `CLAUDE.md` | **Trafic très élevé** (151M paquets entrants observés) — corrélé à `dockercache01.camp`, cohérent avec un usage de cache d'images Docker à fort débit |
-| 247             | (segment WAN partagé)            | Livraison WAN/Internet                  | 🟢     | NIC WAN des deux OPNsense + ~20 services avec IP publique directe                  | 33 VMs — voir `ProxmoxVMInventory.md` §1-2. Plusieurs workers k8s y ont aussi un accès direct (bypass pare-feu)                                       |
-| 310             | —                                | Doublon legacy `cs01`                   | ⚪     | Aucun — VM stoppée, probablement obsolète                                          | 1 VM (`cs01.event.lanets.ca`, vmid 801100, stoppée) — doublon de la vraie `cs01` (vmid 801101, tag 66)                                                |
-| 500             | 10.5.0.0/24                      | "services" — réseau interne k8s         | 🟢     | `opnsense.internal` (opt5)                                                         | **25 VMs** — NIC `net0` partagé par tous les clusters k8s                                                                                             |
-| 601             | (réseau k3s `k3s-m0x`/`k3s-w0x`) | Cluster k3s "classique"                 | 🔵     | Inconnu — pas dans la liste VLAN d'aucun OPNsense inspecté                         | 8 VMs — gateway à identifier avant toute action sur ce tag                                                                                            |
-| 1001            | 10.10.0.128/25                   | k8s01                                   | ✅     | `opnsense.internal` (opt1)                                                         | 0 VM, 0 trafic — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                                                  |
-| 1002            | 10.10.1.0/25                     | k8s02                                   | ✅     | `opnsense.internal` (opt2)                                                         | 0 VM, 0 trafic — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                                                  |
+| 20              | 172.16.0.0/16                    | Lan ETS (cluster k3s)                   | ✅     | `opnsense.internal` (opt12 supprimé 2026-06-23)                                    | 0 VM — cluster k3s Lan ETS supprimé ; interface+tag+règle+OS interface entièrement retirés                                                            |
+| 21              | 10.0.21.0/24                     | LAN / management                        | 🟢     | `opnsense.internal` (lan)                                                          | 5 VMs (forgejo-runners, clonezilla, cisco-pnp, eclipse-vm)                                                                                            |
+| 30              | 10.0.30.0/24                     | Déploiement/CI (?)                      | 🔵     | Inconnu — gw déclaré `10.0.30.2`, pas une IP d'un OPNsense inspecté                | Zone grise — gateway non identifiée, à investiguer                                                                                                    |
+| 65              | 10.255.255.252/30                | Lien "Eclipse"                          | 🟠     | `opnsense.internal` (opt14)                                                        | 0 trafic/0 VM, conservé par décision explicite ("pls don't delete")                                                                                   |
+| 66              | 10.110.0.0/16                    | CLIENT (réseau joueurs CTF)             | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — teardown SummerCamp 2026-06-23 ; **à conserver sur le trunk switch**                                                                   |
+| 67              | 10.120.0.0/16                    | AP-MGMT (WiFi + mgmt event)             | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
+| 68              | 10.130.0.0/16                    | DNS/Challenges CTF                      | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
+| 69              | 10.140.0.0/16                    | Réseau événement additionnel            | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
+| 70              | 10.150.0.0/16                    | Cache Docker événement                  | ⚪     | *(event OPNsense supprimé)*                                                        | 0 VM active (dockercache01 supprimé) — **non confirmé comme VLAN événement permanent** ; à valider avant pruning switch                               |
+| 247             | (segment WAN partagé)            | Livraison WAN/Internet                  | 🟢     | NIC WAN des OPNsense + services IP publique directe                                | opnsense01.prod, uploadbox, ctfd, workers k8s avec NIC WAN direct                                                                                    |
+| 310             | —                                | Doublon legacy `cs01`                   | ✅     | Aucun                                                                              | VM 801100 supprimée — VLAN orphelin, aucune VM restante                                                                                               |
+| 500             | 10.5.0.0/24                      | "services" — réseau interne k8s         | 🟢     | `opnsense.internal` (opt5)                                                         | 24 VMs — NIC inter-nœuds des clusters k8s                                                                                                             |
+| 601             | (réseau k3s `k3s-m0x`/`k3s-w0x`) | Cluster k3s "classique"                 | ✅     | Inconnu — pas dans aucun OPNsense                                                  | 0 VM — cluster k3s-m/w supprimé lors du cleanup 2026-06-23 ; VLAN trunk à pruner                                                                     |
+| 1001            | 10.10.0.128/25                   | k8s01                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
+| 1002            | 10.10.1.0/25                     | k8s02                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
 | 1003            | 10.10.1.128/25                   | k8s03 (cluster "cedille-sandbox")       | 🟢     | `opnsense.internal` (opt3)                                                         | 4 VMs, 4 baux DHCP actifs                                                                                                                             |
-| 1004            | 10.5.4.0/24                      | k8s04                                   | ✅     | `opnsense.internal` (opt4)                                                         | 0 VM, 0 trafic — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                                                  |
-| 1005            | 10.10.2.128/25                   | k8s05                                   | ✅     | `opnsense.internal` (opt6)                                                         | 0 VM ; léger trafic résiduel = bruit de trunk — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                   |
-| 1006            | 10.10.3.0/25                     | k8s06                                   | ✅     | `opnsense.internal` (opt7)                                                         | 0 VM, 0 trafic — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                                                  |
-| 1007            | 10.10.3.128/25                   | k8s07                                   | ✅     | `opnsense.internal` (opt8)                                                         | 0 VM, 0 trafic — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                                                  |
-| 1008            | 10.5.8.0/24                      | k8s08                                   | ✅     | `opnsense.internal` (opt9)                                                         | 0 VM ; léger trafic résiduel = bruit de trunk — entièrement orphelinée le 2026-06-23 (interface+règle+tag retirés)                                                                   |
+| 1004            | 10.5.4.0/24                      | k8s04                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
+| 1005            | 10.10.2.128/25                   | k8s05                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
+| 1006            | 10.10.3.0/25                     | k8s06                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
+| 1007            | 10.10.3.128/25                   | k8s07                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
+| 1008            | 10.5.8.0/24                      | k8s08                                   | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — interface+règle+tag+OS retirés 2026-06-23                                                                                                      |
 | 1009            | 10.5.9.0/24                      | k8s09 (cluster "shared")                | 🟢     | `opnsense.internal` (opt10)                                                        | 10 VMs, le plus chargé du cluster                                                                                                                     |
 | 1010            | 10.5.10.0/24                     | k8s10 (cluster "cedille-production-v2") | 🟢     | `opnsense.internal` (opt13)                                                        | 10 VMs, 8 baux actifs                                                                                                                                 |
-| 1011            | —                                | Tag orphelin                            | ✅     | `opnsense.internal` (tag retiré le 2026-06-23)                                     | 0 VM, 0 interface — tag VLAN supprimé, interface OS détruite                                                                                          |
-| 2206            | —                                | Second NIC `dockercache01.camp`         | 🔵     | Probablement événement (`.camp`), non confirmé                                     | 1 VM                                                                                                                                                  |
-| _(natif/untag)_ | —                                | VLAN natif `vmbr1`                      | 🔵     | Inconnu — à clarifier (management Proxmox lui-même ?)                              | 3 VMs : `controlplane-01.etsmtl.club`, `controlplane-01.management.etsmtl.ca`, `worker-01.management.etsmtl.club`                                     |
+| 1011            | —                                | Tag orphelin                            | ✅     | `opnsense.internal` (supprimé)                                                     | 0 VM — tag+OS retirés 2026-06-23                                                                                                                      |
+| 2206            | —                                | Lien ETS — infrastructure réseau ETS    | 🟢     | Côté ETS (routeurs/infra ETS)                                                      | **À conserver** — lien vers l'infrastructure et les routeurs de l'ETS ; le NIC `dockercache01` n'était qu'un usage secondaire                         |
+| _(natif/untag)_ | —                                | VLAN natif `vmbr1`                      | ✅     | Aucun                                                                              | 3 VMs management supprimées lors du cleanup 2026-06-23                                                                                                |
 
 ---
 
@@ -117,46 +117,33 @@ jamais eu d'interface assignée, donc rien à désassigner pour ce tag (reste te
   physique vers `opnsense.internal` (pas d'accès switch dans cette session) — à
   vérifier/pruner lors de la validation switch mentionnée ci-dessous.
 
-### Nettoyage OPNsense terminé — prochaine étape : validation switch
+### État du nettoyage OPNsense — 2026-06-23
 
-Le nettoyage côté `opnsense.internal` est maintenant complet (interfaces + règles +
-tags VLAN). Les 3 routeurs de l'infra ont maintenant été inspectés (2026-06-23) :
+**`opnsense.internal` (10.0.21.1)** — nettoyage complet :
+- Toutes les interfaces mortes supprimées de `config.xml` (k8s01-08, LanETS/20)
+- 11 interfaces actives : lan, wan, k8s03, services, k8s09, k8s10, breakingglass WG, OpenVPN, Eclipse, lo0
+- 106 règles pf
 
-1. `opnsense.internal.etsmtl.club` (10.0.21.1) — routeur interne club, audit + nettoyage complets
-2. `opnsense01/02.event.lanets.ca` (CARP 10.120.0.2/3) — cluster événement CTF
-3. `OPNsense.lanets.ca` (172.16.10.2) — routeur infra LAN Events, **audité le 2026-06-23**
-   (voir [`OpnsenseLanetsCA.md`](OpnsenseLanetsCA.md)) — n'utilise pas de VLAN 802.1Q,
-   ne gère aucun tag du registre ci-dessus
+**`opnsense01/02.event.lanets.ca`** — **supprimés** (teardown SummerCamp 2026-06-23).
+VLANs 66-70 conservés sur le trunk switch, sans gateway active — réservés pour le
+prochain événement. Un nouvel event OPNsense sera déployé depuis le template
+(`template-opnsense`, vmid 2000 — supprimé aussi, à recréer si nécessaire).
 
-Conclusion : les tags 30 et 601 **ne sont gérés par aucun des 3 OPNsense** — leur
-gateway reste non identifiée (voir "Zones grises" ci-dessous).
+**`OPNsense.lanets.ca` (172.16.10.2, vmid 100201)** — **non accessible en session SSH**
+(172.16.10.x non routable depuis pve01 ni depuis la machine locale). Nettoyage à faire :
+8 interfaces mortes (GameServers, InfraJennifer, EventStaging, LABO, WireguardVPN,
+OpenVPN_Players, StagingPeeringVlan501, Wireguard opt1) — voir [`OpnsenseLanetsCA.md`](OpnsenseLanetsCA.md).
+Nécessite accès console Proxmox (VM 100201 pve04) ou VPN 172.16.10.x.
 
-Il reste à faire, selon le contexte donné par l'utilisateur (2026-06-23) :
+### Prochaine étape : switch
 
-> Valider les configurations sur le switch pour s'assurer que tous les VLANs
-> nécessaires à l'infra sont disponibles, et pruner tous les VLANs qui ne servent
-> plus à rien.
+VLANs à pruner du trunk (plus aucune VM ni gateway) : **20, 310, 601, 1001, 1002,
+1004, 1005, 1006, 1007, 1008, 1011, natif/untag**.
 
-Cette étape nécessite un accès au(x) switch(s) — non disponible dans cette session.
+VLANs à conserver : **21, 65, 66, 67, 68, 69, 247, 500, 1003, 1009, 1010, 2206**.
 
-## Zones grises à clarifier avant toute action future
-
-Ces VLANs ont des VMs actives mais ne sont gérés par aucun des **trois** OPNsense
-inspectés — **ne pas les inclure dans un nettoyage** sans avoir d'abord identifié leur
-gateway/rôle réel :
-
-- **Tag 30** (10.0.30.0/24, déploiement/CI) — gateway déclarée `10.0.30.2`, non
-  identifiée.
-- **Tag 601** (cluster k3s `k3s-m0x`/`k3s-w0x`, 8 VMs) — aucune gateway identifiée.
-- **Tag 69** (10.140.0.0/16) et **tag 70** (10.150.0.0/16) — gérés par le cluster CARP
-  événement mais absents de `CLAUDE.md` ; tag 70 a un trafic très élevé (cache Docker
-  probable) et ne devrait surtout pas être touché sans investigation.
-- **Tag 2206** — rôle non confirmé.
-- **VLAN natif/untag de `vmbr1`** — 3 VMs de management dessus, à clarifier si c'est
-  voulu.
-- **Tag 310** — doublon legacy stoppé (`cs01.event.lanets.ca`), candidat à la
-  suppression de VM (pas un VLAN à gérer en tant que tel) mais pas couvert par cette
-  décision d'orphelinage VLAN.
+À valider avant décision : **30** (gateway inconnue 10.0.30.2, CI/déploiement), **70**
+(cache Docker événement — non confirmé comme VLAN événement permanent).
 
 ## Limites
 

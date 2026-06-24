@@ -74,24 +74,27 @@ le cluster ne peut pas avoir de trafic réel, peu importe ce que montrent les co
 
 | VLAN               | Interface | Constat                                                                                                                                                  | Décision |
 | ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| k8s01 (1001)       | opt1      | 0 trafic 30j (1 seul échantillon non-nul sur toute la fenêtre)                                                                                           | **Désassignée (2026-06-23)** |
-| k8s02 (1002)       | opt2      | 0 trafic 30j                                                                                                                                             | **Désassignée (2026-06-23)** |
-| k8s04 (1004)       | opt4      | 0 trafic 30j, **0 VM** dans tout le cluster Proxmox sur ce tag                                                                                           | **Désassignée (2026-06-23)** |
-| k8s05 (1005)       | opt6      | Trafic résiduel observé (228.9 octets/échantillon) mais **0 VM** sur ce tag — bruit de trunk, pas un hôte réel. Reclassé "mort" suite au croisement Proxmox | **Désassignée (2026-06-23)** |
-| k8s06 (1006)       | opt7      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Désassignée (2026-06-23)** |
-| k8s07 (1007)       | opt8      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Désassignée (2026-06-23)** |
-| k8s08 (1008)       | opt9      | Trafic résiduel observé (779.7 octets/échantillon) mais **0 VM** sur ce tag — même cas que k8s05, reclassé "mort"                                         | **Désassignée (2026-06-23)** |
+| k8s01 (1001)       | opt1      | 0 trafic 30j (1 seul échantillon non-nul sur toute la fenêtre)                                                                                           | **Supprimée de config.xml (2026-06-23)** |
+| k8s02 (1002)       | opt2      | 0 trafic 30j                                                                                                                                             | **Supprimée de config.xml (2026-06-23)** |
+| k8s04 (1004)       | opt4      | 0 trafic 30j, **0 VM** dans tout le cluster Proxmox sur ce tag                                                                                           | **Supprimée de config.xml (2026-06-23)** |
+| k8s05 (1005)       | opt6      | Trafic résiduel observé (228.9 octets/échantillon) mais **0 VM** sur ce tag — bruit de trunk, pas un hôte réel. Reclassé "mort" suite au croisement Proxmox | **Supprimée de config.xml (2026-06-23)** |
+| k8s06 (1006)       | opt7      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Supprimée de config.xml (2026-06-23)** |
+| k8s07 (1007)       | opt8      | 0 trafic 30j, **0 VM**                                                                                                                                    | **Supprimée de config.xml (2026-06-23)** |
+| k8s08 (1008)       | opt9      | Trafic résiduel observé (779.7 octets/échantillon) mais **0 VM** sur ce tag — même cas que k8s05, reclassé "mort"                                         | **Supprimée de config.xml (2026-06-23)** |
+| Lan ETS (20)       | opt12     | Toutes les VMs k3s (k3sm1-3, k3sa1-6) supprimées lors du cleanup 2026-06-23                                                                              | **Supprimée de config.xml (2026-06-23)** — tag et OS interface déjà retirés lors du cleanup précédent |
 | Eclipse (65)       | opt14     | 0 trafic 30j, **0 VM**, et aucune règle pare-feu définie pour cette interface (cf. audit pf ci-dessous) — bloqué par défaut de toute façon                | **Conservé** — décision explicite de l'utilisateur (2026-06-23), malgré l'absence de trafic mesuré ; cohérent avec le commentaire "pls don't delete" déjà présent dans la config |
 | Tag 1011           | *(non assigné)* | 0 trafic, **0 VM** — VLAN orphelin, jamais utilisé                                                                                                  | **Tag supprimé (2026-06-23)** |
 | OpenVPN (`ovpns1`) | openvpn   | 0 trafic 30j — serveur configuré ("sysadmin") mais aucun client connecté depuis au moins un mois                                                         | À confirmer séparément (hors décision VLAN) |
 
-**Décision (2026-06-23)** : le VLAN 65 ("Eclipse") est **conservé tel quel**. Les 7
-VLANs k8s morts (k8s01/02/04/05/06/07/08) + le tag orphelin 1011 ont été
-**entièrement orphelinés côté OPNsense** : interfaces désassignées, règles pare-feu
-retirées, tags VLAN supprimés et interfaces VLAN OS détruites — voir le détail complet
-dans [`VLANRegistry.md`](VLANRegistry.md) §"Orphelinage exécuté". Reste à faire :
-valider/pruner ces tags côté switch (hors périmètre OPNsense). Le statut OpenVPN reste
-une question séparée, à trancher indépendamment de ce nettoyage VLAN.
+**Décision (2026-06-23)** : le VLAN 65 ("Eclipse") est **conservé tel quel**. Les 8
+VLANs morts (k8s01/02/04/05/06/07/08 + Lan ETS/20) + le tag orphelin 1011 ont été
+**entièrement supprimés de config.xml** le 2026-06-23 : entrées d'interface retirées,
+règles pare-feu supprimées, tags VLAN retirés de `<vlans>`, interfaces VLAN OS
+détruites. Backup : `/conf/backup/config-pre-disabled-iface-cleanup-1782262587.xml`.
+Config rechargée via `configctl filter reload` + `configctl dhcpd restart` — 11
+interfaces actives, 106 règles pf, uptime continu.
+
+Reste à faire : valider/pruner ces tags côté switch (hors périmètre OPNsense).
 
 ### Actifs confirmés
 
@@ -100,9 +103,8 @@ une question séparée, à trancher indépendamment de ce nettoyage VLAN.
 | k8s03 (1003)                       | opt3      | 4 VMs Proxmox (cluster "cedille-sandbox"), 4 baux DHCP actifs, trafic régulier                                                                                  |
 | k8s09 (1009)                       | opt10     | 10 VMs Proxmox (cluster "shared"), le plus chargé — ~1.9 MB/échantillon en moyenne                                                                              |
 | k8s10 (1010)                       | opt13     | 10 VMs Proxmox (cluster "cedille-production-v2"), 8 baux actifs                                                                                                 |
-| services (500)                     | opt5      | **25 VMs Proxmox** — NIC `net0` partagé par quasiment tous les nœuds k8s. Trafic OPNsense faible car surtout inter-nœuds, pas WAN. Reclassé "actif"            |
-| Lan ETS (20)                       | opt12     | **11 VMs Proxmox** (k3sm1-3, k3sa1-6 — cluster k3s) malgré un trafic OPNsense quasi nul — probable trafic east-west/CNI hors gateway. Reclassé "actif"          |
-| LAN (21)                           | lan       | 8 VMs Proxmox (cisco-pnp, eclipse-vm, clonezilla, forgejo-runner01-03, test-ubuntu, ...) + trafic web/SSH admin réel                                            |
+| services (500)                     | opt5      | 24 VMs Proxmox (clusters k8s) — NIC inter-nœuds, trafic OPNsense faible mais actif                                                                             |
+| LAN (21)                           | lan       | 5 VMs Proxmox (cisco-pnp, eclipse-vm, clonezilla, forgejo-runner01-03) + trafic web/SSH admin réel                                                             |
 | WireGuard "breakingglass" (opt11)  | opt11     | Usage léger mais réel (120.5 octets/échantillon, 7 peers nommés : Cydrick, aime, Louis, Max, Matai2, Max2, Julien2)                                             |
 
 **Note** : le croisement avec l'inventaire Proxmox (voir
