@@ -1,5 +1,10 @@
 # Inventaire Proxmox — VMs/CT et mapping VLAN
 
+> ⚠️ **Document remplacé** : voir [`VMInventoryAudit.md`](VMInventoryAudit.md) pour
+> l'audit complet et exhaustif (209 VMs, recommandations suppression, zones grises) —
+> produit le 2026-06-23 à partir des données fraîches de l'API Proxmox.
+> Ce document reste utile pour les constats macro et l'historique de l'analyse initiale.
+
 > Inventaire complet du cluster Proxmox `OneBigCluster` (10.0.21.51), collecté en
 > lecture seule (lecture directe de `/etc/pve/nodes/*/{qemu-server,lxc}/*.conf` +
 > `pvesh get /cluster/resources` pour les statuts) en juin 2026.

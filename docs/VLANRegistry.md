@@ -1,14 +1,21 @@
 # Registre des VLANs — état général de l'infra
 
 > Vue d'ensemble de tous les tags 802.1Q observés sur le trunk Proxmox (`vmbr1`,
-> cluster `OneBigCluster`, 10.0.21.51) et sur les deux OPNsense inspectés
-> (`opnsense.internal.etsmtl.club` / `opnsense01-02.event.lanets.ca`). Construit en
-> croisant [`OpnsenseInternalETSMTL.md`](OpnsenseInternalETSMTL.md),
+> cluster `OneBigCluster`, 10.0.21.51) et sur les trois OPNsense inspectés :
+> `opnsense.internal.etsmtl.club`, `opnsense01-02.event.lanets.ca` (CARP) et
+> `OPNsense.lanets.ca` (172.16.10.2). Construit en croisant
+> [`OpnsenseInternalETSMTL.md`](OpnsenseInternalETSMTL.md),
+> [`OpnsenseLanetsCA.md`](OpnsenseLanetsCA.md),
 > [`ProxmoxVMInventory.md`](ProxmoxVMInventory.md) et `CLAUDE.md` (topologie événement
 > CTF). État au 2026-06-23.
 >
 > Ce document est le point d'entrée pour savoir "qui gère quoi" avant toute
 > intervention sur le trunk/switch ou sur un OPNsense.
+>
+> **Note** : `OPNsense.lanets.ca` (3e routeur, 172.16.10.2) n'utilise **pas** de
+> VLAN 802.1Q — il opère sur des NICs physiques séparées et n'apparaît donc pas
+> dans la table des tags ci-dessous. Voir [`OpnsenseLanetsCA.md`](OpnsenseLanetsCA.md)
+> pour son audit complet.
 
 ---
 
@@ -113,23 +120,28 @@ jamais eu d'interface assignée, donc rien à désassigner pour ce tag (reste te
 ### Nettoyage OPNsense terminé — prochaine étape : validation switch
 
 Le nettoyage côté `opnsense.internal` est maintenant complet (interfaces + règles +
-tags VLAN). Il reste, selon le contexte donné par l'utilisateur (2026-06-23) :
+tags VLAN). Les 3 routeurs de l'infra ont maintenant été inspectés (2026-06-23) :
+
+1. `opnsense.internal.etsmtl.club` (10.0.21.1) — routeur interne club, audit + nettoyage complets
+2. `opnsense01/02.event.lanets.ca` (CARP 10.120.0.2/3) — cluster événement CTF
+3. `OPNsense.lanets.ca` (172.16.10.2) — routeur infra LAN Events, **audité le 2026-06-23**
+   (voir [`OpnsenseLanetsCA.md`](OpnsenseLanetsCA.md)) — n'utilise pas de VLAN 802.1Q,
+   ne gère aucun tag du registre ci-dessus
+
+Conclusion : les tags 30 et 601 **ne sont gérés par aucun des 3 OPNsense** — leur
+gateway reste non identifiée (voir "Zones grises" ci-dessous).
+
+Il reste à faire, selon le contexte donné par l'utilisateur (2026-06-23) :
 
 > Valider les configurations sur le switch pour s'assurer que tous les VLANs
 > nécessaires à l'infra sont disponibles, et pruner tous les VLANs qui ne servent
-> plus à rien selon les **3 routeurs** de l'infra.
+> plus à rien.
 
 Cette étape nécessite un accès au(x) switch(s) — non disponible dans cette session.
-Avant de s'y attaquer, il faudra clarifier l'inventaire des "3 routeurs" : à ce stade,
-ce document n'en couvre que 2 identités distinctes (`opnsense.internal.etsmtl.club` et
-le cluster CARP `opnsense01/02.event.lanets.ca`, qui compte comme une seule paire
-HA) — le troisième routeur reste à identifier (voir "Zones grises" ci-dessous : les
-tags 30 et 601 ont des VMs actives sans gateway identifiée parmi les deux OPNsense
-inspectés — l'un d'eux est peut-être géré par ce 3ᵉ routeur).
 
 ## Zones grises à clarifier avant toute action future
 
-Ces VLANs ont des VMs actives mais ne sont gérés par aucun des deux OPNsense
+Ces VLANs ont des VMs actives mais ne sont gérés par aucun des **trois** OPNsense
 inspectés — **ne pas les inclure dans un nettoyage** sans avoir d'abord identifié leur
 gateway/rôle réel :
 
