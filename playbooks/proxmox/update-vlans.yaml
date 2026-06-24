@@ -1,18 +1,4 @@
 ---
-# Met à jour les sub-interfaces VLAN sur vmbr1 pour tous les nœuds PVE.
-# Utilise l'API Proxmox (community.proxmox.proxmox_node_network) — pas de SSH.
-#
-# Phases :
-#   1. Retire les sub-interfaces des VLANs morts (pve_vlans_to_remove)
-#   2. Crée/met à jour les sub-interfaces désirées (pve_vlans_desired)
-#   3. Applique les changements stagés (équivalent "Apply Configuration" dans la UI)
-#
-# Usage :
-#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/update-vlans.yaml --check
-#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/update-vlans.yaml
-#
-#     L'étape apply (pvesh PUT /nodes/<node>/network) déclenche ifreload -a
-#     et peut causer une brève interruption réseau sur le nœud.
 - name: Update VLAN sub-interfaces on PVE nodes
   hosts: pve
   gather_facts: false
@@ -50,7 +36,7 @@
           }}
 
     # ── Phase 0.5 : MTU du bridge trunk ───────────────────────────────────────
-    - name: Ensure {{ pve_trunk_bridge }} MTU is 9216 (jumbo frames)
+    - name: Ensure MTU is 9216 (jumbo frames) on {{ pve_trunk_bridge }}
       community.proxmox.proxmox_node_network:
         api_host: "{{ ansible_host }}"
         api_user: "{{ pve_api_user }}"

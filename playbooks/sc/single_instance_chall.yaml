@@ -46,12 +46,13 @@
     - name: Pull the latest images for the challenge
       community.docker.docker_compose_v2_pull:
         project_src: "{{ install_docker_compose_target_dir }}"
-      register: pull_result
-    - name: If images were pulled, recreate the containers
+      notify: Recreate containers
+
+  handlers:
+    - name: Recreate containers
       community.docker.docker_compose_v2:
         project_src: "{{ install_docker_compose_target_dir }}"
         state: present
-      when: pull_result.changed
 
 - name: Deploy Docker container state exporter on Single-Instance Challenge VMs
   hosts: single_instance_challenges
@@ -62,7 +63,7 @@
     # run_once: true pour ne télécharger l'archive node_exporter qu'une seule fois
     # depuis GitHub, peu importe le nombre de challenges single-instance, puis la
     # pousser host-par-host par SSH. Ne pas retirer cette étape de staging.
-    - name: Ensure local archive staging directory exists
+    - name: Ensure local archive staging directory exists  # noqa: run-once[task]
       ansible.builtin.file:
         path: /tmp/monitoring-archives
         state: directory
@@ -71,7 +72,7 @@
       run_once: true
       become: false
 
-    - name: Download node_exporter archive on controller
+    - name: Download node_exporter archive on controller  # noqa: run-once[task]
       ansible.builtin.get_url:
         url: "{{ node_exporter_install.archive_url }}"
         dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"

@@ -40,12 +40,13 @@
     - name: Pull the latest images for the challenge
       community.docker.docker_compose_v2_pull:
         project_src: "{{ install_docker_compose_target_dir }}"
-      register: pull_result
-    - name: If images were pulled, recreate the containers
+      notify: Recreate containers
+
+  handlers:
+    - name: Recreate containers
       community.docker.docker_compose_v2:
         project_src: "{{ install_docker_compose_target_dir }}"
         state: present
-      when: pull_result.changed
 
 - name: Deploy Docker container state exporter on Challenge VMs
   hosts: chall
@@ -61,7 +62,7 @@
     # short-circuits locally and never re-downloads from GitHub. Do NOT remove
     # this staging step or per-host count growth will start tripping GitHub's
     # unauthenticated rate limit (60 req/h per source IP).
-    - name: Ensure local archive staging directory exists
+    - name: Ensure local archive staging directory exists  # noqa: run-once[task]
       ansible.builtin.file:
         path: /tmp/monitoring-archives
         state: directory
@@ -70,7 +71,7 @@
       run_once: true
       become: false
 
-    - name: Download node_exporter archive on controller
+    - name: Download node_exporter archive on controller  # noqa: run-once[task]
       ansible.builtin.get_url:
         url: "{{ node_exporter_install.archive_url }}"
         dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
