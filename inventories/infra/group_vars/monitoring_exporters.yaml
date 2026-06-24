@@ -31,8 +31,6 @@ snmp_exporter_modules:
     walk:
       - 1.3.6.1.2.1.2 # IF-MIB interfaces table
       - 1.3.6.1.2.1.31 # IF-MIB ifXTable (64-bit counters, names)
-    version: 2
-    auth: infra_v2
 
   # Cisco NX-OS — interface + system + CPU/memory OIDs
   cisco_nxos:
@@ -41,15 +39,11 @@ snmp_exporter_modules:
       - 1.3.6.1.2.1.31 # IF-MIB ifXTable
       - 1.3.6.1.4.1.9.9.109 # CISCO-PROCESS-MIB (CPU)
       - 1.3.6.1.4.1.9.9.48 # CISCO-MEMORY-POOL-MIB
-    version: 2
-    auth: infra_v2
 
-  # Cisco IOS — same OID set as NX-OS
+  # Cisco IOS — interface + system + CPU/memory OIDs
   cisco_ios:
     walk:
       - 1.3.6.1.2.1.2
       - 1.3.6.1.2.1.31
       - 1.3.6.1.4.1.9.9.109
       - 1.3.6.1.4.1.9.9.48
-    version: 2
-    auth: infra_v2

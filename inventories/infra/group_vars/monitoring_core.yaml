@@ -41,18 +41,22 @@ loki_storage:
     index_prefix: index_
 
 # ─── Alertmanager ─────────────────────────────────────────────────────────────
-monitoring_alertmanager_slack_webhook_url: REPLACE_WITH_VAULTED_SLACK_WEBHOOK_URL
+# Slack webhook URL — vault-encrypt and switch receiver to "slack" when ready
+# monitoring_alertmanager_slack_webhook_url: !vault |
+#   $ANSIBLE_VAULT;...
 
 alertmanager_route:
-  receiver: slack
+  receiver: "null"
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
 
 alertmanager_receivers:
-  - name: slack
-    webhook_configs:
-      - url: "{{ monitoring_alertmanager_slack_webhook_url }}"
+  - name: "null"
+# Uncomment when Slack webhook is configured:
+# - name: slack
+#   webhook_configs:
+#     - url: "{{ monitoring_alertmanager_slack_webhook_url }}"
 
 # ─── Prometheus ───────────────────────────────────────────────────────────────
 prometheus_server:
@@ -198,7 +202,8 @@ prometheus_scrape_configs:
   - job_name: snmp_ios_switches
     metrics_path: /snmp
     params:
-      module: [if_mib]
+      module: [cisco_ios]
+      auth: [infra_v2]
     targets:
       - "10.0.21.31" # axs01
       - "10.0.21.32" # mgmt01
@@ -214,7 +219,8 @@ prometheus_scrape_configs:
   - job_name: snmp_nxos_switches
     metrics_path: /snmp
     params:
-      module: [if_mib]
+      module: [cisco_nxos]
+      auth: [infra_v2]
     targets:
       - "10.0.21.41" # data01
     relabel_configs:
