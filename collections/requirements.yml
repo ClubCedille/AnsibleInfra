@@ -1,15 +1,15 @@
 ---
 collections:
-- name: community.proxmox
-- name: .cache/AnsibleRoles/cisco-3850
-  type: dir
-- name: .cache/AnsibleRoles/netservices
-  type: dir
-- name: .cache/AnsibleRoles/opnsense
-  type: dir
-- name: .cache/AnsibleRoles/proxmox
-  type: dir
-- name: .cache/AnsibleRoles/cs2
-  type: dir
-- name: .cache/AnsibleRoles/monitoring
-  type: dir
+  - name: community.proxmox
+  - name: .cache/AnsibleRoles/cisco-3850
+    type: dir
+  - name: .cache/AnsibleRoles/netservices
+    type: dir
+  - name: .cache/AnsibleRoles/opnsense
+    type: dir
+  - name: .cache/AnsibleRoles/proxmox
+    type: dir
+  - name: .cache/AnsibleRoles/cs2
+    type: dir
+  - name: .cache/AnsibleRoles/monitoring
+    type: dir

@@ -4,7 +4,7 @@ install_docker_compose_filename: docker-compose.yml
 install_docker_compose_content: |
   services:
     mosquitto:
-      image: iot-moustiques-abeilles-ma1-mosquitto 
+      image: iot-moustiques-abeilles-ma1-mosquitto
       container_name: chall01-mosquitto
       ports:
         - "1883:1883"
