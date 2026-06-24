@@ -23,5 +23,11 @@
         labels:
           job: pve
           env: infra
+      - name: ceph_logs
+        paths:
+          - /var/log/ceph/*.log
+        labels:
+          job: ceph
+          env: infra
   roles:
     - cedille.monitoring.alloy

@@ -1,0 +1,20 @@
+---
+- name: Enable Ceph MGR Prometheus module on PVE cluster
+  hosts: pve
+  gather_facts: false
+  become: true
+  tasks:
+    # Run once — all PVE nodes share the same Ceph cluster config.
+    # The prometheus module exposes metrics on port 9283 on the active MGR node;
+    # Prometheus scrapes all nodes and only the active one responds.
+    - name: Enable Ceph MGR Prometheus module
+      ansible.builtin.command:
+        cmd: ceph mgr module enable prometheus
+      run_once: true
+      changed_when: false
+
+    - name: Ensure Ceph MGR Prometheus module listens on all interfaces
+      ansible.builtin.command:
+        cmd: "ceph config set mgr mgr/prometheus/server_addr ::"
+      run_once: true
+      changed_when: false

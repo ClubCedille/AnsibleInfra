@@ -7,7 +7,7 @@ monitoring_mimir_password: !vault |
   REPLACE_WITH_VAULTED_MIMIR_PASSWORD
 
 # PVE API credentials for prometheus-pve-exporter
-monitoring_pve_api_user: "monitoring@pam"
+monitoring_pve_api_user: "root@pam"
 monitoring_pve_api_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   35366363353730653863343336626166373062353862333663333938616435646366663634383937
@@ -46,13 +46,13 @@ loki_storage:
 #   $ANSIBLE_VAULT;...
 
 alertmanager_route:
-  receiver: "null"
+  receiver: drop
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
 
 alertmanager_receivers:
-  - name: "null"
+  - name: drop
 # Uncomment when Slack webhook is configured:
 # - name: slack
 #   webhook_configs:
@@ -197,6 +197,21 @@ prometheus_scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: "localhost:9290"
+
+  # ── Ceph cluster — native MGR Prometheus module (port 9283) ──────────────
+  # Only the active MGR responds; scraping all nodes auto-follows MGR failover.
+  - job_name: ceph
+    scrape_interval: 60s
+    metrics_path: /metrics
+    targets:
+      - "10.0.21.51:9283" # pve01
+      - "10.0.21.52:9283" # pve02
+      - "10.0.21.53:9283" # pve03
+      - "10.0.21.54:9283" # pve04
+      - "10.0.21.55:9283" # pve05
+      - "10.0.21.56:9283" # pve06
+      - "10.0.21.57:9283" # pve07
+      - "10.0.21.58:9283" # pve08
 
   # ── SNMP — Cisco IOS switches (axs01, mgmt01) ──────────────────────────────
   - job_name: snmp_ios_switches
