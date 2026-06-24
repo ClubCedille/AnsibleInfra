@@ -1,0 +1,53 @@
+---
+# Audit en lecture seule de la configuration réseau sur tous les nœuds PVE.
+# Utilise l'API Proxmox (proxmoxer) depuis le controller — pas de SSH.
+#
+# Usage :
+#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/gather-network.yaml
+- name: Gather PVE network interface state
+  hosts: pve
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  connection: local
+
+  tasks:
+    - name: Get all network interfaces on {{ inventory_hostname | split('.') | first }}
+      community.proxmox.proxmox_node_network_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+      register: net_info
+
+    - name: All interfaces (sorted)
+      ansible.builtin.debug:
+        msg: "{{ net_info.proxmox_node_networks | map(attribute='iface') | list | sort }}"
+
+    - name: VLAN sub-interfaces on {{ pve_trunk_bridge }}
+      ansible.builtin.debug:
+        msg: >-
+          {{
+            net_info.proxmox_node_networks
+            | selectattr('type', 'defined')
+            | selectattr('type', 'equalto', 'vlan')
+            | map(attribute='iface')
+            | list
+            | sort
+          }}
+
+    - name: Check for pending staged changes
+      community.proxmox.proxmox_node_network_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        check_changes: true
+      register: pending
+
+    - name: Pending changes (empty = aucun changement en attente)
+      ansible.builtin.debug:
+        msg: "{{ pending.pending_changes | default('aucun changement en attente') }}"

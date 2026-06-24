@@ -6,3 +6,45 @@ ansible_password: !vault |
   61653665626562323564346563336463393633663231653063616566353961353434363338353531
   6333623135383336610a343532623531353331643164353261666333663637643437383861373161
   3564
+
+pve_api_user: "root@pam"
+pve_api_password: "{{ ansible_password }}"
+
+pve_trunk_bridge: vmbr1
+
+# VLANs à maintenir actifs (sub-interfaces PVE host)
+pve_vlans_desired:
+  - id: 15
+    comment: "CEPH - MTU 9216"
+    mtu: 9216
+  - id: 21
+    comment: "LAN management"
+  - id: 30
+    comment: "Deploiement Day 0 - Switches"
+  - id: 65
+    comment: "Eclipse link (conservé explicitement - ne pas supprimer)"
+  - id: 66
+    comment: "CLIENT event"
+  - id: 67
+    comment: "AP-MGMT event"
+  - id: 68
+    comment: "DNS/CTF event"
+  - id: 69
+    comment: "Event additionnel"
+  - id: 247
+    comment: "WAN"
+  - id: 255
+    comment: "PFSYNC OPNsense - sync état firewall entre instances"
+  - id: 500
+    comment: "k8s services inter-nœuds"
+  - id: 1003
+    comment: "k8s cedille-sandbox"
+  - id: 1009
+    comment: "k8s shared"
+  - id: 1010
+    comment: "k8s cedille-production-v2"
+  - id: 2206
+    comment: "Lien infrastructure ETS"
+
+# VLANs à retirer (VMs supprimées, plus aucun usage)
+pve_vlans_to_remove:

@@ -43,6 +43,13 @@ ifneq ($(strip $(EXTRA_VARS)),)
 EXTRA_VARS_FLAG = --extra-vars "$(EXTRA_VARS)"
 endif
 
+# LIMIT=<pattern> limite l'exécution à un sous-ensemble d'hôtes (ex. LIMIT=pve01)
+LIMIT ?=
+LIMIT_FLAG =
+ifneq ($(strip $(LIMIT)),)
+LIMIT_FLAG = --limit "$(LIMIT)"
+endif
+
 .PHONY: venv
 venv:
 	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
@@ -86,7 +93,7 @@ lint: galaxy-install lint-tools
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
 $(1): $(playbook)/$(1).yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(LIMIT_FLAG) $(EXTRA_VARS_FLAG)
 endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))

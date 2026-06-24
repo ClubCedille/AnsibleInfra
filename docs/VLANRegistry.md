@@ -37,16 +37,18 @@
 
 | Tag             | Réseau                           | Nom/rôle                                | Statut | Géré par                                                                           | Détail                                                                                                                                                |
 | --------------- | -------------------------------- | --------------------------------------- | ------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 15              | —                                | CEPH (stockage)                         | 🟢     | Proxmox Ceph cluster                                                               | MTU 9216 — réseau dédié réplication Ceph entre nœuds PVE                                                                                              |
 | 20              | 172.16.0.0/16                    | Lan ETS (cluster k3s)                   | ✅     | `opnsense.internal` (opt12 supprimé 2026-06-23)                                    | 0 VM — cluster k3s Lan ETS supprimé ; interface+tag+règle+OS interface entièrement retirés                                                            |
 | 21              | 10.0.21.0/24                     | LAN / management                        | 🟢     | `opnsense.internal` (lan)                                                          | 5 VMs (forgejo-runners, clonezilla, cisco-pnp, eclipse-vm)                                                                                            |
-| 30              | 10.0.30.0/24                     | Déploiement/CI (?)                      | 🔵     | Inconnu — gw déclaré `10.0.30.2`, pas une IP d'un OPNsense inspecté                | Zone grise — gateway non identifiée, à investiguer                                                                                                    |
+| 30              | 10.0.30.0/24                     | Bootstrap switches Cisco PNP            | 🟢     | Serveur PNP (`cisco-pnp.mgmt`) — gw 10.0.30.2                                     | Utilisé pour bootstrapper les switches Cisco via PNP ; à conserver                                                                                    |
 | 65              | 10.255.255.252/30                | Lien "Eclipse"                          | 🟠     | `opnsense.internal` (opt14)                                                        | 0 trafic/0 VM, conservé par décision explicite ("pls don't delete")                                                                                   |
 | 66              | 10.110.0.0/16                    | CLIENT (réseau joueurs CTF)             | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — teardown SummerCamp 2026-06-23 ; **à conserver sur le trunk switch**                                                                   |
 | 67              | 10.120.0.0/16                    | AP-MGMT (WiFi + mgmt event)             | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
 | 68              | 10.130.0.0/16                    | DNS/Challenges CTF                      | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
 | 69              | 10.140.0.0/16                    | Réseau événement additionnel            | 🟠     | *(event OPNsense supprimé)* — **réservé événements futurs**                        | 0 VM active — **à conserver sur le trunk switch**                                                                                                    |
-| 70              | 10.150.0.0/16                    | Cache Docker événement                  | ⚪     | *(event OPNsense supprimé)*                                                        | 0 VM active (dockercache01 supprimé) — **non confirmé comme VLAN événement permanent** ; à valider avant pruning switch                               |
+| 70              | 10.150.0.0/16                    | Cache Docker événement                  | ✅     | *(event OPNsense supprimé)*                                                        | 0 VM active (dockercache01 supprimé 2026-06-23) — **à retirer PVE et switch**                                                                        |
 | 247             | (segment WAN partagé)            | Livraison WAN/Internet                  | 🟢     | NIC WAN des OPNsense + services IP publique directe                                | opnsense01.prod, uploadbox, ctfd, workers k8s avec NIC WAN direct                                                                                    |
+| 255             | —                                | PFSYNC OPNsense                         | 🟠     | OPNsense (pfsync — sync état firewall)                                             | Sub-interface `vmbr1.255` présente sur pve04 (OPNsense existant), à propager sur tous les nœuds PVE 2026-06-24                                        |
 | 310             | —                                | Doublon legacy `cs01`                   | ✅     | Aucun                                                                              | VM 801100 supprimée — VLAN orphelin, aucune VM restante                                                                                               |
 | 500             | 10.5.0.0/24                      | "services" — réseau interne k8s         | 🟢     | `opnsense.internal` (opt5)                                                         | 24 VMs — NIC inter-nœuds des clusters k8s                                                                                                             |
 | 601             | (réseau k3s `k3s-m0x`/`k3s-w0x`) | Cluster k3s "classique"                 | ✅     | Inconnu — pas dans aucun OPNsense                                                  | 0 VM — cluster k3s-m/w supprimé lors du cleanup 2026-06-23 ; VLAN trunk à pruner                                                                     |
@@ -120,6 +122,7 @@ jamais eu d'interface assignée, donc rien à désassigner pour ce tag (reste te
 ### État du nettoyage OPNsense — 2026-06-23
 
 **`opnsense.internal` (10.0.21.1)** — nettoyage complet :
+
 - Toutes les interfaces mortes supprimées de `config.xml` (k8s01-08, LanETS/20)
 - 11 interfaces actives : lan, wan, k8s03, services, k8s09, k8s10, breakingglass WG, OpenVPN, Eclipse, lo0
 - 106 règles pf
@@ -137,12 +140,11 @@ Nécessite accès console Proxmox (VM 100201 pve04) ou VPN 172.16.10.x.
 
 ### Prochaine étape : switch
 
-VLANs à pruner du trunk (plus aucune VM ni gateway) : **20, 310, 601, 1001, 1002,
-1004, 1005, 1006, 1007, 1008, 1011, natif/untag**.
+VLANs à pruner du trunk switch (plus aucune VM ni gateway) : **20, 70, 310, 601,
+1001, 1002, 1004, 1005, 1006, 1007, 1008, 1011, natif/untag**.
 
-VLANs à conserver : **21, 65, 66, 67, 68, 69, 247, 500, 1003, 1009, 1010, 2206**.
+VLANs à conserver : **21, 30, 65, 66, 67, 68, 69, 247, 255, 500, 1003, 1009, 1010, 2206**.
 
-À valider avant décision : **30** (gateway inconnue 10.0.30.2, CI/déploiement), **70**
 (cache Docker événement — non confirmé comme VLAN événement permanent).
 
 ## Limites
