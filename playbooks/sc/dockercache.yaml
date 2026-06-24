@@ -36,9 +36,10 @@
     - name: Pull the latest images for the challenge
       community.docker.docker_compose_v2_pull:
         project_src: "{{ install_docker_compose_target_dir }}"
-      register: pull_result
-    - name: If images were pulled, recreate the containers
+      notify: Recreate containers
+
+  handlers:
+    - name: Recreate containers
       community.docker.docker_compose_v2:
         project_src: "{{ install_docker_compose_target_dir }}"
         state: present
-      when: pull_result.changed

@@ -9,7 +9,7 @@
       api_password: "{{ vm_proxmox_api.password }}"
       api_host: "{{ vm_proxmox_api.host }}"
   tasks:
-    - name: Hard-stop VM
+    - name: Hard-stop VM  # noqa: args[module]
       community.proxmox.proxmox_kvm:
         vmid: "{{ vm_id }}"
         node: "{{ vm_proxmox_node }}"
@@ -18,12 +18,12 @@
       delegate_to: localhost
       when: vm_id is defined
 
-    - name: Wait 30 seconds before starting VMs
+    - name: Wait 30 seconds before starting VMs  # noqa: run-once[task]
       ansible.builtin.pause:
         seconds: 30
       run_once: true
 
-    - name: Start VM
+    - name: Start VM  # noqa: args[module]
       community.proxmox.proxmox_kvm:
         vmid: "{{ vm_id }}"
         node: "{{ vm_proxmox_node }}"

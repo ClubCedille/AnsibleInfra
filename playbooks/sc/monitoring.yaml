@@ -19,7 +19,7 @@
         owner: root
         group: root
 
-    - name: Ensure local archive staging directory exists
+    - name: Ensure local archive staging directory exists  # noqa: run-once[task]
       ansible.builtin.file:
         path: /tmp/monitoring-archives
         state: directory
@@ -28,7 +28,7 @@
       run_once: true
       become: false
 
-    - name: Download node_exporter archive on controller
+    - name: Download node_exporter archive on controller  # noqa: run-once[task]
       ansible.builtin.get_url:
         url: "{{ node_exporter_install.archive_url }}"
         dest: "/tmp/monitoring-archives/{{ node_exporter_install.archive_name }}"
@@ -113,7 +113,7 @@
         owner: root
         group: root
 
-    - name: Ensure local archive staging directory exists
+    - name: Ensure local archive staging directory exists  # noqa: run-once[task]
       ansible.builtin.file:
         path: /tmp/monitoring-archives
         state: directory
@@ -122,7 +122,7 @@
       run_once: true
       become: false
 
-    - name: Download all monitoring archives on controller
+    - name: Download all monitoring archives on controller  # noqa: run-once[task]
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "/tmp/monitoring-archives/{{ item.name }}"
