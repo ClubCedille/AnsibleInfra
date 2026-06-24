@@ -1,0 +1,133 @@
+---
+# Met à jour les sub-interfaces VLAN sur vmbr1 pour tous les nœuds PVE.
+# Utilise l'API Proxmox (community.proxmox.proxmox_node_network) — pas de SSH.
+#
+# Phases :
+#   1. Retire les sub-interfaces des VLANs morts (pve_vlans_to_remove)
+#   2. Crée/met à jour les sub-interfaces désirées (pve_vlans_desired)
+#   3. Applique les changements stagés (équivalent "Apply Configuration" dans la UI)
+#
+# Usage :
+#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/update-vlans.yaml --check
+#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/update-vlans.yaml
+#
+#     L'étape apply (pvesh PUT /nodes/<node>/network) déclenche ifreload -a
+#     et peut causer une brève interruption réseau sur le nœud.
+- name: Update VLAN sub-interfaces on PVE nodes
+  hosts: pve
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  connection: local
+
+  tasks:
+    # ── Phase 0 : état courant ─────────────────────────────────────────────────
+    - name: Get current network interfaces
+      community.proxmox.proxmox_node_network_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+      register: net_info
+
+    - name: Set current iface list
+      ansible.builtin.set_fact:
+        current_ifaces: "{{ net_info.proxmox_node_networks | map(attribute='iface') | list }}"
+
+    - name: Current VLAN sub-interfaces
+      ansible.builtin.debug:
+        msg: >-
+          {{
+            net_info.proxmox_node_networks
+            | selectattr('type', 'defined')
+            | selectattr('type', 'equalto', 'vlan')
+            | map(attribute='iface')
+            | list
+            | sort
+          }}
+
+    # ── Phase 0.5 : MTU du bridge trunk ───────────────────────────────────────
+    - name: Ensure {{ pve_trunk_bridge }} MTU is 9216 (jumbo frames)
+      community.proxmox.proxmox_node_network:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        state: present
+        iface: "{{ pve_trunk_bridge }}"
+        iface_type: bridge
+        mtu: 9216
+
+    # ── Phase 1 : retrait des VLANs morts ─────────────────────────────────────
+    - name: Stage removal of dead VLAN sub-interfaces
+      community.proxmox.proxmox_node_network:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        state: absent
+        iface: "{{ pve_trunk_bridge }}.{{ item.id }}"
+      loop: "{{ pve_vlans_to_remove }}"
+      loop_control:
+        label: "{{ pve_trunk_bridge }}.{{ item.id }} — {{ item.comment }}"
+      when: (pve_trunk_bridge ~ '.' ~ item.id | string) in current_ifaces
+
+    # ── Phase 2 : ajout / mise à jour des VLANs désirés ───────────────────────
+    - name: Ensure desired VLAN sub-interfaces are present
+      community.proxmox.proxmox_node_network:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        state: present
+        iface: "{{ pve_trunk_bridge }}.{{ item.id }}"
+        iface_type: vlan
+        autostart: true
+        mtu: "{{ item.mtu | default(1500) }}"
+        comments: "{{ item.comment }}"
+      loop: "{{ pve_vlans_desired }}"
+      loop_control:
+        label: "{{ pve_trunk_bridge }}.{{ item.id }} — {{ item.comment }}"
+
+    # ── Phase 3 : application des changements stagés ──────────────────────────
+    - name: Check for pending staged changes before applying
+      community.proxmox.proxmox_node_network_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        check_changes: true
+      register: pending
+
+    - name: Apply staged network changes (ifreload -a)
+      community.proxmox.proxmox_node_network:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        node: "{{ inventory_hostname | split('.') | first }}"
+        state: apply
+      when: pending.has_pending_changes
+
+    # # ── Phase 4 : vérification finale ─────────────────────────────────────────
+    # - name: Final VLAN sub-interfaces after update
+    #   community.proxmox.proxmox_node_network_info:
+    #     api_host: "{{ ansible_host }}"
+    #     api_user: "{{ pve_api_user }}"
+    #     api_password: "{{ pve_api_password }}"
+    #     node: "{{ inventory_hostname | split('.') | first }}"
+    #   register: net_final
+
+    # - name: Final state
+    #   ansible.builtin.debug:
+    #     msg: >-
+    #       VLANs actifs sur {{ inventory_hostname | split('.') | first }} : {{
+    #         net_final.proxmox_node_networks
+    #         | selectattr('type', 'defined')
+    #         | selectattr('type', 'equalto', 'vlan')
+    #         | map(attribute='iface')
+    #         | list
+    #         | sort
+    #       }}

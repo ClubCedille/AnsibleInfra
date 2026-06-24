@@ -3,9 +3,7 @@
   hosts: monitoring_core
   gather_facts: false
   module_defaults:
-    community.proxmox.proxmox_kvm:
-      validate_certs: false
-    community.proxmox.proxmox_disk:
+    group/community.proxmox.proxmox:
       validate_certs: false
   roles:
     - cedille.proxmox.vm
