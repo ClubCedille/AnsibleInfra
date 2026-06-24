@@ -9,3 +9,6 @@ PyYAML>=5.4.1
 resolvelib>=1.0.1
 requests>=2.31.0
 proxmoxer>=2.0.1
+paramiko<=2.8.1
+ansible-pylibssh>=1.2.0
+six

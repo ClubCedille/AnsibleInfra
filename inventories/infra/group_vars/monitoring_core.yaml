@@ -250,7 +250,7 @@ prometheus_scrape_configs:
       module: [cisco_nxos]
       auth: [infra_v2]
     targets:
-      - "10.0.21.41" # data01
+      - "10.0.21.11" # data01
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -286,10 +286,10 @@ prometheus_scrape_configs:
     params:
       module: [icmp]
     targets:
-      - "10.0.21.50" # nas01
+      - "10.0.21.11" # data01
       - "10.0.21.31" # axs01
       - "10.0.21.32" # mgmt01
-      - "10.0.21.41" # data01
+      - "10.0.21.50" # nas01
       - "142.137.247.141" # opnsense01
       - "142.137.247.142" # opnsense02
     relabel_configs:

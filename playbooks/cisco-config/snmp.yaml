@@ -49,11 +49,3 @@
             - community: "{{ snmp_community }}"
               ro: true
         state: merged
-
-    - name: Restrict SNMP access to monitoring VM
-      cisco.nxos.nxos_config:
-        lines:
-          - "ip access-list SNMP_ALLOW"
-          - "  10 permit ip 10.0.21.95/32 any"
-          - "  20 deny ip any any"
-          - "snmp-server community {{ snmp_community }} ro use-ipv4acl SNMP_ALLOW"
