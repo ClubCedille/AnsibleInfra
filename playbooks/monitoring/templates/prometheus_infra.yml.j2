@@ -1,0 +1,64 @@
+global:
+  scrape_interval: {{ prometheus_server.scrape_interval }}
+  evaluation_interval: {{ prometheus_server.evaluation_interval }}
+{% if prometheus_server.external_labels | length > 0 %}
+  external_labels:
+{% for key, value in prometheus_server.external_labels.items() %}
+    {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+
+{% if prometheus_rule_files | length > 0 %}
+rule_files:
+{% for rule_file in prometheus_rule_files %}
+  - {{ rule_file }}
+{% endfor %}
+{% endif %}
+
+{% if prometheus_alerting.alertmanagers | length > 0 %}
+alerting:
+  alertmanagers:
+{% for alertmanager in prometheus_alerting.alertmanagers %}
+    - static_configs:
+        - targets:
+{% for target in alertmanager.targets %}
+            - {{ target }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+{% if prometheus_remote_write is defined and prometheus_remote_write | length > 0 %}
+remote_write:
+{% for rw in prometheus_remote_write %}
+  - url: {{ rw.url }}
+{% if rw.basic_auth is defined %}
+    basic_auth:
+      username: {{ rw.basic_auth.username }}
+      password: {{ rw.basic_auth.password }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+scrape_configs:
+{% for job in prometheus_scrape_configs %}
+  - job_name: {{ job.job_name }}
+    scrape_interval: {{ job.scrape_interval | default(prometheus_server.scrape_interval) }}
+    metrics_path: {{ job.metrics_path | default('/metrics') }}
+{% if job.params is defined %}
+    params:
+{% for key, values in job.params.items() %}
+      {{ key }}: [{{ values | join(', ') }}]
+{% endfor %}
+{% endif %}
+    static_configs:
+      - targets:
+{% for target in job.targets %}
+          - {{ target }}
+{% endfor %}
+{% if job.relabel_configs is defined %}
+    relabel_configs:
+{% for rc in job.relabel_configs %}
+      - {{ rc | to_json }}
+{% endfor %}
+{% endif %}
+{% endfor %}

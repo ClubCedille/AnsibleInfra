@@ -1,0 +1,59 @@
+---
+# Configure SNMP v2c read-only community on all infra switches.
+# The snmp_community is vaulted in group_vars/monitoring_exporters.yaml.
+# ACL restricts SNMP queries to the monitoring VM only.
+
+- name: Configure SNMP on Cisco IOS switches
+  hosts: ios
+  gather_facts: false
+  vars:
+    snmp_community: "{{ monitoring_snmp_community }}"
+    snmp_acl_v4: SNMP_ALLOW
+  tasks:
+    - name: Create ACL to restrict SNMP access to monitoring VM
+      cisco.ios.ios_acls:
+        config:
+          - afi: ipv4
+            acls:
+              - name: SNMP_ALLOW
+                aces:
+                  - sequence: 10
+                    grant: permit
+                    source:
+                      host: 10.0.21.95
+                  - sequence: 20
+                    grant: deny
+                    source:
+                      any: true
+        state: merged
+
+    - name: Configure SNMP v2c read-only community
+      cisco.ios.ios_snmp_server:
+        config:
+          communities:
+            - name: "{{ snmp_community }}"
+              ro: true
+              acl_v4: SNMP_ALLOW
+        state: merged
+
+- name: Configure SNMP on Cisco NX-OS switch
+  hosts: nxos
+  gather_facts: false
+  vars:
+    snmp_community: "{{ monitoring_snmp_community }}"
+  tasks:
+    - name: Configure SNMP v2c read-only community
+      cisco.nxos.nxos_snmp_server:
+        config:
+          communities:
+            - community: "{{ snmp_community }}"
+              ro: true
+        state: merged
+
+    - name: Restrict SNMP access to monitoring VM
+      cisco.nxos.nxos_config:
+        lines:
+          - "ip access-list SNMP_ALLOW"
+          - "  10 permit ip 10.0.21.95/32 any"
+          - "  20 deny ip any any"
+          - "snmp-server community {{ snmp_community }} ro use-ipv4acl SNMP_ALLOW"

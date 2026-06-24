@@ -1,0 +1,82 @@
+---
+- name: Provision monitoring VM on Proxmox
+  hosts: monitoring_core
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Deploy core monitoring stack
+  hosts: monitoring_core
+  gather_facts: true
+  become: true
+  pre_tasks:
+    # Cloud-init on Ubuntu Noble sometimes provisions /tmp as 755 instead of
+    # 1777, which prevents apt-key from creating temp files even as root.
+    - name: Ensure /tmp has correct permissions
+      ansible.builtin.file:
+        path: /tmp
+        mode: "1777"
+
+    # Override only config_template in prometheus_paths — combine() shallow-merges
+    # so we don't have to duplicate all default path values.
+    - name: Set Prometheus config template to infra-specific version
+      ansible.builtin.set_fact:
+        prometheus_paths: "{{ prometheus_paths | combine({'config_template': playbook_dir + '/templates/prometheus_infra.yml.j2'}) }}"
+
+    # The cedille.monitoring.loki apt package creates the loki user (uid 109)
+    # but not the loki group, causing the role's directory tasks to fail.
+    - name: Ensure loki group exists
+      ansible.builtin.group:
+        name: loki
+        system: true
+
+    # The cedille.monitoring.prometheus role installs the binary but does not
+    # create the systemd unit. We create it here so the service can start.
+    - name: Create Prometheus systemd service unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/prometheus.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          ExecStart=/usr/local/bin/prometheus \
+            --config.file=/etc/prometheus/prometheus.yml \
+            --storage.tsdb.path=/var/lib/prometheus \
+            --storage.tsdb.retention.time={{ prometheus_server.retention_time }} \
+            --web.enable-remote-write-receiver
+          Restart=on-failure
+          RestartSec=5s
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Reload systemd daemon
+  handlers:
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+  roles:
+    - cedille.monitoring.loki
+    - cedille.monitoring.alertmanager
+    - cedille.monitoring.prometheus
+    - cedille.monitoring.grafana
+
+- name: Deploy network exporters on monitoring host
+  hosts: monitoring_core
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.monitoring.blackbox_exporter
+    - cedille.monitoring.snmp_exporter
+    - pve-exporter
+    - ipmi-exporter

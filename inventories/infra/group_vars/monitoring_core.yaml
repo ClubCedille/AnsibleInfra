@@ -1,0 +1,286 @@
+---
+# Prometheus remote_write credentials for Mimir (k8s prod-v2)
+# TODO: vault-encrypt once Mimir is deployed
+monitoring_mimir_url: REPLACE_WITH_MIMIR_REMOTE_WRITE_URL
+monitoring_mimir_username: REPLACE_WITH_MIMIR_USERNAME
+monitoring_mimir_password: !vault |
+  REPLACE_WITH_VAULTED_MIMIR_PASSWORD
+
+# PVE API credentials for prometheus-pve-exporter
+monitoring_pve_api_user: "monitoring@pam"
+monitoring_pve_api_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  35366363353730653863343336626166373062353862333663333938616435646366663634383937
+  3130643638353764616465303232663464393363326537380a323132613438356437613033346661
+  30316437636363616239663464313031666238663734383834386364353265653831333735373138
+  6637343630323164610a353264313763343439313761343462353031623433393664356266613437
+  6463
+
+# IPMI credentials for iLO/iDRAC (used by ipmi_exporter)
+monitoring_ipmi_username: admin
+monitoring_ipmi_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  35366363353730653863343336626166373062353862333663333938616435646366663634383937
+  3130643638353764616465303232663464393363326537380a323132613438356437613033346661
+  30316437636363616239663464313031666238663734383834386364353265653831333735373138
+  6637343630323164610a353264313763343439313761343462353031623433393664356266613437
+  6463
+
+# ─── Loki ────────────────────────────────────────────────────────────────────
+loki_server:
+  http_listen_port: 3100
+  retention_period: 720h # 30 days
+  bind_address: 0.0.0.0
+
+loki_storage:
+  path_prefix: /var/lib/loki
+  filesystem:
+    chunks_directory: /var/lib/loki/chunks
+    rules_directory: /var/lib/loki/rules
+  schema_config:
+    index_prefix: index_
+
+# ─── Alertmanager ─────────────────────────────────────────────────────────────
+monitoring_alertmanager_slack_webhook_url: REPLACE_WITH_VAULTED_SLACK_WEBHOOK_URL
+
+alertmanager_route:
+  receiver: slack
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+alertmanager_receivers:
+  - name: slack
+    webhook_configs:
+      - url: "{{ monitoring_alertmanager_slack_webhook_url }}"
+
+# ─── Prometheus ───────────────────────────────────────────────────────────────
+prometheus_server:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  retention_time: 30d
+  # remote_write receiver enabled so OPNsense Telegraf can push here
+  extra_flags:
+    - "--web.enable-remote-write-receiver"
+  external_labels:
+    environment: infra
+    cluster: etsmtl
+
+# remote_write to Mimir — uncomment and fill once Mimir is deployed in prod-v2
+# prometheus_remote_write:
+#   - url: "{{ monitoring_mimir_url }}"
+#     basic_auth:
+#       username: "{{ monitoring_mimir_username }}"
+#       password: "{{ monitoring_mimir_password }}"
+
+prometheus_rule_files: []
+
+prometheus_alerting:
+  alertmanagers:
+    - targets:
+        - 127.0.0.1:9093
+
+prometheus_scrape_configs:
+  # ── Self-monitoring ─────────────────────────────────────────────────────────
+  - job_name: prometheus
+    targets: ["127.0.0.1:9090"]
+
+  - job_name: alertmanager
+    targets: ["127.0.0.1:9093"]
+
+  - job_name: loki
+    targets: ["127.0.0.1:3100"]
+
+  # ── PVE hosts — node_exporter ──────────────────────────────────────────────
+  - job_name: pve_node_exporter
+    targets:
+      - "10.0.21.51:9100" # pve01
+      - "10.0.21.52:9100" # pve02
+      - "10.0.21.53:9100" # pve03
+      - "10.0.21.54:9100" # pve04
+      - "10.0.21.55:9100" # pve05
+      - "10.0.21.56:9100" # pve06
+      - "10.0.21.57:9100" # pve07
+      - "10.0.21.58:9100" # pve08
+
+  # ── NAS — node_exporter ────────────────────────────────────────────────────
+  - job_name: nas_node_exporter
+    targets:
+      - "10.0.21.50:9100" # nas01
+
+  # ── GarageHQ — native /metrics on admin port ───────────────────────────────
+  # Requires GarageHQ admin API to listen on 0.0.0.0 (default: 127.0.0.1:3903)
+  # Set rpc_bind_addr = "[::]:3903" in garage.toml [admin] section
+  - job_name: garagehq
+    targets:
+      - "10.0.21.50:3903"
+
+  # ── PVE cluster — prometheus-pve-exporter (port 9221) ─────────────────────
+  # Scrapes PVE API for cluster/node/VM/CT/Ceph metrics
+  - job_name: pve_cluster
+    metrics_path: /pve
+    params:
+      module: [default]
+      cluster: ["1"]
+      node: ["1"]
+    targets:
+      - "pve01.mgmt.etsmtl.club"
+      - "pve02.mgmt.etsmtl.club"
+      - "pve03.mgmt.etsmtl.club"
+      - "pve04.mgmt.etsmtl.club"
+      - "pve05.mgmt.etsmtl.club"
+      - "pve06.mgmt.etsmtl.club"
+      - "pve07.mgmt.etsmtl.club"
+      - "pve08.mgmt.etsmtl.club"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9221"
+
+  # ── IPMI — iLO (HP, pve01-04 + pve07) ─────────────────────────────────────
+  - job_name: ipmi_ilo
+    metrics_path: /ipmi
+    scrape_interval: 120s
+    params:
+      module: [default]
+    targets:
+      - "10.0.21.21" # pve01 iLO
+      - "10.0.21.22" # pve02
+      - "10.0.21.23" # pve03
+      - "10.0.21.24" # pve04
+      - "10.0.21.27" # pve07
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9290"
+
+  # ── IPMI — iDRAC (Dell, pve05-06 + pve08) ──────────────────────────────────
+  - job_name: ipmi_idrac
+    metrics_path: /ipmi
+    scrape_interval: 120s
+    params:
+      module: [default]
+    targets:
+      - "10.0.21.25" # pve05 iDRAC
+      - "10.0.21.26" # pve06
+      - "10.0.21.28" # pve08
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9290"
+
+  # ── IPMI — NAS BMC ─────────────────────────────────────────────────────────
+  - job_name: ipmi_nas
+    metrics_path: /ipmi
+    scrape_interval: 120s
+    params:
+      module: [default]
+    targets:
+      - "10.0.21.91" # nasmgmt01
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9290"
+
+  # ── SNMP — Cisco IOS switches (axs01, mgmt01) ──────────────────────────────
+  - job_name: snmp_ios_switches
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+    targets:
+      - "10.0.21.31" # axs01
+      - "10.0.21.32" # mgmt01
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9116"
+
+  # ── SNMP — Cisco NX-OS switch (data01) ─────────────────────────────────────
+  - job_name: snmp_nxos_switches
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+    targets:
+      - "10.0.21.41" # data01
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9116"
+
+  # ── Blackbox — ICMP probes ─────────────────────────────────────────────────
+  - job_name: blackbox_icmp_pve
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    targets:
+      - "10.0.21.51"
+      - "10.0.21.52"
+      - "10.0.21.53"
+      - "10.0.21.54"
+      - "10.0.21.55"
+      - "10.0.21.56"
+      - "10.0.21.57"
+      - "10.0.21.58"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9115"
+
+  - job_name: blackbox_icmp_infra
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    targets:
+      - "10.0.21.50" # nas01
+      - "10.0.21.31" # axs01
+      - "10.0.21.32" # mgmt01
+      - "10.0.21.41" # data01
+      - "142.137.247.141" # opnsense01
+      - "142.137.247.142" # opnsense02
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "localhost:9115"
+
+# ─── Grafana ──────────────────────────────────────────────────────────────────
+grafana_server:
+  http_port: 3000
+  root_url: "http://monitoring01.mgmt.etsmtl.club:3000"
+
+grafana_datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    is_default: true
+    editable: false
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://127.0.0.1:3100
+    is_default: false
+    editable: false

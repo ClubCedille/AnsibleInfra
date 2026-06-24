@@ -1,0 +1,78 @@
+---
+# Configure Telegraf on OPNsense via the OPNsense API (os-telegraf plugin).
+# Telegraf remote_writes PF/firewall/interface metrics directly to the
+# monitoring VM Prometheus remote_write receiver (port 9090/api/v1/write),
+# which then forwards them to Mimir once it is deployed.
+#
+# Prerequisites:
+#   - os-telegraf plugin installed in OPNsense (Plugins → os-telegraf)
+#   - API key/secret with sufficient privileges vaulted in group_vars
+
+- name: Configure Telegraf on OPNsense routers
+  hosts: routers
+  gather_facts: false
+  vars:
+    opnsense_telegraf_prometheus_url: "http://10.0.21.95:9090/api/v1/write"
+  tasks:
+    - name: Enable Telegraf plugin via OPNsense API
+      ansible.builtin.uri:
+        url: "https://{{ ansible_host }}/api/telegraf/service/start"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: telegraf_start
+      changed_when: false
+
+    - name: Configure Telegraf outputs — Prometheus remote_write
+      ansible.builtin.uri:
+        url: "https://{{ ansible_host }}/api/telegraf/output/setOutputs"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body:
+          output:
+            prometheus_client:
+              enabled: "0"
+            prometheus_remote_write:
+              enabled: "1"
+              url: "{{ opnsense_telegraf_prometheus_url }}"
+        status_code: [200]
+
+    - name: Configure Telegraf inputs — PF firewall + interfaces
+      ansible.builtin.uri:
+        url: "https://{{ ansible_host }}/api/telegraf/input/setInputs"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body:
+          input:
+            pf:
+              enabled: "1"
+            net:
+              enabled: "1"
+            cpu:
+              enabled: "1"
+            mem:
+              enabled: "1"
+            system:
+              enabled: "1"
+        status_code: [200]
+
+    - name: Apply Telegraf configuration
+      ansible.builtin.uri:
+        url: "https://{{ ansible_host }}/api/telegraf/service/reload"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]

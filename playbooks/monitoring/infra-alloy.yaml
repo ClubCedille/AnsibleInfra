@@ -1,0 +1,27 @@
+---
+- name: Deploy Alloy log shipping on PVE and NAS hosts
+  hosts: monitoring_alloy
+  gather_facts: true
+  become: true
+  vars:
+    alloy_loki_endpoints:
+      - name: infra_loki
+        url: "http://10.0.21.95:3100/loki/api/v1/push"
+    alloy_file_sources:
+      - name: system_logs
+        paths:
+          - /var/log/syslog
+          - /var/log/auth.log
+          - /var/log/*.log
+        labels:
+          job: system
+          env: infra
+      - name: pve_logs
+        paths:
+          - /var/log/pve/*.log
+          - /var/log/pve-firewall.log
+        labels:
+          job: pve
+          env: infra
+  roles:
+    - cedille.monitoring.alloy

@@ -1,0 +1,55 @@
+---
+monitoring_snmp_community: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  38653537663432396565643263383537623233636461303561353266343532643663623363356131
+  3936393866303761653539323436623266623662353631390a313032316539313733613438393935
+  38663365326236333664326263656631323538623132363931363665623865613330396137396331
+  3361336135636561360a663433663633366239313466336461653838313565376262613336346564
+  3962
+
+# ─── Blackbox exporter ────────────────────────────────────────────────────────
+blackbox_exporter_modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+  icmp:
+    prober: icmp
+    timeout: 5s
+
+# ─── SNMP exporter ────────────────────────────────────────────────────────────
+snmp_exporter_auths:
+  infra_v2:
+    community: "{{ monitoring_snmp_community }}"
+    version: 2
+
+snmp_exporter_modules:
+  # Standard interface counters — used for all switches and OPNsense
+  if_mib:
+    walk:
+      - 1.3.6.1.2.1.2 # IF-MIB interfaces table
+      - 1.3.6.1.2.1.31 # IF-MIB ifXTable (64-bit counters, names)
+    version: 2
+    auth: infra_v2
+
+  # Cisco NX-OS — interface + system + CPU/memory OIDs
+  cisco_nxos:
+    walk:
+      - 1.3.6.1.2.1.2 # IF-MIB
+      - 1.3.6.1.2.1.31 # IF-MIB ifXTable
+      - 1.3.6.1.4.1.9.9.109 # CISCO-PROCESS-MIB (CPU)
+      - 1.3.6.1.4.1.9.9.48 # CISCO-MEMORY-POOL-MIB
+    version: 2
+    auth: infra_v2
+
+  # Cisco IOS — same OID set as NX-OS
+  cisco_ios:
+    walk:
+      - 1.3.6.1.2.1.2
+      - 1.3.6.1.2.1.31
+      - 1.3.6.1.4.1.9.9.109
+      - 1.3.6.1.4.1.9.9.48
+    version: 2
+    auth: infra_v2
