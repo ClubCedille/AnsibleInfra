@@ -43,7 +43,15 @@ scrape_configs:
 {% for job in prometheus_scrape_configs %}
   - job_name: {{ job.job_name }}
     scrape_interval: {{ job.scrape_interval | default(prometheus_server.scrape_interval) }}
+{% if job.scrape_timeout is defined %}
+    scrape_timeout: {{ job.scrape_timeout }}
+{% endif %}
     metrics_path: {{ job.metrics_path | default('/metrics') }}
+{% if job.authorization is defined %}
+    authorization:
+      type: {{ job.authorization.type | default('Bearer') }}
+      credentials: {{ job.authorization.credentials }}
+{% endif %}
 {% if job.params is defined %}
     params:
 {% for key, values in job.params.items() %}
