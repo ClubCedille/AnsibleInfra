@@ -11,6 +11,12 @@ ansible_connection: ssh
 opnsense_ha_interface: "opt15"
 opnsense_ha_peer_net: "10.255.254.252/30"
 
+# VIPs are already correctly configured (vhid 1-6, descriptions empty).
+# Disabled until vip_nat.yaml matching is updated to use vhid+interface.
+opnsense_manage_vips: false
+# NAT is in classic format — kept as-is pending rules analysis.
+opnsense_manage_nat: false
+
 # CARP shared password — empty string = no CARP authentication (OPNsense default).
 vip_password: ""
 
