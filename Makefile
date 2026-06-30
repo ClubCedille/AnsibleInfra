@@ -28,6 +28,15 @@ ANSIBLE_ROLES_REPO_DIR = .cache/AnsibleRoles
 ANSIBLE_ROLES_DEV_REF = feature/opnsense-rules-interfaces
 LOCAL_ROLES_DIR = .cache/roles
 
+# VAULT_PASSWORD_FILE=<path> utilise un fichier vault au lieu de --ask-vault-pass.
+# Ex. : make infra/opnsense-config VAULT_PASSWORD_FILE=~/.vault
+#        make infra/opnsense-diff   VAULT_PASSWORD_FILE=~/CEDILLE/.vault
+VAULT_PASSWORD_FILE ?=
+VAULT_FLAG = --ask-vault-pass
+ifneq ($(strip $(VAULT_PASSWORD_FILE)),)
+VAULT_FLAG = --vault-password-file "$(VAULT_PASSWORD_FILE)"
+endif
+
 # DRY_RUN=1 active le mode Ansible check+diff.
 DRY_RUN ?= 0
 ANSIBLE_MODE_FLAGS =
@@ -114,7 +123,7 @@ lint: galaxy-install lint-tools
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
 $(1): $(playbook)/$(1).yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(LIMIT_FLAG) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(LIMIT_FLAG) $(EXTRA_VARS_FLAG)
 endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))
@@ -133,20 +142,20 @@ $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(ta
 
 .PHONY: sc/chall/%
 sc/chall/%: $(playbook)/sc/chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/reset_chall.yaml (docker compose down/up sur
 # des hosts précis) : make sc/reset_chall/<hosts ou groupe> inventory_name=sc
 .PHONY: sc/reset_chall/%
 sc/reset_chall/%: $(playbook)/sc/reset_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reset_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reset_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/update_chall.yaml (docker compose pull puis
 # down/up, pour forcer la mise à jour d'une image plus récente) :
 # make sc/update_chall/<hosts ou groupe> inventory_name=sc
 .PHONY: sc/update_chall/%
 sc/update_chall/%: $(playbook)/sc/update_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Met à jour les challenges single-instance (playbooks/sc/update_single_chall.yaml) :
 # resynchronise install_docker_compose_content depuis CHALLENGE_DIR (sync-compose),
@@ -156,26 +165,26 @@ sc/update_chall/%: $(playbook)/sc/update_chall.yaml
 # Usage : make sc/update_single_chall/<hosts ou groupe> inventory_name=sc
 .PHONY: sc/update_single_chall/%
 sc/update_single_chall/%: $(playbook)/sc/update_single_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_single_chall.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_single_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/reboot.yaml (hard-stop + start via l'API
 # Proxmox, ex. apt/dpkg lock coincé après un boot cloud-init) :
 # make sc/reboot/<hosts ou groupe> inventory_name=sc
 .PHONY: sc/reboot/%
 sc/reboot/%: $(playbook)/sc/reboot.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reboot.yaml --ask-vault-pass --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reboot.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Déploie le fichier flag dans /home/sc sur toutes les VMs shellctf :
 # make deploy-shellctf-flag
 .PHONY: deploy-shellctf-flag
 deploy-shellctf-flag: $(playbook)/sc/deploy_shellctf_flag.yaml
-	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/deploy_shellctf_flag.yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/deploy_shellctf_flag.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Provisionne et déploie le host secret.ctf (nginx + page narrative) :
 # make deploy-secret-portal
 .PHONY: deploy-secret-portal
 deploy-secret-portal: $(playbook)/sc/secret_portal.yaml
-	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/secret_portal.yaml --ask-vault-pass $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/secret_portal.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # ---------------------------------------------------------------------------
 # Summercamp — génération des credentials et de l'inventaire

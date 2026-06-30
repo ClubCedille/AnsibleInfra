@@ -29,7 +29,7 @@
     # -----------------------------------------------------------------------
     - name: "[interfaces] Fetch interface names from API"
       ansible.builtin.uri:
-        url: "https://{{ vm_net.ip }}/api/interfaces/overview/getInterfaceNames"
+        url: "https://{{ vm_net.ip }}/api/interfaces/overview/interfacesInfo"
         method: GET
         user: "{{ opnsense_api_key }}"
         password: "{{ opnsense_api_secret }}"
@@ -42,7 +42,7 @@
     - name: "[interfaces] Build expected vs actual comparison"
       ansible.builtin.set_fact:
         _iface_expected: "{{ vm_net_trunk.vlans | selectattr('vip', 'ne', None) | map(attribute='interface_name') | list }}"
-        _iface_actual: "{{ _api_iface_names.json.keys() | list }}"
+        _iface_actual: "{{ _api_iface_names.json.rows | map(attribute='identifier') | select('ne', '') | unique | list }}"
       tags: [interfaces]
 
     - name: "[interfaces] ✅ Interfaces present"
@@ -236,7 +236,7 @@
     # -----------------------------------------------------------------------
     - name: "[ha] Fetch current HA sync config from API"
       ansible.builtin.uri:
-        url: "https://{{ vm_net.ip }}/api/core/hasync/getConfiguration"
+        url: "https://{{ vm_net.ip }}/api/core/hasync/get"
         method: GET
         user: "{{ opnsense_api_key }}"
         password: "{{ opnsense_api_secret }}"
@@ -250,10 +250,15 @@
     - name: "[ha] Current HA sync config"
       ansible.builtin.debug:
         msg: >-
-          pfsync_interface={{ _api_hasync.json.hasync.pfsyncinterface | default('?') }}
+          pfsync_interface={{ _api_hasync.json.hasync.pfsyncinterface
+            | dict2items | selectattr('value.selected', 'equalto', 1)
+            | map(attribute='key') | list | join(', ') | default('none') }}
           peer={{ _api_hasync.json.hasync.pfsyncpeerip | default('?') }}
-          preempt={{ _api_hasync.json.hasync.disablepreempt | default('?') }}
-          syncitems={{ _api_hasync.json.hasync.syncitems | default('[]') }}
+          preempt={{ 'enabled' if _api_hasync.json.hasync.disablepreempt | int == 0 else 'disabled' }}
+          syncitems={{ _api_hasync.json.hasync.syncitems
+            | dict2items | selectattr('value.selected', 'equalto', 1)
+            | map(attribute='key') | list
+            | default([]) }}
       when: _api_hasync.status == 200
       tags: [ha]
 
@@ -277,27 +282,26 @@
 
   tasks:
     - name: "[classic_rules] Read classic rules section from config.xml"
-      ansible.builtin.command:
-        cmd: >-
-          python3 -c "
-          import xml.etree.ElementTree as ET
-          tree = ET.parse('/conf/config.xml')
-          root = tree.getroot()
-          rules = root.find('filter')
-          count = 0
-          if rules is not None:
+      ansible.builtin.shell: |
+        python3 << 'PYEOF'
+        import xml.etree.ElementTree as ET
+        tree = ET.parse('/conf/config.xml')
+        root = tree.getroot()
+        rules = root.find('filter')
+        count = 0
+        if rules is not None:
             for rule in rules.findall('rule'):
-              iface = rule.findtext('interface', '?')
-              action = rule.findtext('type', rule.findtext('action', '?'))
-              proto = rule.findtext('protocol', 'any')
-              descr = rule.findtext('descr', '')
-              src = rule.findtext('source/network', rule.findtext('source/address', 'any'))
-              dst = rule.findtext('destination/network', rule.findtext('destination/address', 'any'))
-              dport = rule.findtext('destination/port', '')
-              print(f'  {iface:12} {action:6} {proto:6} src={src:20} dst={dst:20} {dport:6} \"{descr}\"')
-              count += 1
-          print(f'Total: {count} classic rule(s) in <filter> section')
-          "
+                iface  = rule.findtext('interface', '?')
+                action = rule.findtext('type', rule.findtext('action', '?'))
+                proto  = rule.findtext('protocol', 'any')
+                descr  = rule.findtext('descr', '')
+                src    = rule.findtext('source/network', rule.findtext('source/address', 'any'))
+                dst    = rule.findtext('destination/network', rule.findtext('destination/address', 'any'))
+                dport  = rule.findtext('destination/port', '')
+                print(f"  {iface:12} {action:6} {proto:6} src={src:20} dst={dst:20} {dport:6} \"{descr}\"")
+                count += 1
+        print(f"Total: {count} classic rule(s) in <filter> section")
+        PYEOF
       register: _classic_rules
       changed_when: false
       tags: [classic_rules]

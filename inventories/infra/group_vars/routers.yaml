@@ -11,18 +11,19 @@ ansible_connection: ssh
 opnsense_ha_interface: "opt15"
 opnsense_ha_peer_net: "10.255.254.252/30"
 
-# CARP shared password — same across all VIPs on both nodes.
-# To vault: ansible-vault encrypt_string '<password>' --name vip_password
-vip_password: !vault |
-  # VAULT_PLACEHOLDER — replace with: ansible-vault encrypt_string '...' --name vip_password
-  CHANGE_ME
+# CARP shared password — empty string = no CARP authentication (OPNsense default).
+vip_password: ""
 
 # XMLRPC sync credentials (used by hasync_general on the master node).
 # To vault: ansible-vault encrypt_string '<password>' --name vm_password
 vm_user: root
 vm_password: !vault |
-  # VAULT_PLACEHOLDER — replace with: ansible-vault encrypt_string '...' --name vm_password
-  CHANGE_ME
+  $ANSIBLE_VAULT;1.1;AES256
+  38616663323566326538653235663137303731356666336338303339616164366637373438663366
+  3664396432356165363735646236376238633331373332300a356532353031656264333035303939
+  61653665626562323564346563336463393633663231653063616566353961353434363338353531
+  6333623135383336610a343532623531353331643164353261666333663637643437383861373161
+  3564
 
 # VLAN trunk — all VLANs on vtnet0, shared between both nodes.
 # VLAN 247 (vtnet0_vlan247): WAN delivery VLAN managed at Proxmox/switch level —
