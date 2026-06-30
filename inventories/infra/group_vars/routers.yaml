@@ -1,3 +1,82 @@
 ---
+# Shared configuration for all OPNsense routers (opnsense01/02.prod.etsmtl.club).
+# Per-node values (vm_net.ip, vm_is_master, ha device/peer IPs) are in host_vars.
+
 ansible_user: root
+# SSH used for: escape-hatch interface provisioning, diff playbook classic rules read.
+# opnsense-config.yaml overrides connection to local (API calls from control machine).
 ansible_connection: ssh
+
+# HA sync interface — dedicated NIC vtnet2, subnet 10.255.254.252/30
+opnsense_ha_interface: "opt15"
+opnsense_ha_peer_net: "10.255.254.252/30"
+
+# VIPs are already correctly configured (vhid 1-6, descriptions empty).
+# Disabled until vip_nat.yaml matching is updated to use vhid+interface.
+opnsense_manage_vips: false
+# NAT is in classic format — kept as-is pending rules analysis.
+opnsense_manage_nat: false
+# VLANs already exist; interface_vlan module has no match_fields so it would
+# try to create duplicates. Skip — assert task confirms they're present.
+opnsense_skip_vlan_create: true
+
+# CARP shared password — empty string = no CARP authentication (OPNsense default).
+vip_password: ""
+
+# XMLRPC sync credentials (used by hasync_general on the master node).
+# To vault: ansible-vault encrypt_string '<password>' --name vm_password
+vm_user: root
+vm_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  38616663323566326538653235663137303731356666336338303339616164366637373438663366
+  3664396432356165363735646236376238633331373332300a356532353031656264333035303939
+  61653665626562323564346563336463393633663231653063616566353961353434363338353531
+  6333623135383336610a343532623531353331643164353261666333663637643437383861373161
+  3564
+
+# VLAN trunk — all VLANs on vtnet0, shared between both nodes.
+# VLAN 247 (vtnet0_vlan247): WAN delivery VLAN managed at Proxmox/switch level —
+# intentionally not managed by this role. Candidate for removal from OPNsense config.
+vm_net_trunk:
+  vlans:
+    - id: 21
+      interface_name: lan
+      vip: "10.0.21.1"
+      mask: 24
+      network: "10.0.21.0"
+      parent_nic: vtnet0
+
+    - id: 1003
+      interface_name: opt3
+      vip: "10.10.1.129"
+      mask: 25
+      network: "10.10.1.128"
+      parent_nic: vtnet0
+
+    - id: 500
+      interface_name: opt5
+      vip: "10.5.0.1"
+      mask: 24
+      network: "10.5.0.0"
+      parent_nic: vtnet0
+
+    - id: 1009
+      interface_name: opt10
+      vip: "10.5.9.1"
+      mask: 24
+      network: "10.5.9.0"
+      parent_nic: vtnet0
+
+    - id: 1010
+      interface_name: opt13
+      vip: "10.5.10.1"
+      mask: 24
+      network: "10.5.10.0"
+      parent_nic: vtnet0
+
+    - id: 65
+      interface_name: opt14
+      vip: null
+      mask: 30
+      network: "10.255.255.252"
+      parent_nic: vtnet0

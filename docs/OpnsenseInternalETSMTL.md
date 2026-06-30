@@ -14,6 +14,35 @@
 
 ---
 
+## Gestion Ansible (état au 2026-06-30)
+
+Le cluster CARP est géré via `playbooks/infra/opnsense-config.yaml` (rôle
+`cedille.opnsense.config`, collection `oxlorg.opnsense` v25.7.8+).
+
+```bash
+# Appliquer la configuration
+make infra/opnsense-config VAULT_PASSWORD_FILE=~/CEDILLE/.vault
+
+# Dry-run
+make infra/opnsense-config VAULT_PASSWORD_FILE=~/CEDILLE/.vault CHECK=--check
+
+# Vue de l'état courant (interfaces, VIPs, HA sync)
+make infra/opnsense-diff VAULT_PASSWORD_FILE=~/CEDILLE/.vault
+```
+
+| Composant | État Ansible | Notes |
+|-----------|-------------|-------|
+| Règles firewall (18 règles nommées) | ✅ géré | Automation/Filter, séq 10–600 |
+| HA sync (pfsync + XMLRPC) | ✅ géré | pfsync=opt15, syncitems vide |
+| VLANs (assertion) | ✅ assertion seulement | VLANs déjà présents, API ne supporte pas la mise à jour |
+| VIPs CARP | ⚠️ skippé (`opnsense_manage_vips: false`) | descriptions vides → doublons si activé |
+| NAT sortant | ⚠️ skippé (`opnsense_manage_nat: false`) | NAT classique conservé, migration pendante |
+| OpenVPN | ⚠️ skippé (`opnsense_openvpn: []`) | non configuré via Ansible |
+
+Analyse complète des règles et nettoyage restant : [`docs/opnsense-rules-analysis.md`](opnsense-rules-analysis.md)
+
+---
+
 ## Système
 
 | Élément          | Valeur                                                       |
@@ -260,11 +289,9 @@ raisons de sécurité) :
   session d'audit.
 - **Provisioning OS** : pas de cloud-init fiable pour OPNsense connu à ce jour →
   installation manuelle (ISO/image) reste le chemin recommandé pour la VM dupliquée.
-  Une fois l'OS installé et accessible (SSH/API), la configuration (interfaces,
-  VLANs, DHCP, BIND, règles pare-feu nettoyées) pourrait être poussée via une
-  collection Ansible orientée API REST OPNsense (ex. `ansibleguy.opnsense`), à
-  intégrer dans ce repo comme un nouveau rôle — travail non démarré, à planifier une
-  fois ce document validé.
+  Une fois l'OS installé et accessible (SSH/API), la configuration peut être poussée
+  via `make infra/opnsense-config` (rôle `cedille.opnsense.config`, collection
+  `oxlorg.opnsense`) — disponible dans ce repo depuis 2026-06-30.
 - **VLANs à recréer** : les actifs confirmés (21, 20, 500, 1003, 1009, 1010) plus le
   VLAN 65 ("Eclipse", conservé par décision explicite). Ne pas recréer 1001, 1002,
   1004, 1005, 1006, 1007, 1008, 1011 — orphelinés (cf. décision du 2026-06-23 et

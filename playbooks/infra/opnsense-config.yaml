@@ -1,0 +1,40 @@
+---
+# Apply OPNsense configuration to the CARP cluster via the REST API.
+#
+# This playbook runs from the Ansible control machine (connection: local).
+# API calls go to vm_net.ip (management IP) on each node.
+#
+# Usage:
+#   make infra/opnsense-config                   # apply
+#   make infra/opnsense-config DRY_RUN=1         # check + diff (no changes)
+#   make infra/opnsense-config LIMIT=opnsense01  # single node
+#
+# Prerequisites:
+#   make galaxy-install-dev   (or galaxy-install on main branch)
+#   vault: vip_password and vm_password set in group_vars/routers.yaml
+
+- name: Configure OPNsense CARP cluster
+  hosts: routers
+  gather_facts: false
+  connection: local
+
+  pre_tasks:
+    - name: Verify API connectivity before applying changes
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/core/firmware/info"
+        method: GET
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: 200
+      register: _api_check
+      no_log: true
+      failed_when: _api_check.status != 200
+
+    - name: Show OPNsense version
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} — OPNsense {{ _api_check.json.product_version | default('unknown') }}"
+
+  roles:
+    - role: cedille.opnsense.config

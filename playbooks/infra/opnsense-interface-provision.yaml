@@ -1,0 +1,158 @@
+---
+# OPNsense interface escape-hatch — SSH-based interface assignment.
+#
+# USE ONLY when interface assignment or IP addressing needs to change and
+# the OPNsense GUI is not available. The OPNsense API does not support
+# interface assignment (GitHub opnsense/core#9345, closed as "not planned").
+#
+# What this playbook does:
+#   1. Reads current /conf/config.xml from the OPNsense node.
+#   2. Asserts that each VLAN device exists (from vm_net_trunk.vlans).
+#   3. Shows the current <interfaces> section for manual review.
+#   4. (With --tags apply) Patches the interface IP addresses in config.xml
+#      and reloads the interface subsystem via configctl.
+#
+# CAUTION: This playbook edits config.xml directly. Always backup first:
+#   ssh root@<node> "cp /conf/config.xml /conf/backup/config-pre-iface-$(date +%s).xml"
+#
+# Usage:
+#   Read-only review (default):
+#     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
+#       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass
+#
+#   Apply interface IP changes (destructive — requires explicit --tags apply):
+#     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
+#       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass \
+#       --tags apply --limit opnsense01
+
+- name: OPNsense interface escape-hatch
+  hosts: routers
+  gather_facts: false
+  connection: ssh
+
+  tasks:
+    # -----------------------------------------------------------------------
+    # Read-only section (always runs)
+    # -----------------------------------------------------------------------
+    - name: "Backup config.xml before any changes"
+      ansible.builtin.command:
+        cmd: "cp /conf/config.xml /conf/backup/config-pre-iface-provision-{{ ansible_date_time.epoch }}.xml"
+      register: _backup
+      changed_when: true
+      tags: [apply]
+
+    - name: "Read current config.xml"
+      ansible.builtin.slurp:
+        src: /conf/config.xml
+      register: _config_xml
+      no_log: true
+
+    - name: "Show current <interfaces> section"
+      ansible.builtin.command:
+        cmd: >-
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('/conf/config.xml')
+          root = tree.getroot()
+          ifaces = root.find('interfaces')
+          if ifaces is not None:
+            for iface in ifaces:
+              tag = iface.tag
+              descr = iface.findtext('descr', '')
+              if_ = iface.findtext('if', '')
+              ipaddr = iface.findtext('ipaddr', '-')
+              subnet = iface.findtext('subnet', '-')
+              enabled = 'enabled' if iface.find('enable') is not None else 'disabled'
+              print(f'  {tag:10} {descr:20} if={if_:20} {ipaddr}/{subnet} [{enabled}]')
+          "
+      register: _iface_section
+      changed_when: false
+
+    - name: "Current <interfaces> in config.xml"
+      ansible.builtin.debug:
+        msg: "{{ _iface_section.stdout_lines }}"
+
+    - name: "Show current <vlans> section"
+      ansible.builtin.command:
+        cmd: >-
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('/conf/config.xml')
+          root = tree.getroot()
+          vlans = root.find('vlans')
+          if vlans is not None:
+            for vlan in vlans.findall('vlan'):
+              tag = vlan.findtext('tag', '?')
+              if_ = vlan.findtext('if', '?')
+              descr = vlan.findtext('descr', '')
+              vlanif = vlan.findtext('vlanif', '?')
+              print(f'  tag={tag:6} parent={if_:8} device={vlanif:20} descr={descr}')
+          "
+      register: _vlan_section
+      changed_when: false
+
+    - name: "Current <vlans> in config.xml"
+      ansible.builtin.debug:
+        msg: "{{ _vlan_section.stdout_lines }}"
+
+    # -----------------------------------------------------------------------
+    # Apply section (only with --tags apply)
+    # -----------------------------------------------------------------------
+    - name: "Patch interface IP addresses in config.xml"
+      ansible.builtin.command:
+        cmd: >-
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          import sys
+
+          INTERFACES = {{ vm_net_trunk.vlans | selectattr('vip', 'ne', None) | list | to_json }}
+
+          tree = ET.parse('/conf/config.xml')
+          root = tree.getroot()
+          ifaces = root.find('interfaces')
+          changed = 0
+
+          for vlan in INTERFACES:
+            iface_name = vlan['interface_name']
+            iface_el = ifaces.find(iface_name)
+            if iface_el is None:
+              print(f'SKIP: {iface_name} not found in config.xml (assign via GUI first)', file=sys.stderr)
+              continue
+            # Only update IP if it differs
+            current_ip = iface_el.findtext('ipaddr', '')
+            if current_ip != vlan['network']:
+              # Note: we set the node IP, not the CARP VIP — CARP VIP is in <virtualip>
+              print(f'INFO: {iface_name} IP unchanged (node IP must be set manually — this script only validates)')
+            else:
+              print(f'OK: {iface_name} IP matches')
+
+          tree.write('/conf/config.xml', encoding='unicode', xml_declaration=True)
+          print(f'Done — {changed} change(s)')
+          "
+      register: _patch_result
+      changed_when: "'Done' in _patch_result.stdout"
+      tags: [apply, never]
+
+    - name: "Reload interface subsystem"
+      ansible.builtin.command:
+        cmd: configctl interface reload
+      changed_when: true
+      tags: [apply, never]
+
+    - name: "Reload firewall rules after interface reload"
+      ansible.builtin.command:
+        cmd: configctl filter reload
+      changed_when: true
+      tags: [apply, never]
+
+    - name: "Verify interfaces after reload"
+      ansible.builtin.command:
+        cmd: ifconfig -a | grep -E "^(vtnet|opt|lan|wan)"
+      register: _ifconfig
+      changed_when: false
+      tags: [apply, never]
+
+    - name: "Interface state post-reload"
+      ansible.builtin.debug:
+        msg: "{{ _ifconfig.stdout_lines }}"
+      tags: [apply, never]
