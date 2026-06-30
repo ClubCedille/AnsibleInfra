@@ -16,6 +16,9 @@ opnsense_ha_peer_net: "10.255.254.252/30"
 opnsense_manage_vips: false
 # NAT is in classic format — kept as-is pending rules analysis.
 opnsense_manage_nat: false
+# VLANs already exist; interface_vlan module has no match_fields so it would
+# try to create duplicates. Skip — assert task confirms they're present.
+opnsense_skip_vlan_create: true
 
 # CARP shared password — empty string = no CARP authentication (OPNsense default).
 vip_password: ""
