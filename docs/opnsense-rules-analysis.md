@@ -8,10 +8,10 @@
 
 ## Contexte
 
-Les deux routeurs OPNSense fonctionnent en cluster CARP actif/backup. Les règles ont été
-créées manuellement via la GUI. L'objectif à long terme est de les gérer via Ansible
-(`oxlorg.opnsense.rule` → `/api/firewall/filter/`). Cette migration est **en attente
-d'une analyse plus poussée** avant toute application.
+Les deux routeurs OPNSense fonctionnent en cluster CARP actif/backup. Ce document est le
+snapshot de l'état avant migration Ansible (relevé 2026-06-30). Les 18 règles nommées ont
+été **appliquées le 2026-06-30** via `make infra/opnsense-config` — voir la section
+[État post-application](#état-post-application-2026-06-30) en bas de page.
 
 **NAT :** Conservé tel quel — hors scope Ansible pour l'instant.
 
@@ -114,10 +114,10 @@ opt15    pass  any      10.255.254.252/30 → any       "HASync + diag depuis su
 
 ---
 
-## Ce qu'Ansible ferait si on appliquait `make infra/opnsense-config`
+## Ce qu'Ansible a appliqué (`make infra/opnsense-config`, 2026-06-30)
 
-Le rôle utilise `match_fields: ["description"]`. Les règles sans description ne seront
-**pas mises à jour** — Ansible va créer 18 nouvelles règles nommées en parallèle.
+Le rôle utilise `match_fields: ["description"]`. Les règles sans description n'ont
+**pas été modifiées** — Ansible a créé 18 nouvelles règles nommées en parallèle.
 
 ### Règles qui seraient créées (18)
 
@@ -142,26 +142,42 @@ Le rôle utilise `match_fields: ["description"]`. Les règles sans description n
 | 510 | wireguard | pass | out | any | — | WireGuard group \| Allow outbound |
 | 600 | opt15 | pass | in | any | src:10.255.254.252/30 | HA \| Allow sync traffic from peer (pfsync + XMLRPC) |
 
-### État résultant (si appliqué sans nettoyage préalable)
+### État résultant (post-apply, sans nettoyage préalable)
 
 - Catégorie A (30) : inchangées
-- Catégorie B (17) : toujours présentes — **doublons fonctionnels**
-- Catégorie C (1) : `HASync + diag depuis subnet sync` reste — **doublon de la règle HA Ansible (séq 600)**
-- Nouvelles règles Ansible (18) : créées, nommées, séquencées
-
-### Nettoyage post-apply
-
-1. Supprimer les 17 règles Catégorie B (sans description) via `Firewall → Automation → Filter`
-2. Supprimer l'ancienne règle HA `HASync + diag depuis subnet sync` (remplacée par séq 600)
-3. Migrer ou supprimer les 18 règles classiques via `Firewall → Rules → Migration Assistant`
+- Catégorie B (17) : toujours présentes — **doublons fonctionnels** (à nettoyer)
+- Catégorie C (1) : `HASync + diag depuis subnet sync` toujours présente — **doublon de la règle HA Ansible (séq 600)** (à nettoyer)
+- Règles Ansible (18) : **créées, nommées, séquencées** ✅
+- Règles classiques (18) : toujours présentes dans `config.xml <filter>` — Automation (nouveau format) est évalué **avant** les classiques, donc les classiques sont maintenant en double fonctionnel
 
 ---
 
-## Questions ouvertes pour l'analyse à venir
+## État post-application (2026-06-30)
 
-- Les règles `pass any any` sur opt3/opt5/opt10/opt13 sont très permissives — faut-il les affiner ?
-- opt11 (breakingglass WireGuard) : policy identique aux autres k8s VLANs — est-ce intentionnel ?
-- Faut-il des règles inter-VLAN explicites, ou le `let out anything from firewall host` suffit ?
-- Les règles ICMP WAN in/out permettent le ping vers le WAN VIP — à restreindre ou conserver ?
-- Stratégie de migration : appliquer Ansible + nettoyage en une fenêtre de maintenance,
-  ou migrer interface par interface ?
+**Playbook :** `playbooks/infra/opnsense-config.yaml`  
+**Résultat :** `ok=32 changed=13 failed=0` sur opnsense01, `ok=31 changed=11 failed=0` sur opnsense02  
+**Idempotence vérifiée :** second passage → `changed=0 failed=0` sur les deux nœuds
+
+### Ce qui est maintenant géré par Ansible
+
+| Composant | Ansible | Remarques |
+|-----------|---------|-----------|
+| 18 règles firewall nommées | ✅ géré | Séquences 10–600, format Automation |
+| Config HA sync (pfsync + XMLRPC) | ✅ géré | Idempotent, syncitems vide |
+| VLANs (devices) | Assert seulement | interface_vlan sans match_fields = création uniquement, skip sur cluster existant |
+| VIPs CARP | ❌ skippé | `opnsense_manage_vips: false` — descriptions vides causeraient des doublons |
+| NAT sortant | ❌ skippé | `opnsense_manage_nat: false` — NAT classique conservé tel quel |
+| OpenVPN | ❌ skippé | `opnsense_openvpn: []` — non configuré |
+
+### Nettoyage manuel restant
+
+1. **Catégorie B (17 règles sans description)** : supprimer via `Firewall → Automation → Filter`
+2. **Ancienne règle HA** (`HASync + diag depuis subnet sync`) : remplacée par séq 600, à supprimer
+3. **18 règles classiques** : migrer ou supprimer via `Firewall → Rules → Migration Assistant`
+
+### Questions ouvertes (futures)
+
+- Les règles `pass any any` sur opt3/opt5/opt10/opt13 sont très permissives — affiner ?
+- opt11 (breakingglass WireGuard) : même policy que les k8s VLANs — intentionnel ?
+- VIPs : corriger `vip_nat.yaml` pour utiliser `match_fields: ["vhid", "interface"]` et réactiver `opnsense_manage_vips: true`
+- NAT : analyser la migration du NAT classique vers le nouveau format avant de réactiver `opnsense_manage_nat: true`

@@ -13,6 +13,7 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 ├─ playbooks/
 │   ├─ cisco-pnp
 │   ├─ cs2_server
+│   ├─ infra/            ← OPNsense prod CARP (config, diff, interface-provision)
 │   ├─ netservices
 │   ├─ proxmox
 │   └─ sc/               ← playbooks summercamp (DNS, challenges, shellctf…)
@@ -112,6 +113,7 @@ sur `main` et via déclenchement manuel.
 | Registre des VLANs | [docs/VLANRegistry.md](docs/VLANRegistry.md) |
 | Audit complet des VMs Proxmox | [docs/VMInventoryAudit.md](docs/VMInventoryAudit.md) |
 | OPNsense événementiel (lanets.ca) | [docs/OpnsenseLanetsCA.md](docs/OpnsenseLanetsCA.md) |
-| OPNsense interne (etsmtl.club) | [docs/OpnsenseInternalETSMTL.md](docs/OpnsenseInternalETSMTL.md) |
+| OPNsense prod CARP (etsmtl.club) — topologie, audit, gestion Ansible | [docs/OpnsenseInternalETSMTL.md](docs/OpnsenseInternalETSMTL.md) |
+| OPNsense prod CARP — analyse des règles et état post-migration Ansible | [docs/opnsense-rules-analysis.md](docs/opnsense-rules-analysis.md) |
 | Cisco WLC — notes de troubleshooting | [docs/CiscoWLC.md](docs/CiscoWLC.md) |
 | Monitoring — design phase 1 | [docs/MONITORING_PHASE1_DESIGN.md](docs/MONITORING_PHASE1_DESIGN.md) |
