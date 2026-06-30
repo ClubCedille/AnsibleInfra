@@ -48,3 +48,5 @@ pve_vlans_desired:
 
 # VLANs à retirer (VMs supprimées, plus aucun usage)
 pve_vlans_to_remove:
+  - id: 1000
+    comment: "orphan VLAN"

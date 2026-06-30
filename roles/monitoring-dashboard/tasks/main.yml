@@ -1,4 +1,5 @@
 ---
+# ── Summercamp dashboards ──────────────────────────────────────────────────────
 - name: Copy Summercamp infrastructure dashboard
   ansible.builtin.copy:
     src: summercamp-infra.json
@@ -16,5 +17,25 @@
     owner: root
     group: grafana
     mode: "0640"
+  notify: Restart Grafana
+  become: true
+
+# ── Infra dashboards ───────────────────────────────────────────────────────────
+- name: Copy infra dashboards
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/grafana/provisioning/dashboards/{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop:
+    - infra-overview.json
+    - infra-pve-nodes.json
+    - infra-pve-cluster.json
+    - infra-ceph.json
+    - infra-ipmi.json
+    - infra-network.json
+    - infra-nas.json
+    - infra-blackbox.json
   notify: Restart Grafana
   become: true

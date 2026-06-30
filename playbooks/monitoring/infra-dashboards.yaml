@@ -1,0 +1,7 @@
+---
+- name: Deploy infra Grafana dashboards
+  hosts: monitoring_core
+  gather_facts: false
+  become: true
+  roles:
+    - monitoring-dashboard
