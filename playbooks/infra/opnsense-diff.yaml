@@ -1,0 +1,308 @@
+---
+# OPNsense configuration diff/validation — read-only debug menu.
+#
+# Reads current state from the OPNsense API and SSH (for classic rules),
+# compares with the desired state defined in host_vars/group_vars, and
+# displays structured diffs.
+#
+# Usage (tag-based menu):
+#   make infra/opnsense-diff                          # all sections
+#   make infra/opnsense-diff EXTRA_VARS="tags=rules"  # rules only
+#
+#   Or directly:
+#   .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
+#     playbooks/infra/opnsense-diff.yaml --ask-vault-pass \
+#     [--tags interfaces|rules|vips|nat|classic_rules|ha]
+#     [--limit opnsense01]
+
+# ---------------------------------------------------------------------------
+# Play 1: API-based reads (connection: local — calls go from control machine)
+# ---------------------------------------------------------------------------
+- name: OPNsense diff — API state
+  hosts: routers
+  gather_facts: false
+  connection: local
+
+  tasks:
+    # -----------------------------------------------------------------------
+    # INTERFACES
+    # -----------------------------------------------------------------------
+    - name: "[interfaces] Fetch interface names from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/interfaces/overview/getInterfaceNames"
+        method: GET
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: _api_iface_names
+      no_log: true
+      tags: [interfaces]
+
+    - name: "[interfaces] Build expected vs actual comparison"
+      ansible.builtin.set_fact:
+        _iface_expected: "{{ vm_net_trunk.vlans | selectattr('vip', 'ne', None) | map(attribute='interface_name') | list }}"
+        _iface_actual: "{{ _api_iface_names.json.keys() | list }}"
+      tags: [interfaces]
+
+    - name: "[interfaces] ✅ Interfaces present"
+      ansible.builtin.debug:
+        msg: "{{ _iface_expected | intersect(_iface_actual) }}"
+      tags: [interfaces]
+
+    - name: "[interfaces] ❌ Interfaces MISSING (configure via GUI or escape-hatch playbook)"
+      ansible.builtin.debug:
+        msg: "{{ _iface_expected | difference(_iface_actual) }}"
+      tags: [interfaces]
+
+    - name: "[interfaces] VLAN devices — fetch from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/interfaces/vlan_settings/searchItem"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body: {"current": 1, "rowCount": -1, "searchPhrase": "", "sort": {}}
+      register: _api_vlans
+      no_log: true
+      tags: [interfaces]
+
+    - name: "[interfaces] VLAN devices current state"
+      ansible.builtin.debug:
+        msg: >-
+          tag={{ item.tag }} parent={{ item.if }}
+          descr={{ item.descr | default('') }}
+      loop: "{{ _api_vlans.json.rows | default([]) }}"
+      loop_control:
+        label: "VLAN {{ item.tag }}"
+      tags: [interfaces]
+
+    # -----------------------------------------------------------------------
+    # RULES (new format — Firewall → Automation → Filter)
+    # -----------------------------------------------------------------------
+    - name: "[rules] Fetch current new-format rules from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/searchRule"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body: {"current": 1, "rowCount": -1, "searchPhrase": "", "sort": {}}
+      register: _api_rules_new
+      no_log: true
+      tags: [rules]
+
+    - name: "[rules] New-format rule count"
+      ansible.builtin.debug:
+        msg: "{{ _api_rules_new.json.total | default(0) }} rule(s) in new format (Automation/Filter)"
+      tags: [rules]
+
+    - name: "[rules] New-format rules — current state"
+      ansible.builtin.debug:
+        msg: >-
+          [{{ item.sequence | default('?') }}]
+          {{ item.interface | default('*') }}
+          {{ item.action }} {{ item.direction | default('in') }}
+          proto={{ item.protocol | default('any') }}
+          src={{ item.source_net | default('any') }}
+          dst={{ item.destination_net | default('any') }}
+          "{{ item.description | default('') }}"
+      loop: "{{ _api_rules_new.json.rows | default([]) }}"
+      loop_control:
+        label: "{{ item.description | default(item.uuid) }}"
+      tags: [rules]
+
+    - name: "[rules] Desired rules (from Ansible vars)"
+      ansible.builtin.debug:
+        msg: |
+          The following rules will be created/updated by opnsense-config.yaml:
+          {% set desired = [
+            {'seq': 10,  'iface': 'wan',       'action': 'pass', 'dir': 'in',  'proto': 'UDP',  'dst_port': '51820', 'descr': 'WAN | Allow WireGuard inbound (UDP 51820)'},
+            {'seq': 20,  'iface': 'wan',       'action': 'pass', 'dir': 'in',  'proto': 'UDP',  'dst_port': '1194',  'descr': 'WAN | Allow OpenVPN inbound (UDP 1194)'},
+            {'seq': 30,  'iface': 'wan',       'action': 'pass', 'dir': 'out', 'proto': 'UDP',  'dst_port': '1194',  'descr': 'WAN | Allow OpenVPN outbound (UDP 1194)'},
+            {'seq': 40,  'iface': 'wan',       'action': 'pass', 'dir': 'in',  'proto': 'ICMP', 'descr': 'WAN | Allow ICMP inbound'},
+            {'seq': 50,  'iface': 'wan',       'action': 'pass', 'dir': 'out', 'proto': 'ICMP', 'descr': 'WAN | Allow ICMP outbound'},
+            {'seq': 100, 'iface': 'lan',       'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'LAN | Allow LAN to any (IPv4)'},
+            {'seq': 110, 'iface': 'lan',       'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'LAN | Allow LAN to any (IPv6)'},
+            {'seq': 200, 'iface': 'openvpn',   'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'OpenVPN | Allow inbound'},
+            {'seq': 210, 'iface': 'openvpn',   'action': 'pass', 'dir': 'out', 'proto': 'any',  'descr': 'OpenVPN | Allow outbound'},
+            {'seq': 300, 'iface': 'opt3',      'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'k8s03 (opt3) | Allow all inbound'},
+            {'seq': 310, 'iface': 'opt5',      'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'services (opt5) | Allow all inbound'},
+            {'seq': 320, 'iface': 'opt10',     'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'k8s09 (opt10) | Allow all inbound'},
+            {'seq': 330, 'iface': 'opt13',     'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'k8s10 (opt13) | Allow all inbound'},
+            {'seq': 400, 'iface': 'opt11',     'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'breakingglass WG (opt11) | Allow inbound'},
+            {'seq': 410, 'iface': 'opt11',     'action': 'pass', 'dir': 'out', 'proto': 'any',  'descr': 'breakingglass WG (opt11) | Allow outbound'},
+            {'seq': 500, 'iface': 'wireguard', 'action': 'pass', 'dir': 'in',  'proto': 'any',  'descr': 'WireGuard group | Allow inbound'},
+            {'seq': 510, 'iface': 'wireguard', 'action': 'pass', 'dir': 'out', 'proto': 'any',  'descr': 'WireGuard group | Allow outbound'},
+            {'seq': 600, 'iface': 'opt15',     'action': 'pass', 'dir': 'in',  'proto': 'any',  'src': opnsense_ha_peer_net, 'descr': 'HA | Allow sync traffic from peer (pfsync + XMLRPC)'},
+          ] %}
+          {% for r in desired %}
+          [{{ r.seq }}] {{ r.iface }} {{ r.action }} {{ r.dir }} proto={{ r.proto }} "{{ r.descr }}"
+          {% endfor %}
+      tags: [rules]
+
+    - name: "[rules] Compare — new-format rules already present by description"
+      ansible.builtin.set_fact:
+        _rules_new_descriptions: >-
+          {{ _api_rules_new.json.rows | default([]) | map(attribute='description') | list }}
+      tags: [rules]
+
+    - name: "[rules] ✅ Already in new format"
+      ansible.builtin.debug:
+        msg: "{{ _rules_new_descriptions | select('match', '^(WAN|LAN|OpenVPN|k8s|services|breakingglass|WireGuard|HA).*') | list }}"
+      tags: [rules]
+
+    # -----------------------------------------------------------------------
+    # VIPs (CARP)
+    # -----------------------------------------------------------------------
+    - name: "[vips] Fetch current VIPs from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/interfaces/vip_settings/search_item"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body: {"current": 1, "rowCount": -1, "searchPhrase": "", "sort": {}}
+      register: _api_vips
+      no_log: true
+      tags: [vips]
+
+    - name: "[vips] Current VIPs"
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.interface }} {{ item.subnet }} mode={{ item.mode }}
+          vhid={{ item.vhid }} advbase={{ item.advbase }}
+          "{{ item.description | default('') }}"
+      loop: "{{ _api_vips.json.rows | default([]) }}"
+      loop_control:
+        label: "vhid={{ item.vhid }} {{ item.subnet }}"
+      tags: [vips]
+
+    - name: "[vips] Desired VIPs (from vars)"
+      ansible.builtin.debug:
+        msg: |
+          WAN VIP: {{ vm_net.vip }}/{{ vm_net.netmask }} on {{ vm_net.custom_name }} vhid=1
+          {% for vlan in vm_net_trunk.vlans | selectattr('vip', 'ne', None) | list %}
+          VLAN {{ vlan.id }}: {{ vlan.vip }}/{{ vlan.mask }} on {{ vlan.interface_name }} vhid={{ loop.index + 1 }}
+          {% endfor %}
+      tags: [vips]
+
+    # -----------------------------------------------------------------------
+    # NAT (outbound)
+    # -----------------------------------------------------------------------
+    - name: "[nat] Fetch current outbound NAT rules from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/source_nat/search_rule"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body: {"current": 1, "rowCount": -1, "searchPhrase": "", "sort": {}}
+      register: _api_nat
+      no_log: true
+      tags: [nat]
+
+    - name: "[nat] Current outbound NAT rules"
+      ansible.builtin.debug:
+        msg: >-
+          [{{ item.sequence | default('?') }}]
+          src={{ item.source_net | default('any') }}
+          → {{ item.interface }} → target={{ item.target | default('') }}
+          "{{ item.description | default('') }}"
+      loop: "{{ _api_nat.json.rows | default([]) }}"
+      loop_control:
+        label: "{{ item.description | default(item.uuid) }}"
+      tags: [nat]
+
+    - name: "[nat] Desired outbound NAT rules (from vars)"
+      ansible.builtin.debug:
+        msg: |
+          WAN CARP VIP ({{ vm_net.vip }}) masquerades:
+          {% for vlan in vm_net_trunk.vlans | selectattr('vip', 'ne', None) | list %}
+          - {{ vlan.network }}/{{ vlan.mask }} ({{ vlan.interface_name }}) → wan → {{ vm_net.vip }}
+          {% endfor %}
+      tags: [nat]
+
+    # -----------------------------------------------------------------------
+    # HA SYNC
+    # -----------------------------------------------------------------------
+    - name: "[ha] Fetch current HA sync config from API"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/core/hasync/getConfiguration"
+        method: GET
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: _api_hasync
+      no_log: true
+      failed_when: false
+      tags: [ha]
+
+    - name: "[ha] Current HA sync config"
+      ansible.builtin.debug:
+        msg: >-
+          pfsync_interface={{ _api_hasync.json.hasync.pfsyncinterface | default('?') }}
+          peer={{ _api_hasync.json.hasync.pfsyncpeerip | default('?') }}
+          preempt={{ _api_hasync.json.hasync.disablepreempt | default('?') }}
+          syncitems={{ _api_hasync.json.hasync.syncitems | default('[]') }}
+      when: _api_hasync.status == 200
+      tags: [ha]
+
+    - name: "[ha] Desired HA sync config"
+      ansible.builtin.debug:
+        msg: |
+          pfsync_interface={{ opnsense_ha_interface }}
+          peer={{ opnsense_ha_peer_ip }}
+          preempt=true
+          syncitems=[] (pfsync state only)
+          is_master={{ vm_is_master }}
+      tags: [ha]
+
+# ---------------------------------------------------------------------------
+# Play 2: SSH-based read of classic (legacy) rules from config.xml
+# ---------------------------------------------------------------------------
+- name: OPNsense diff — classic rules (SSH)
+  hosts: routers
+  gather_facts: false
+  connection: ssh
+
+  tasks:
+    - name: "[classic_rules] Read classic rules section from config.xml"
+      ansible.builtin.command:
+        cmd: >-
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('/conf/config.xml')
+          root = tree.getroot()
+          rules = root.find('filter')
+          count = 0
+          if rules is not None:
+            for rule in rules.findall('rule'):
+              iface = rule.findtext('interface', '?')
+              action = rule.findtext('type', rule.findtext('action', '?'))
+              proto = rule.findtext('protocol', 'any')
+              descr = rule.findtext('descr', '')
+              src = rule.findtext('source/network', rule.findtext('source/address', 'any'))
+              dst = rule.findtext('destination/network', rule.findtext('destination/address', 'any'))
+              dport = rule.findtext('destination/port', '')
+              print(f'  {iface:12} {action:6} {proto:6} src={src:20} dst={dst:20} {dport:6} \"{descr}\"')
+              count += 1
+          print(f'Total: {count} classic rule(s) in <filter> section')
+          "
+      register: _classic_rules
+      changed_when: false
+      tags: [classic_rules]
+
+    - name: "[classic_rules] Classic (legacy) rules — must be removed via Migration assistant after Ansible apply"
+      ansible.builtin.debug:
+        msg: "{{ _classic_rules.stdout_lines }}"
+      tags: [classic_rules]

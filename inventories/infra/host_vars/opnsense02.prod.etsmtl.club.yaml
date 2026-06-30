@@ -1,4 +1,4 @@
-# OPNsense API credentials (os-telegraf plugin configuration)
+# OPNsense API credentials
 opnsense_api_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   66346332303134323064313733353432333530613332393263383132643232393862656461663932
@@ -21,3 +21,18 @@ opnsense_api_secret: !vault |
   39653437313764333437323630613064646434636234666231646332373633623838643566306363
   63633433313331376137636130353233663234636533633165636438336663333762616635396539
   3461
+
+# Node identity
+vm_is_master: false
+
+# Management IP — used as OPNsense API target (firewall: parameter)
+vm_net:
+  ip: "10.0.21.3"
+  vip: "142.137.247.101"
+  netmask: 24
+  custom_name: "wan"
+  gateway: "142.137.247.1"
+
+# HA sync interface addressing (opt15 / vtnet2, 10.255.254.252/30)
+opnsense_ha_device_ip: "10.255.254.254"
+opnsense_ha_peer_ip: "10.255.254.253"

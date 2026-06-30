@@ -25,6 +25,7 @@ VENV_BIN = $(VENV_DIR)/bin
 ANSIBLE_ROLES_REPO_URL = https://github.com/ClubCedille/AnsibleRoles.git
 ANSIBLE_ROLES_REPO_REF = main
 ANSIBLE_ROLES_REPO_DIR = .cache/AnsibleRoles
+ANSIBLE_ROLES_DEV_REF = feature/opnsense-rules-interfaces
 LOCAL_ROLES_DIR = .cache/roles
 
 # DRY_RUN=1 active le mode Ansible check+diff.
@@ -65,6 +66,26 @@ galaxy-install: venv
 		git -C "$(ANSIBLE_ROLES_REPO_DIR)" reset --hard FETCH_HEAD; \
 	else \
 		git clone --depth 1 --branch "$(ANSIBLE_ROLES_REPO_REF)" "$(ANSIBLE_ROLES_REPO_URL)" "$(ANSIBLE_ROLES_REPO_DIR)"; \
+	fi
+	@mkdir -p "$(LOCAL_ROLES_DIR)"
+	@find "$(ANSIBLE_ROLES_REPO_DIR)" -mindepth 3 -maxdepth 3 -type d -path '*/roles/*' | while read src; do \
+		collection_name=$$(basename $$(dirname $$(dirname "$$src"))); \
+		role_name=$$(basename "$$src"); \
+		dest="$(LOCAL_ROLES_DIR)/cedille.$$collection_name.$$role_name"; \
+		rm -rf "$$dest"; \
+		mkdir -p "$$dest"; \
+		cp -a "$$src"/. "$$dest"/; \
+		done
+	$(VENV_BIN)/ansible-galaxy collection install -r collections/requirements.yml --force
+
+.PHONY: galaxy-install-dev
+galaxy-install-dev: venv
+	@if [ -d "$(ANSIBLE_ROLES_REPO_DIR)/.git" ]; then \
+		git -C "$(ANSIBLE_ROLES_REPO_DIR)" fetch --depth 1 origin "$(ANSIBLE_ROLES_DEV_REF)"; \
+		git -C "$(ANSIBLE_ROLES_REPO_DIR)" checkout --force FETCH_HEAD; \
+		git -C "$(ANSIBLE_ROLES_REPO_DIR)" reset --hard FETCH_HEAD; \
+	else \
+		git clone --depth 1 --branch "$(ANSIBLE_ROLES_DEV_REF)" "$(ANSIBLE_ROLES_REPO_URL)" "$(ANSIBLE_ROLES_REPO_DIR)"; \
 	fi
 	@mkdir -p "$(LOCAL_ROLES_DIR)"
 	@find "$(ANSIBLE_ROLES_REPO_DIR)" -mindepth 3 -maxdepth 3 -type d -path '*/roles/*' | while read src; do \
