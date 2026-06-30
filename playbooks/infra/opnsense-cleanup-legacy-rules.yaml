@@ -1,0 +1,211 @@
+---
+# Removes all legacy firewall rules from the OPNsense CARP cluster.
+#
+# Targets:
+#   - 17 unnamed Automation/Filter rules (pre-Ansible GUI duplicates)
+#   - 1 named Automation/Filter rule "HASync + diag depuis subnet sync" (replaced by seq 600)
+#   - 18 classic rules in config.xml <filter> (legacy per-interface format)
+#
+# Prerequisites:
+#   opnsense-config.yaml must have been applied first — all 18 named Ansible
+#   rules must be present and active in Automation/Filter before running this.
+#
+# Safety:
+#   Phase 1 validates that all 18 Ansible rules are present before deleting anything.
+#   Phase 2 (SSH) backs up config.xml before modifying it.
+#
+# Usage:
+#   make infra/opnsense-cleanup-legacy-rules VAULT_PASSWORD_FILE=~/CEDILLE/.vault
+
+# ---------------------------------------------------------------------------
+# Phase 1 — Remove unnamed + old HA rule from Automation/Filter via API
+# ---------------------------------------------------------------------------
+
+- name: Remove legacy Automation/Filter rules via API
+  hosts: routers
+  gather_facts: false
+  connection: local
+  vars:
+    api_key: "{{ opnsense_api_key }}"
+    api_secret: "{{ opnsense_api_secret }}"
+    _ansible_rule_descriptions:
+      - "WAN | Allow WireGuard inbound (UDP 51820)"
+      - "WAN | Allow OpenVPN inbound (UDP 1194)"
+      - "WAN | Allow OpenVPN outbound (UDP 1194)"
+      - "WAN | Allow ICMP inbound"
+      - "WAN | Allow ICMP outbound"
+      - "LAN | Allow LAN to any (IPv4)"
+      - "LAN | Allow LAN to any (IPv6)"
+      - "OpenVPN | Allow inbound"
+      - "OpenVPN | Allow outbound"
+      - "k8s03 (opt3) | Allow all inbound"
+      - "services (opt5) | Allow all inbound"
+      - "k8s09 (opt10) | Allow all inbound"
+      - "k8s10 (opt13) | Allow all inbound"
+      - "breakingglass WG (opt11) | Allow inbound"
+      - "breakingglass WG (opt11) | Allow outbound"
+      - "WireGuard group | Allow inbound"
+      - "WireGuard group | Allow outbound"
+      - "HA | Allow sync traffic from peer (pfsync + XMLRPC)"
+  tasks:
+    - name: "[guard] Fetch all Automation/Filter rules"
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/searchRule?current=1&rowCount=500"
+        method: GET
+        user: "{{ api_key }}"
+        password: "{{ api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: _all_rules
+      no_log: true
+
+    - name: "[guard] Assert all 18 Ansible rules are present before cleanup"
+      ansible.builtin.assert:
+        that:
+          - item in (_all_rules.json.rows | map(attribute='description') | list)
+        fail_msg: >-
+          Rule '{{ item }}' not found in Automation/Filter.
+          Run playbooks/infra/opnsense-config.yaml first!
+        quiet: true
+      loop: "{{ _ansible_rule_descriptions }}"
+
+    - name: Compute UUIDs of rules to delete
+      ansible.builtin.set_fact:
+        _rules_to_delete: >-
+          {{ (_all_rules.json.rows
+              | selectattr('description', 'equalto', '')
+              | list)
+             + (_all_rules.json.rows
+                | selectattr('description', 'equalto', 'HASync + diag depuis subnet sync')
+                | list) }}
+
+    - name: Show rules queued for deletion from Automation/Filter
+      ansible.builtin.debug:
+        msg: >-
+          {{ _rules_to_delete | length }} rule(s) to delete:
+          {{ _rules_to_delete | map(attribute='interface') | zip(
+               _rules_to_delete | map(attribute='action'),
+               _rules_to_delete | map(attribute='description')) | list }}
+
+    - name: Delete rules from Automation/Filter
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/delRule/{{ item.uuid }}"
+        method: POST
+        user: "{{ api_key }}"
+        password: "{{ api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      loop: "{{ _rules_to_delete }}"
+      loop_control:
+        label: "{{ item.interface }} {{ item.action }} \"{{ item.description }}\""
+      no_log: true
+
+    - name: Apply Automation/Filter changes
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/apply"
+        method: POST
+        user: "{{ api_key }}"
+        password: "{{ api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body: {}
+      no_log: true
+
+    - name: Verify remaining Automation/Filter rule count
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/searchRule?current=1&rowCount=500"
+        method: GET
+        user: "{{ api_key }}"
+        password: "{{ api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: _rules_after
+      no_log: true
+
+    - name: Show Automation/Filter rule count after cleanup
+      ansible.builtin.debug:
+        msg: >-
+          Automation/Filter rules remaining: {{ _rules_after.json.rows | length }}
+          (expected ~48 = 30 system + 18 Ansible)
+
+# ---------------------------------------------------------------------------
+# Phase 2 — Remove classic rules from config.xml via SSH
+# ---------------------------------------------------------------------------
+
+- name: Remove classic rules from config.xml via SSH
+  hosts: routers
+  gather_facts: true
+  connection: ssh
+  tasks:
+    - name: Backup config.xml before modification
+      ansible.builtin.command:
+        cmd: >-
+          cp /conf/config.xml
+          /conf/backup/config-pre-classic-rule-cleanup-{{ ansible_date_time.epoch }}.xml
+      changed_when: true
+
+    - name: Count classic rules before removal
+      ansible.builtin.shell:
+        cmd: >-
+          python3 -c
+          "import xml.etree.ElementTree as ET;
+          t=ET.parse('/conf/config.xml');
+          print(len(t.getroot().findall('filter/rule')))"
+      register: _count_before
+      changed_when: false
+
+    - name: Show classic rule count before
+      ansible.builtin.debug:
+        msg: "Classic <filter> rules before removal: {{ _count_before.stdout }}"
+
+    - name: Remove all <rule> elements from <filter> section
+      ansible.builtin.shell: |
+        python3 << 'PYEOF'
+        import xml.etree.ElementTree as ET
+        import sys
+
+        tree = ET.parse('/conf/config.xml')
+        root = tree.getroot()
+
+        filter_elem = root.find('filter')
+        if filter_elem is None:
+            print("No <filter> section found — nothing to remove")
+            sys.exit(0)
+
+        rules = filter_elem.findall('rule')
+        for rule in rules:
+            filter_elem.remove(rule)
+
+        # Write back preserving encoding; OPNsense accepts config without XML declaration
+        tree.write('/conf/config.xml', encoding='unicode')
+        print(f"Removed {len(rules)} classic rule(s)")
+        PYEOF
+      register: _remove_result
+      changed_when: "'Removed' in _remove_result.stdout"
+
+    - name: Show removal result
+      ansible.builtin.debug:
+        msg: "{{ _remove_result.stdout }}"
+
+    - name: Reload firewall filter
+      ansible.builtin.command: configctl filter reload
+      changed_when: true
+
+    - name: Verify classic rules removed
+      ansible.builtin.shell:
+        cmd: >-
+          python3 -c
+          "import xml.etree.ElementTree as ET;
+          t=ET.parse('/conf/config.xml');
+          print(len(t.getroot().findall('filter/rule')))"
+      register: _count_after
+      changed_when: false
+
+    - name: Assert zero classic rules remain
+      ansible.builtin.assert:
+        that:
+          - _count_after.stdout | int == 0
+        fail_msg: "Still {{ _count_after.stdout }} classic rule(s) in config.xml — check manually"
+        success_msg: "All classic rules removed from config.xml"

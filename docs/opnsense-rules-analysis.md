@@ -17,7 +17,7 @@ snapshot de l'état avant migration Ansible (relevé 2026-06-30). Les 18 règles
 
 ---
 
-## Nouveau format — `/api/firewall/filter/` (48 règles)
+## Nouveau format — `/api/firewall/filter/` (48 règles, état final post-nettoyage)
 
 ### Catégorie A — Règles système OPNSense (30 règles)
 
@@ -52,10 +52,10 @@ Gérées automatiquement par OPNSense. **Ne pas toucher.**
 | `k8s10` | pass | in | udp | — | (self) | allow access to DHCP server |
 | `k8s10` | pass | out | udp | (self) | — | allow access to DHCP server |
 
-### Catégorie B — Règles admin sans description (17 règles)
+### Catégorie B — Règles admin sans description — ~~17 règles~~ **supprimées le 2026-06-30**
 
-Créées via la GUI, sans description. Ce sont les doublons en nouveau format des règles
-classiques (voir section suivante). **À supprimer manuellement après migration Ansible.**
+Créées via la GUI, sans description. Doublons en nouveau format des règles classiques.
+**Supprimées via `playbooks/infra/opnsense-cleanup-legacy-rules.yaml`.**
 
 | Interface | Action | Dir | Proto | Source | Destination | Port | Identité fonctionnelle |
 |-----------|--------|-----|-------|--------|-------------|------|------------------------|
@@ -77,19 +77,19 @@ classiques (voir section suivante). **À supprimer manuellement après migration
 | `breakingglass` | pass | out | — | any | any | — | breakingglass WG out |
 | `k8s10` | pass | in | — | any | any | — | k8s10 in |
 
-### Catégorie C — Règles admin nommées (1 règle)
+### Catégorie C — Règles admin nommées — ~~1 règle~~ **supprimée le 2026-06-30**
 
 | Interface | Action | Dir | Source | Description |
 |-----------|--------|-----|--------|-------------|
-| `CARP-sync` (opt15) | pass | in | 10.255.254.252/30 | **HASync + diag depuis subnet sync** |
+| `CARP-sync` (opt15) | pass | in | 10.255.254.252/30 | ~~HASync + diag depuis subnet sync~~ (remplacée par séq 600) |
 
 ---
 
-## Format classique — `config.xml <filter>` (18 règles)
+## Format classique — `config.xml <filter>` — ~~18 règles~~ **supprimées le 2026-06-30**
 
-Règles créées dans l'ancienne UI (per-interface). Chacune a un équivalent exact dans la
-Catégorie B/C ci-dessus — OPNSense les expose dans les deux vues simultanément.
-OPNSense évalue les règles Automation (nouveau format) **avant** les règles classiques.
+Règles créées dans l'ancienne UI (per-interface). Chacune avait un équivalent dans la
+Catégorie B/C ci-dessus. **Supprimées via SSH + Python dans `opnsense-cleanup-legacy-rules.yaml`.**
+Le `<filter>` de `config.xml` est maintenant vide — seules les règles Automation/Filter s'appliquent.
 
 ```
 wan      pass  tcp/udp  any → (self):51820           ""  ← WireGuard in
@@ -169,11 +169,14 @@ Le rôle utilise `match_fields: ["description"]`. Les règles sans description n
 | NAT sortant | ❌ skippé | `opnsense_manage_nat: false` — NAT classique conservé tel quel |
 | OpenVPN | ❌ skippé | `opnsense_openvpn: []` — non configuré |
 
-### Nettoyage manuel restant
+### Nettoyage — **complété le 2026-06-30**
 
-1. **Catégorie B (17 règles sans description)** : supprimer via `Firewall → Automation → Filter`
-2. **Ancienne règle HA** (`HASync + diag depuis subnet sync`) : remplacée par séq 600, à supprimer
-3. **18 règles classiques** : migrer ou supprimer via `Firewall → Rules → Migration Assistant`
+- ✅ Catégorie B (17 règles sans description) — supprimées via API
+- ✅ Ancienne règle HA (`HASync + diag depuis subnet sync`) — supprimée via API
+- ✅ 18 règles classiques `config.xml <filter>` — supprimées via SSH + Python
+
+**Playbook :** `playbooks/infra/opnsense-cleanup-legacy-rules.yaml`  
+**État final :** 48 règles Automation/Filter (30 système + 18 Ansible), 0 règles classiques
 
 ### Questions ouvertes (futures)
 
