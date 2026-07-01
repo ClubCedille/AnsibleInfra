@@ -1,0 +1,30 @@
+---
+- name: Provision Omni VM on Proxmox
+  hosts: omni
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Install Docker and deploy Omni
+  hosts: omni
+  gather_facts: true
+  become: true
+  vars:
+    # DMZ host — internal registry mirror (10.150.0.100) is not reachable
+    # Role uses both prefixed (defaults) and un-prefixed (when: condition) variants
+    install_docker_registry_mirror_enabled: false
+    docker_registry_mirror_enabled: false
+    # Point cedille.docker.install at our compose template so it handles
+    # both the initial `docker compose up` and subsequent updates
+    install_docker_compose_source_type: template
+    install_docker_compose_template_src: "{{ playbook_dir + '/../../roles/omni/templates/docker-compose.yml.j2' }}"
+    install_docker_compose_target_dir: "{{ omni_deploy_dir }}"
+    install_docker_compose_filename: docker-compose.yml
+    install_docker_compose_owner: root
+  roles:
+    - omni                   # creates /opt/omni, omni.asc, certs/, Caddyfile
+    - cedille.docker.install # installs Docker, writes compose, runs `docker compose up`

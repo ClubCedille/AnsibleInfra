@@ -1,0 +1,51 @@
+---
+omni_version: "v1.9.0"
+omni_name: omni
+omni_fqdn: omni.etsmtl.club
+omni_account_id: "b8c13c02-96cd-406e-8cc9-b200fc51b590"
+
+omni_deploy_dir: /opt/omni
+
+# Public IP advertised to WireGuard peers (Talos nodes)
+omni_public_ip: "142.137.247.99"
+
+# External ports (published on the host)
+omni_wireguard_port: 50180
+
+# Internal ports — Caddy proxies external → these
+omni_internal_https_port: 8443      # Omni UI/API (TLS, Caddy → https://omni:8443)
+omni_internal_siderolink_port: 9090 # SideroLink / Machine API  (external 8090)
+omni_internal_eventsink_port: 9091  # Event sink                (external 8091)
+omni_internal_k8sproxy_port: 9100   # Kubernetes API proxy      (external 8100)
+
+# Authentication — Authentik OIDC
+# Redirect URI to register in Authentik: https://{{ omni_fqdn }}/oidc/consume
+omni_oidc_provider_url: ""          # e.g. https://authentik.etsmtl.club/application/o/omni/
+omni_oidc_client_id: ""
+omni_oidc_client_secret: ""
+
+# Breaking-glass admin — email(s) granted Omni admin on first boot
+omni_initial_users: []              # e.g. ["admin@etsmtl.club"]
+
+# BSL EULA acceptance (required)
+omni_eula_name: ""
+omni_eula_email: ""
+
+# omni.asc — GPG key (RSA4096, no passphrase) for etcd encryption
+# Generate:
+#   gpg --batch --passphrase '' --quick-generate-key \
+#     "Omni (Used for etcd data encryption) omni@internal.local" rsa4096 cert never
+#   FINGERPRINT=$(gpg --with-colons --list-keys "omni@internal.local" | awk -F: '$1=="fpr"{print $10;exit}')
+#   gpg --batch --passphrase '' --quick-add-key ${FINGERPRINT} rsa4096 encr never
+#   gpg --export-secret-key --armor omni@internal.local | ansible-vault encrypt_string --stdin-name omni_wireguard_private_key
+omni_wireguard_private_key: ""
+
+# OIDC scopes — groups is required for AccessPolicy group-based role mapping
+omni_oidc_scopes:
+  - openid
+  - profile
+  - email
+  - groups
+
+# Caddy — Let's Encrypt contact
+caddy_acme_email: "infra@etsmtl.club"

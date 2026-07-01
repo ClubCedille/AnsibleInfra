@@ -1,0 +1,63 @@
+---
+- name: Create Omni deploy directory
+  ansible.builtin.file:
+    path: "{{ omni_deploy_dir }}/certs"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Write omni.asc (GPG key for etcd encryption)
+  ansible.builtin.copy:
+    dest: "{{ omni_deploy_dir }}/omni.asc"
+    content: "{{ omni_wireguard_private_key }}\n"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+# Omni requires --cert/--key even when behind a reverse proxy.
+# We generate a self-signed cert for internal use only; external TLS is handled by Caddy.
+- name: Generate internal TLS private key
+  community.crypto.openssl_privatekey:
+    path: "{{ omni_deploy_dir }}/certs/server-key.pem"
+    type: RSA
+    size: 4096
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart Omni stack
+
+- name: Generate internal TLS CSR
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ omni_deploy_dir }}/certs/server-key.pem"
+    common_name: "{{ omni_fqdn }}"
+    subject_alt_name:
+      - "DNS:{{ omni_fqdn }}"
+      - "DNS:omni"
+      - "IP:{{ omni_public_ip }}"
+  register: omni_csr
+  changed_when: false
+
+- name: Issue self-signed certificate (10 years)
+  community.crypto.x509_certificate:
+    path: "{{ omni_deploy_dir }}/certs/server.pem"
+    csr_content: "{{ omni_csr.csr }}"
+    privatekey_path: "{{ omni_deploy_dir }}/certs/server-key.pem"
+    provider: selfsigned
+    selfsigned_not_after: "+3650d"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Omni stack
+
+- name: Template Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ omni_deploy_dir }}/Caddyfile"
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart Omni stack
+
+# Role assignment in Omni v1.9 is per-user via: omnictl user set-role --role <Admin|Operator|Reader> <email>
