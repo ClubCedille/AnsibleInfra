@@ -52,13 +52,9 @@ services:
       - --siderolink-api-advertised-url=https://{{ omni_fqdn }}:8090/
       - --siderolink-wireguard-advertised-addr={{ omni_public_ip }}:{{ omni_wireguard_port }}
       - --advertised-kubernetes-proxy-url=https://{{ omni_fqdn }}:8100/
-      # Authentication — Authentik OIDC
-      - --auth-oidc-enabled
-      - --auth-oidc-provider-url={{ omni_oidc_provider_url }}
-      - --auth-oidc-client-id={{ omni_oidc_client_id }}
-      - --auth-oidc-client-secret={{ omni_oidc_client_secret }}
-      - --auth-oidc-scopes={{ omni_oidc_scopes | join(',') }}
-      - --auth-oidc-allow-unverified-email
+      # Authentication — Authentik SAML
+      - --auth-saml-enabled
+      - --auth-saml-url={{ omni_saml_url }}
       # Storage
       - --sqlite-storage-path=/var/lib/omni/omni.db
       # Bootstrap

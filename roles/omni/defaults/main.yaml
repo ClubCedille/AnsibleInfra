@@ -18,11 +18,19 @@ omni_internal_siderolink_port: 9090 # SideroLink / Machine API  (external 8090)
 omni_internal_eventsink_port: 9091  # Event sink                (external 8091)
 omni_internal_k8sproxy_port: 9100   # Kubernetes API proxy      (external 8100)
 
-# Authentication — Authentik OIDC
-# Redirect URI to register in Authentik: https://{{ omni_fqdn }}/oidc/consume
-omni_oidc_provider_url: ""          # e.g. https://authentik.etsmtl.club/application/o/omni/
-omni_oidc_client_id: ""
-omni_oidc_client_secret: ""
+# Authentication — Authentik SAML
+# In Authentik: create a SAML provider with:
+#   ACS URL      : https://{{ omni_fqdn }}/saml/acs
+#   Audience     : https://{{ omni_fqdn }}/saml/acs
+#   Redirect URI : https://{{ omni_fqdn }}/saml/acs
+# Then set omni_saml_url to the Authentik metadata URL for that provider.
+omni_saml_url: ""  # e.g. https://auth.etsmtl.club/application/saml/omni/metadata/
+
+# SAMLLabelRules — applied via omnictl; assigns Omni roles on first SAML login.
+# Attribute labels emitted by Authentik use the key format: saml.omni.sidero.dev/<attribute>
+# Only applies on first login; existing users must be updated manually via omnictl user set-role.
+# Each entry: {id: str, match_labels: {<label-key>: <value>}, role: Admin|Operator|Reader}
+omni_saml_label_rules: []
 
 # Breaking-glass admin — email(s) granted Omni admin on first boot
 omni_initial_users: []              # e.g. ["admin@etsmtl.club"]
@@ -39,13 +47,6 @@ omni_eula_email: ""
 #   gpg --batch --passphrase '' --quick-add-key ${FINGERPRINT} rsa4096 encr never
 #   gpg --export-secret-key --armor omni@internal.local | ansible-vault encrypt_string --stdin-name omni_wireguard_private_key
 omni_wireguard_private_key: ""
-
-# OIDC scopes — groups is required for AccessPolicy group-based role mapping
-omni_oidc_scopes:
-  - openid
-  - profile
-  - email
-  - groups
 
 # Caddy — Let's Encrypt contact
 caddy_acme_email: "infra@etsmtl.club"

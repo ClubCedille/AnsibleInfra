@@ -60,4 +60,12 @@
     mode: "0640"
   notify: Restart Omni stack
 
-# Role assignment in Omni v1.9 is per-user via: omnictl user set-role --role <Admin|Operator|Reader> <email>
+- name: Template SAMLLabelRules manifest
+  ansible.builtin.template:
+    src: saml-label-rules.yaml.j2
+    dest: "{{ omni_deploy_dir }}/saml-label-rules.yaml"
+    owner: root
+    group: root
+    mode: "0640"
+  when: omni_saml_label_rules | length > 0
+  notify: Apply SAMLLabelRules

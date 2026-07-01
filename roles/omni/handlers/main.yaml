@@ -4,3 +4,10 @@
     project_src: "{{ omni_deploy_dir }}"
     state: present
     recreate: always
+
+- name: Apply SAMLLabelRules
+  ansible.builtin.command:
+    cmd: omnictl apply -f {{ omni_deploy_dir }}/saml-label-rules.yaml
+  environment:
+    OMNI_ENDPOINT: "https://{{ omni_fqdn }}"
+  changed_when: true
