@@ -55,7 +55,7 @@ vm_proxmox_api:
 #   ACS URL  : https://omni.etsmtl.club/saml/acs
 #   Audience : https://omni.etsmtl.club/saml/acs
 #   Send the "groups" attribute mapped to the user's Authentik groups.
-omni_saml_url: "https://auth.etsmtl.club/application/saml/omni/metadata/"
+omni_saml_url: "https://auth.etsmtl.club/application/saml/omni-saml/metadata/"
 
 # SAMLLabelRules — applied via omnictl on first user login.
 # Label key format: saml.omni.sidero.dev/<saml-attribute-name>
