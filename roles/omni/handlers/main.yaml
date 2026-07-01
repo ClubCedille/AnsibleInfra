@@ -5,9 +5,21 @@
     state: present
     recreate: always
 
+- name: Wait for Omni HTTPS to be ready
+  ansible.builtin.wait_for:
+    host: "{{ omni_fqdn }}"
+    port: 443
+    timeout: 120
+
 - name: Apply SAMLLabelRules
-  ansible.builtin.command:
-    cmd: omnictl apply -f {{ omni_deploy_dir }}/saml-label-rules.yaml
-  environment:
-    OMNI_ENDPOINT: "https://{{ omni_fqdn }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -a
+      . {{ omni_deploy_dir }}/.sync-env
+      set +a
+      omnictl apply -f {{ omni_deploy_dir }}/saml-label-rules.yaml
+  retries: 5
+  delay: 10
+  register: saml_apply_result
+  until: saml_apply_result.rc == 0
   changed_when: true
