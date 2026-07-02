@@ -10,11 +10,11 @@
     - name: Enable Ceph MGR Prometheus module
       ansible.builtin.command:
         cmd: ceph mgr module enable prometheus
-      run_once: true
+      when: inventory_hostname == groups['pve'][0]
       changed_when: false
 
     - name: Ensure Ceph MGR Prometheus module listens on all interfaces
       ansible.builtin.command:
         cmd: "ceph config set mgr mgr/prometheus/server_addr ::"
-      run_once: true
+      when: inventory_hostname == groups['pve'][0]
       changed_when: false
