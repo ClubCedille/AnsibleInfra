@@ -5,13 +5,12 @@
 ---
 metadata:
   namespace: default
-  type: SAMLLabelRule
+  type: SAMLLabelRules.omni.sidero.dev
   id: {{ rule.id }}
 spec:
-  match_labels:
-{% for key, value in rule.match_labels.items() %}
-    {{ key }}: "{{ value }}"
+  matchlabels:
+{% for label in rule.match_labels %}
+    - "{{ label }}"
 {% endfor %}
-  assign_role_on_registration: "{{ rule.role }}"
-  description: "{{ rule.description | default(rule.id) }}"
+  assignrole: "{{ rule.role }}"
 {% endfor %}

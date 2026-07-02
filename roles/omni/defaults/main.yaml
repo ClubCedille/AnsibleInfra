@@ -27,13 +27,21 @@ omni_internal_k8sproxy_port: 9100   # Kubernetes API proxy      (external 8100)
 omni_saml_url: ""  # e.g. https://auth.etsmtl.club/application/saml/omni/metadata/
 
 # SAMLLabelRules — applied via omnictl; assigns Omni roles on first SAML login.
-# Attribute labels emitted by Authentik use the key format: saml.omni.sidero.dev/<attribute>
-# Only applies on first login; existing users must be updated manually via omnictl user set-role.
-# Each entry: {id: str, match_labels: {<label-key>: <value>}, role: Admin|Operator|Reader}
+# match_labels items must be full COSI label keys: saml.omni.sidero.dev/<attribute>/<value>
+# Each entry: {id: str, match_labels: ["saml.omni.sidero.dev/groups/my-group"], role: Admin|Operator|Reader}
 omni_saml_label_rules: []
+
+# Mapping of SAML assertion attribute names → Omni identity label key suffixes.
+# e.g. {groups: groups} causes a SAML attr "groups=omni-admin" to produce label
+# "saml.omni.sidero.dev/groups/omni-admin" on the Identity resource.
+# Passed as --auth-saml-label-rules JSON to Omni on startup.
+omni_saml_attribute_mappings: {}
 
 # Breaking-glass admin — email(s) granted Omni admin on first boot
 omni_initial_users: []              # e.g. ["admin@etsmtl.club"]
+
+# Service account key for omnictl automation (ansible-vault encrypted)
+omni_service_account_key: ""
 
 # BSL EULA acceptance (required)
 omni_eula_name: ""

@@ -55,6 +55,9 @@ services:
       # Authentication — Authentik SAML
       - --auth-saml-enabled
       - --auth-saml-url={{ omni_saml_url }}
+{% if omni_saml_label_rules | length > 0 %}
+      - '--auth-saml-label-rules={{ omni_saml_attribute_mappings | tojson }}'
+{% endif %}
       # Storage
       - --sqlite-storage-path=/var/lib/omni/omni.db
       # Bootstrap
