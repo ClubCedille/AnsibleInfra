@@ -11,15 +11,3 @@
     port: 443
     timeout: 120
 
-- name: Apply SAMLLabelRules
-  ansible.builtin.shell:
-    cmd: omnictl apply -f {{ omni_deploy_dir }}/saml-label-rules.yaml
-  environment:
-    OMNI_ENDPOINT: "https://{{ omni_fqdn }}:443/"
-    OMNI_SERVICE_ACCOUNT_KEY: "{{ omni_service_account_key }}"
-  retries: 5
-  delay: 10
-  register: saml_apply_result
-  until: saml_apply_result.rc == 0
-  changed_when: true
-  no_log: true

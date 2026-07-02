@@ -26,9 +26,10 @@ omni_internal_k8sproxy_port: 9100   # Kubernetes API proxy      (external 8100)
 # Then set omni_saml_url to the Authentik metadata URL for that provider.
 omni_saml_url: ""  # e.g. https://auth.etsmtl.club/application/saml/omni/metadata/
 
-# SAMLLabelRules — applied via omnictl; assigns Omni roles on first SAML login.
+# SAMLLabelRules — applied via omnictl on every Ansible run (idempotent).
 # match_labels items must be full COSI label keys: saml.omni.sidero.dev/<attribute>/<value>
-# Each entry: {id: str, match_labels: ["saml.omni.sidero.dev/groups/my-group"], role: Admin|Operator|Reader}
+# Each entry: {id: str, match_labels: [...], role: Admin|Operator|Reader, update_on_each_login: true}
+# update_on_each_login defaults to true — SAML groups are the source of truth for roles.
 omni_saml_label_rules: []
 
 # Mapping of SAML assertion attribute names → Omni identity label key suffixes.

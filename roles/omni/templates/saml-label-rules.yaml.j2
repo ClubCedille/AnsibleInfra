@@ -13,4 +13,5 @@ spec:
     - "{{ label }}"
 {% endfor %}
   assignrole: "{{ rule.role }}"
+  updateoneachlogin: {{ rule.update_on_each_login | default(true) | lower }}
 {% endfor %}
