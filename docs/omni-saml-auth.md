@@ -58,6 +58,26 @@ ansible -i inventories/infra/hosts.ini omni01.prod.etsmtl.club \
   --ask-vault-pass
 ```
 
+### Durée de vie et renouvellement
+
+Omni impose un maximum de **1 an** pour les clés de service account (hardcodé, aucun flag
+serveur pour modifier cette limite). La clé actuelle expire le **2 juillet 2027**.
+
+Pour renouveler (à faire avant l'expiration) :
+
+```bash
+# 1. Générer une nouvelle clé
+omnictl serviceaccount renew omni-ansible --ttl 8760h
+
+# 2. Chiffrer la nouvelle valeur OMNI_SERVICE_ACCOUNT_KEY dans le vault
+ansible-vault encrypt_string --stdin-name omni_service_account_key
+
+# 3. Remplacer la valeur dans host_vars/omni01.prod.etsmtl.club.yaml et committer
+```
+
+> `renew` ajoute une nouvelle clé sans révoquer l'ancienne — les deux coexistent
+> jusqu'à l'expiration. Il n'existe pas de commande pour révoquer une clé individuelle.
+
 ## Attribution des rôles SAML
 
 Les rôles Omni sont assignés automatiquement selon les groupes Authentik de l'utilisateur.
