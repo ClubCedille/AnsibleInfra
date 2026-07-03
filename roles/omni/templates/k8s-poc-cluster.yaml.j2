@@ -1,0 +1,56 @@
+# Managed by Ansible — do not edit manually
+# Generated and applied by: ansible-playbook playbooks/omni/k8s-poc-cluster.yaml -i inventories/infra/
+---
+metadata:
+  namespace: default
+  type: Clusters.omni.sidero.dev
+  id: k8s-poc
+spec:
+  talosversion: "{{ omni_k8s_poc_talos_version | default('1.13.5') }}"
+  kubernetesversion: "{{ omni_k8s_poc_kubernetes_version | default('1.33.13') }}"
+  features:
+    enableworkloadproxy: false
+---
+metadata:
+  namespace: default
+  type: MachineSets.omni.sidero.dev
+  id: k8s-poc-control-planes
+  labels:
+    omni.sidero.dev/cluster: k8s-poc
+    omni.sidero.dev/role-controlplane: ""
+spec:
+  updatestrategy: 1
+---
+metadata:
+  namespace: default
+  type: MachineSets.omni.sidero.dev
+  id: k8s-poc-workers
+  labels:
+    omni.sidero.dev/cluster: k8s-poc
+    omni.sidero.dev/role-worker: ""
+spec:
+  updatestrategy: 1
+{% for uuid in omni_k8s_poc_cp_uuids %}
+---
+metadata:
+  namespace: default
+  type: MachineSetNodes.omni.sidero.dev
+  id: {{ uuid }}
+  labels:
+    omni.sidero.dev/cluster: k8s-poc
+    omni.sidero.dev/machine-set: k8s-poc-control-planes
+    omni.sidero.dev/role-controlplane: ""
+spec: {}
+{% endfor %}
+{% for uuid in omni_k8s_poc_worker_uuids %}
+---
+metadata:
+  namespace: default
+  type: MachineSetNodes.omni.sidero.dev
+  id: {{ uuid }}
+  labels:
+    omni.sidero.dev/cluster: k8s-poc
+    omni.sidero.dev/machine-set: k8s-poc-workers
+    omni.sidero.dev/role-worker: ""
+spec: {}
+{% endfor %}
