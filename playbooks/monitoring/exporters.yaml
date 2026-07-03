@@ -1,4 +1,9 @@
 ---
+# Déploie blackbox_exporter (probes HTTP/ICMP/TCP) et snmp_exporter sur le host monitoring (event SC).
+# Complément de monitoring/core.yaml — à exécuter après la stack core.
+# Hôtes : monitoring_core
+# Usage : make monitoring/exporters
+
 - name: Deploy network and probe exporters on monitoring host
   hosts: monitoring_core
   gather_facts: true

@@ -1,6 +1,7 @@
 ---
 collections:
   - name: community.proxmox
+    version: ">=2.0.0"
   - name: oxlorg.opnsense
     version: ">=25.7.8"
   - name: .cache/AnsibleRoles/cisco-3850

@@ -1,4 +1,11 @@
 ---
+# Provisionne la VM de monitoring (infra permanente) et déploie la stack complète :
+# Loki + Alertmanager + Prometheus + Grafana + blackbox + snmp + pve-exporter + ipmi-exporter.
+# Config Prometheus via templates/prometheus_infra.yml.j2 (distinct de la config SC).
+# Pour l'event SC, utiliser monitoring/core.yaml + monitoring/exporters.yaml.
+# Hôtes : monitoring_core
+# Usage : make monitoring/infra-core
+
 - name: Provision monitoring VM on Proxmox
   hosts: monitoring_core
   gather_facts: false

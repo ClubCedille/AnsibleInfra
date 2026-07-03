@@ -1,4 +1,12 @@
 ---
+# Télécharge les images cloud sur tous les hôtes PVE vers /var/lib/vz/template/iso/ :
+#   - Ubuntu 24.04 (Noble) cloud image
+#   - Alpine 3.23 (BIOS + metal)
+#   - Talos 1.13.5 (UEFI schéma ef60de8a + BIOS schéma 070c45b1, nocloud)
+# Prérequis pour la création de VMs Talos (k8s-poc) et Ubuntu (netservices).
+# Hôtes : pve
+# Usage : make proxmox/pull_disk
+
 - name: Pull Ubuntu cloud image for Proxmox
   hosts: pve
   gather_facts: false

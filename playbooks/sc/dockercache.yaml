@@ -1,4 +1,9 @@
 ---
+# Provision + déploie un cache Docker Registry (proxy pull-through) pour les VMs de challenges.
+# Réduit la charge sur Docker Hub/ghcr.io depuis le réseau event.
+# Hôtes : dockercache
+# Usage : make sc/dockercache
+
 - name: Provision DockerCache VMs on Proxmox
   hosts: dockercache
   gather_facts: false

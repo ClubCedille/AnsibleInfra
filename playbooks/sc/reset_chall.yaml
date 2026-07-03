@@ -1,4 +1,9 @@
 ---
+# Remet à zéro un challenge par-équipe : docker compose down (volumes inclus) puis up.
+# Efface toute la progression de l'équipe sur ce challenge. Utiliser --limit pour cibler une équipe.
+# Hôtes : chall
+# Usage : make sc/reset_chall LIMIT=<equipe>
+
 - name: Reset a per-team challenge instance (docker compose down/up, volumes inclus)
   hosts: chall
   gather_facts: false

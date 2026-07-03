@@ -1,4 +1,9 @@
 ---
+# Provisionne les VMs et déploie BIND9 (autoritative + récursif) sur netservices_dns.
+# Rend le fichier de zone event.lanets.ca depuis templates/event.lanets.ca.zone.j2.
+# Hôtes : netservices_dns
+# Usage : make network/dns
+
 - name: Provision DNS VMs on Proxmox
   hosts: netservices_dns
   gather_facts: false

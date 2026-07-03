@@ -1,4 +1,9 @@
 ---
+# Met à jour un challenge par-équipe : pull des nouvelles images, down (volumes inclus), up.
+# Utiliser --limit pour cibler un challenge ou une équipe spécifique.
+# Hôtes : chall
+# Usage : make sc/update_chall LIMIT=<challenge>
+
 - name: Update a per-team challenge instance (docker compose pull + down/up, volumes inclus)
   hosts: chall
   gather_facts: false

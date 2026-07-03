@@ -1,4 +1,9 @@
 ---
+# Provisionne les VMs et déploie Kea DHCP4 sur netservices_dhcp (infra permanente).
+# Valide la config Kea après déploiement.
+# Hôtes : netservices_dhcp
+# Usage : make network/dhcp
+
 - name: Provision DHCP VMs on Proxmox
   hosts: netservices_dhcp
   gather_facts: false
@@ -9,15 +14,7 @@
   roles:
     - cedille.proxmox.vm
 
-- name: Wait for SSH on DHCP VMs
-  hosts: netservices_dhcp
-  gather_facts: false
-  tasks:
-    - name: Wait for SSH to be available
-      ansible.builtin.wait_for_connection:
-        timeout: 120
-
-- name: Deploy DHCP
+- name: Deploy netservices DHCP
   hosts: netservices_dhcp
   gather_facts: true
   become: true

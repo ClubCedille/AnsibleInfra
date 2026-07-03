@@ -1,4 +1,6 @@
 ---
+# Démarre le serveur CS2 (LanETS) via le rôle lanets.cs2.start_server.
+# Hôtes : cs2
 
 - name: Starting cs2 server
   hosts: cs2

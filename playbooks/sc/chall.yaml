@@ -1,4 +1,10 @@
 ---
+# Provision + déploie les challenges par-équipe (groupe `chall`) : VM Proxmox → Docker Compose
+# + node_exporter + docker_state_exporter. Peut cibler 600-700+ VMs simultanément.
+# L'archive node_exporter est téléchargée une seule fois via le controller (anti-rate-limit GitHub).
+# Hôtes : chall
+# Usage : make sc/chall [LIMIT=<challenge>]
+
 - name: Provision Challenge VMs on Proxmox
   hosts: chall
   gather_facts: false

@@ -1,4 +1,8 @@
 ---
+# Déploie Grafana Alloy (log shipping vers Loki) sur les hôtes netservices de l'event SC.
+# Hôtes : netservices_alloy
+# Usage : make monitoring/alloy
+
 - name: Deploy Alloy log shipping on netservices hosts
   hosts: netservices_alloy
   gather_facts: true

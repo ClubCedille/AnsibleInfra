@@ -1,4 +1,9 @@
 ---
+# Provision + déploie BIND9 (zones .ctf et .camp) pour l'event CTF.
+# Charge les flags depuis roles/kea/vars/flags.yml (flag #9 → TXT record sur secret.ctf).
+# Hôtes : netservices_dns (inventaire SC)
+# Usage : make sc/dns
+
 - name: Provision DNS VMs on Proxmox
   hosts: netservices_dns
   gather_facts: false

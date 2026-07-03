@@ -1,0 +1,20 @@
+---
+# Télécharge l'ISO Talos (schéma Omni/SideroLink) sur tous les hôtes PVE.
+# Requis avant la création des VMs k8s via omni/k8s-poc-vms.yaml (boot CDROM).
+# L'ISO contient les extensions qemu-guest-agent + lldpd + SideroLink.
+# Hôtes : pve
+# Usage : make proxmox/upload-talos-iso
+- name: Upload Talos ISO to Proxmox hosts
+  hosts: pve
+  gather_facts: false
+  become: true
+  vars:
+    pull_disk_image_path: /var/lib/vz/template/iso
+    talos_version: "1.13.5"
+    # Schéma ef60de8a : extensions qemu-guest-agent, lldpd, SideroLink (Omni)
+    talos_schematic_id: "ef60de8a5587e1ff3257ff6d8a2e2e45c6bdb8c780d06afc4032aebc683f88fa"
+    pull_disk_images:
+      - url: "https://factory.talos.dev/image/{{ talos_schematic_id }}/{{ talos_version }}/nocloud-amd64.iso"
+        dest_filename: "talos-{{ talos_version }}-omni-nocloud-amd64.iso"
+  roles:
+    - cedille.proxmox.pull_disk

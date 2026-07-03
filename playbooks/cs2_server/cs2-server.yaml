@@ -1,4 +1,6 @@
 ---
+# Déploie le serveur CS2 complet (prérequis système + server) sur la VM cs2 (LanETS).
+# Hôtes : cs2
 
 - name: Deploying cs2 server
   hosts: cs2

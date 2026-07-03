@@ -1,4 +1,9 @@
 ---
+# Provisionne la VM et déploie Omni (gestionnaire de clusters Talos k8s) via Docker Compose.
+# Expose l'API Omni sur :443 (Caddy TLS) et le kubeconfig endpoint sur :8100.
+# Hôtes : omni
+# Usage : make omni/deploy
+
 - name: Provision Omni VM on Proxmox
   hosts: omni
   gather_facts: false

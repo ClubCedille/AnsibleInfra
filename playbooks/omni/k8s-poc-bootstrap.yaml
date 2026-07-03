@@ -25,6 +25,8 @@
         OMNI_ENDPOINT: "https://{{ omni_fqdn }}:443/"
         OMNI_SERVICE_ACCOUNT_KEY: "{{ omni_service_account_key }}"
       no_log: true
+      check_mode: false
+      changed_when: true
       # Server URL dans le kubeconfig : https://omni.etsmtl.club:8100?cluster=k8s-poc
 
     - name: Install ArgoCD via Helm

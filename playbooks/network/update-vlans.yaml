@@ -1,4 +1,10 @@
 ---
+# Synchronise les VLANs sur les hôtes Proxmox ET sur le switch core NX-OS.
+# Source de vérité : pve_vlans_desired / pve_vlans_to_remove dans group_vars/pve.yaml.
+#
+# Usage : make network/update-vlans [VAULT_PASSWORD_FILE=~/.vault]
+
+# ── Play 1 : sous-interfaces VLAN sur les hôtes Proxmox ───────────────────────
 - name: Update VLAN sub-interfaces on PVE nodes
   hosts: pve
   gather_facts: false
@@ -10,7 +16,6 @@
   connection: local
 
   tasks:
-    # ── Phase 0 : état courant ─────────────────────────────────────────────────
     - name: Get current network interfaces
       community.proxmox.proxmox_node_network_info:
         api_host: "{{ ansible_host }}"
@@ -35,7 +40,6 @@
             | sort
           }}
 
-    # ── Phase 0.5 : MTU du bridge trunk ───────────────────────────────────────
     - name: Ensure MTU is 9216 (jumbo frames) on {{ pve_trunk_bridge }}
       community.proxmox.proxmox_node_network:
         api_host: "{{ ansible_host }}"
@@ -47,7 +51,6 @@
         iface_type: bridge
         mtu: 9216
 
-    # ── Phase 1 : retrait des VLANs morts ─────────────────────────────────────
     - name: Stage removal of dead VLAN sub-interfaces
       community.proxmox.proxmox_node_network:
         api_host: "{{ ansible_host }}"
@@ -61,7 +64,6 @@
         label: "{{ pve_trunk_bridge }}.{{ item.id }} — {{ item.comment }}"
       when: (pve_trunk_bridge ~ '.' ~ item.id | string) in current_ifaces
 
-    # ── Phase 2 : ajout / mise à jour des VLANs désirés ───────────────────────
     - name: Ensure desired VLAN sub-interfaces are present
       community.proxmox.proxmox_node_network:
         api_host: "{{ ansible_host }}"
@@ -78,7 +80,6 @@
       loop_control:
         label: "{{ pve_trunk_bridge }}.{{ item.id }} — {{ item.comment }}"
 
-    # ── Phase 3 : application des changements stagés ──────────────────────────
     - name: Check for pending staged changes before applying
       community.proxmox.proxmox_node_network_info:
         api_host: "{{ ansible_host }}"
@@ -97,23 +98,24 @@
         state: apply
       when: pending.has_pending_changes
 
-    # # ── Phase 4 : vérification finale ─────────────────────────────────────────
-    # - name: Final VLAN sub-interfaces after update
-    #   community.proxmox.proxmox_node_network_info:
-    #     api_host: "{{ ansible_host }}"
-    #     api_user: "{{ pve_api_user }}"
-    #     api_password: "{{ pve_api_password }}"
-    #     node: "{{ inventory_hostname | split('.') | first }}"
-    #   register: net_final
+# ── Play 2 : VLANs sur le switch core NX-OS ───────────────────────────────────
+- name: Sync VLANs on core NX-OS switch
+  hosts: nxos
+  gather_facts: false
+  vars:
+    # pve_vlans_desired / pve_vlans_to_remove sont définis dans group_vars/pve.yaml.
+    # Ansible charge tous les hostvars à l'initialisation — on les lit depuis pve01.
+    _pve_vlans_desired: "{{ hostvars[groups['pve'][0]]['pve_vlans_desired'] }}"
+    _pve_vlans_to_remove: "{{ hostvars[groups['pve'][0]]['pve_vlans_to_remove'] }}"
 
-    # - name: Final state
-    #   ansible.builtin.debug:
-    #     msg: >-
-    #       VLANs actifs sur {{ inventory_hostname | split('.') | first }} : {{
-    #         net_final.proxmox_node_networks
-    #         | selectattr('type', 'defined')
-    #         | selectattr('type', 'equalto', 'vlan')
-    #         | map(attribute='iface')
-    #         | list
-    #         | sort
-    #       }}
+  tasks:
+    - name: Ensure desired VLANs are present on switch
+      cisco.nxos.nxos_vlans:
+        config: "{{ _pve_vlans_desired | json_query('[].{vlan_id: id, name: comment}') }}"
+        state: merged
+
+    - name: Remove retired VLANs from switch
+      cisco.nxos.nxos_vlans:
+        config: "{{ _pve_vlans_to_remove | json_query('[].{vlan_id: id}') }}"
+        state: deleted
+      when: _pve_vlans_to_remove | length > 0

@@ -36,7 +36,7 @@
     # -----------------------------------------------------------------------
     - name: "Backup config.xml before any changes"
       ansible.builtin.command:
-        cmd: "cp /conf/config.xml /conf/backup/config-pre-iface-provision-{{ ansible_date_time.epoch }}.xml"
+        cmd: "cp /conf/config.xml /conf/backup/config-pre-iface-provision-{{ lookup('pipe', 'date +%s') }}.xml"
       register: _backup
       changed_when: true
       tags: [apply]
