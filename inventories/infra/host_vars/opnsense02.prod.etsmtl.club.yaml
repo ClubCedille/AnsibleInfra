@@ -22,6 +22,9 @@ opnsense_api_secret: !vault |
   63633433313331376137636130353233663234636533633165636438336663333762616635396539
   3461
 
+# opnsense02 n'est pas joignable directement depuis le control node — passe par opnsense01
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o ProxyJump=root@10.0.21.2'
+
 # Node identity
 vm_is_master: false
 

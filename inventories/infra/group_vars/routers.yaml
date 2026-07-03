@@ -80,3 +80,10 @@ vm_net_trunk:
       mask: 30
       network: "10.255.255.252"
       parent_nic: vtnet0
+
+    - id: 1300
+      interface_name: opt16
+      vip: "10.0.130.1"
+      mask: 24
+      network: "10.0.130.0"
+      parent_nic: vtnet0

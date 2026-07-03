@@ -1,0 +1,52 @@
+---
+# Provision k8s PoC VMs on Proxmox via ISO boot.
+# Talos boots from ISO (local:iso/talos-1.13.5-bios-nocloud-amd64.iso),
+# installs itself to the blank virtio0 disk, reboots, then registers with Omni.
+#
+# Prerequisites:
+#   - ISO present on all PVE hosts: /var/lib/vz/template/iso/talos-1.13.5-bios-nocloud-amd64.iso
+#     (distribute via: ansible-playbook playbooks/omni/upload-talos-iso.yaml)
+#   - VMs must not exist (run cleanup first if needed)
+
+- name: Provision k8s PoC VMs on Proxmox (ISO boot)
+  hosts: k8s_poc
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: Create VM with blank boot disk
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        name: "{{ vm_name }}"
+        node: "{{ vm_proxmox_node }}"
+        memory: "{{ vm_memory_mb }}"
+        cores: "{{ vm_cpu_cores }}"
+        bios: seabios
+        machine: q35
+        cpu: host
+        boot: "order=virtio0;ide2"
+        virtio:
+          virtio0: "{{ vm_disk_storage }}:{{ vm_disk_size | regex_replace('G$', '') }}"
+        ide:
+          ide2: "local:iso/talos-1.13.5-bios-nocloud-amd64.iso,media=cdrom"
+        net:
+          net0: "virtio,bridge={{ vm_net.bridge }},tag={{ vm_net.vlan }}"
+        onboot: "{{ vm_onboot }}"
+        state: present
+      delegate_to: localhost
+
+    - name: Start VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        state: started
+      delegate_to: localhost
+      when: vm_start_after_creation | default(true)

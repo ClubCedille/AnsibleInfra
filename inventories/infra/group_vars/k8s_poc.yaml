@@ -1,0 +1,37 @@
+---
+# Shared configuration for all k8s-poc nodes (controlplanes + workers).
+# Per-node overrides (vm_id, vm_name, vm_proxmox_node, vm_disk_size, vm_net.ip) are in host_vars.
+
+pve_api_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  34643833613139363839333538346531643266666335613638643163356333666365646261313737
+  3465336365643965666263353239626531316165653435330a663161363934316130656564663965
+  65323739663838396635353365336366373566353763623536366163633664333763356438643965
+  3362383962636166360a666435613766656230623739366464623735323264643035636537383134
+  3633
+
+vm_proxmox_api:
+  user: "root@pam"
+  password: "{{ pve_api_password }}"
+  host: "10.0.21.51"
+
+vm_disk_storage: RBD_Common
+vm_cloud_init_storage: RBD_Common
+# Path to the Talos/Omni disk image on PVE hosts (downloaded via pull_disk.yaml).
+vm_disk_image_path: /var/lib/vz/template/iso/talos-1.13.5-bios-nocloud-amd64.raw.xz
+vm_disk_format: raw
+
+vm_cpu_cores: 4
+vm_memory_mb: 8192
+
+# vm_net est défini entièrement dans chaque host_vars (les dicts Ansible ne font pas de deep merge par défaut).
+# Chaque host_vars contient : bridge, vlan, device, ip, gateway, netmask, nameservers, search_domain.
+
+# Talos ne lit pas cloud-init — ces champs sont requis par le rôle cedille.proxmox.vm mais ignorés.
+vm_user: "unused"
+vm_password: "unused"
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
+
+vm_start_after_creation: true
+vm_onboot: true
+vm_delete_if_exists: false

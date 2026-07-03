@@ -43,6 +43,8 @@ pve_vlans_desired:
     comment: "k8s shared"
   - id: 1010
     comment: "k8s cedille-production-v2"
+  - id: 1300
+    comment: "k8s poc"
   - id: 2206
     comment: "Lien infrastructure ETS"
 

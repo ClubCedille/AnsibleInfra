@@ -1,0 +1,88 @@
+---
+# Ajoute les règles firewall OPNsense spécifiques au cluster k8s-poc (VLAN 1300).
+#
+# Prérequis :
+#   1. Interface opt16 (vtnet0.1300) assignée et active sur les deux OPNsense.
+#      → Si pas encore fait : ansible-playbook playbooks/infra/opnsense-interface-provision.yaml --tags apply
+#   2. VIP CARP 10.0.130.1 présente sur opt16.
+#      → Activer opnsense_manage_vips dans routers.yaml et relancer opnsense-config.yaml
+#
+# Usage :
+#   ansible-playbook playbooks/infra/opnsense-k8s-poc.yaml -i inventories/infra/
+#   ansible-playbook playbooks/infra/opnsense-k8s-poc.yaml -i inventories/infra/ --check
+
+- name: Add k8s-poc firewall rules to OPNsense
+  hosts: routers
+  gather_facts: false
+  connection: local
+
+  pre_tasks:
+    - name: Verify API connectivity
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/core/firmware/info"
+        method: GET
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: 200
+      register: _api_check
+      no_log: true
+      failed_when: _api_check.status != 200
+
+  tasks:
+    - name: "Rule seq 340 — k8s poc → mgmt (Ceph, GarageHQ)"
+      oxlorg.opnsense.rule:
+        firewall: "{{ vm_net.ip }}"
+        api_key: "{{ opnsense_api_key }}"
+        api_secret: "{{ opnsense_api_secret }}"
+        ssl_verify: false
+        description: "k8s poc vers mgmt"
+        interface: ["opt16"]
+        source_net: "10.0.130.0/24"
+        destination_net: "10.0.21.0/24"
+        action: pass
+        sequence: 340
+        match_fields: ["description"]
+        state: present
+
+    - name: "Rule seq 345 — k8s poc sortie WAN (pull images)"
+      oxlorg.opnsense.rule:
+        firewall: "{{ vm_net.ip }}"
+        api_key: "{{ opnsense_api_key }}"
+        api_secret: "{{ opnsense_api_secret }}"
+        ssl_verify: false
+        description: "k8s poc sortie WAN"
+        interface: ["opt16"]
+        source_net: "10.0.130.0/24"
+        destination_net: any
+        action: pass
+        sequence: 345
+        match_fields: ["description"]
+        state: present
+
+    - name: "Rule seq 330 — mgmt → k8s poc (SSH, provisioning)"
+      oxlorg.opnsense.rule:
+        firewall: "{{ vm_net.ip }}"
+        api_key: "{{ opnsense_api_key }}"
+        api_secret: "{{ opnsense_api_secret }}"
+        ssl_verify: false
+        description: "mgmt vers k8s poc"
+        interface: ["lan"]
+        source_net: "10.0.21.0/24"
+        destination_net: "10.0.130.0/24"
+        action: pass
+        sequence: 330
+        match_fields: ["description"]
+        state: present
+
+    - name: Apply firewall rules
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/firewall/filter/apply"
+        method: POST
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: 200
+      no_log: true

@@ -8,12 +8,18 @@
     pull_disk_images:
       - url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
         dest_filename: ubuntu-24.04-server-cloudimg-amd64.img
-        checksum: sha256:53fdde898feed8b027d94baa9cfe8229867f330a1d9c49dc7d84465ee7f229f7
+        checksum: sha256:5fa5b05e5ec239858c4531485d6023b0896448c2df7c63b34f8dae6ea6051a44
       - url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/nocloud_alpine-3.23.4-x86_64-bios-cloudinit-r0.qcow2
         dest_filename: alpine-3.23.4-x86_64-bios-cloudinit-r0.qcow2
         checksum: sha256:39fc293200534b03cf805620a099f2f68265220215434fde687536f67a955bc3
       - url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/nocloud_alpine-3.23.4-x86_64-bios-cloudinit-metal-r0.qcow2
         dest_filename: alpine-3.23.4-x86_64-bios-cloudinit-metal-r0.qcow2
         checksum: sha256:781c1358b3777883e302007b0366744d4f051cd8f6de6d7c0cd994b3c34fb3d7
+      # Talos nocloud image — schematic ef60de8a (UEFI, extensions Omni/SideroLink), v1.13.5
+      - url: https://factory.talos.dev/image/ef60de8a5587e1ff3257ff6d8a2e2e45c6bdb8c780d06afc4032aebc683f88fa/1.13.5/nocloud-amd64.raw.xz
+        dest_filename: talos-1.13.5-uefi-nocloud-amd64.raw.xz
+      # Talos nocloud image — schematic 070c45b1 (BIOS, extensions Omni/SideroLink), v1.13.5
+      - url: https://factory.talos.dev/image/070c45b136ec449253c32e69f2caf66918652af08c04b0289daf885a7151ff35/1.13.5/nocloud-amd64.raw.xz
+        dest_filename: talos-1.13.5-bios-nocloud-amd64.raw.xz
   roles:
     - cedille.proxmox.pull_disk
