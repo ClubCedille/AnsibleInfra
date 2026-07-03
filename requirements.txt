@@ -12,3 +12,4 @@ proxmoxer>=2.0.1
 paramiko<=2.8.1
 ansible-pylibssh>=1.2.0
 six
+jmespath>=0.9.0
