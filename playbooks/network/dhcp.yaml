@@ -1,8 +1,8 @@
 ---
-# Provisionne les VMs et déploie Kea DHCP4 sur netservices_dhcp (infra permanente, sans validation post-deploy).
-# NOTE : préférer infra/dhcp.yaml qui valide la config Kea après déploiement.
+# Provisionne les VMs et déploie Kea DHCP4 sur netservices_dhcp (infra permanente).
+# Valide la config Kea après déploiement.
 # Hôtes : netservices_dhcp
-# Usage : make netservices/dhcp
+# Usage : make network/dhcp
 
 - name: Provision DHCP VMs on Proxmox
   hosts: netservices_dhcp
@@ -20,3 +20,8 @@
   become: true
   roles:
     - cedille.netservices.dhcp
+  post_tasks:
+    - name: Validate Kea config
+      ansible.builtin.command:
+        cmd: kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+      changed_when: false

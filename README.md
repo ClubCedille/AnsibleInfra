@@ -11,12 +11,15 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │   ├─ event
 │   └─ summercamp
 ├─ playbooks/
-│   ├─ cisco-pnp
-│   ├─ cs2_server
-│   ├─ infra/            ← OPNsense prod CARP (config, diff, interface-provision)
-│   ├─ netservices
-│   ├─ proxmox
-│   └─ sc/               ← playbooks summercamp (DNS, challenges, shellctf…)
+│   ├─ cisco-config/   ← config switches (Day-1, SNMP)
+│   ├─ cisco-pnp/      ← serveur Zero Touch Provisioning
+│   ├─ cs2_server/     ← serveur CS2 (LanETS)
+│   ├─ infra/          ← OPNsense CARP (config, diff, interface-provision, règles k8s-poc, telegraf)
+│   ├─ monitoring/     ← Prometheus/Grafana/Loki (infra-* = infra permanente, sans préfixe = event SC)
+│   ├─ network/        ← réseau transverse : VLANs PVE+NX-OS, DHCP Kea, DNS BIND9, Stork
+│   ├─ omni/           ← Omni (gestionnaire Talos k8s) + cycle de vie cluster k8s-poc
+│   ├─ proxmox/        ← images cloud, audit réseau PVE
+│   └─ sc/             ← infra événementielle SummerCamp (DHCP CTF, challenges, portails…)
 │
 ├─ scripts/
 │   ├─ expand_switch_selection.py
@@ -43,7 +46,7 @@ make list-playbooks
 Exécuter un playbook (inventaire infra par défaut):
 
 ```bash
-make proxmox/update
+make network/update-vlans
 ```
 
 Exécuter un playbook avec un inventaire spécifique:

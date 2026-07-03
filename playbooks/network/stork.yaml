@@ -1,7 +1,7 @@
 ---
 # Provisionne la VM et déploie Stork (dashboard de monitoring pour Kea DHCP et BIND9).
 # Hôtes : netservices_stork
-# Usage : make netservices/stork
+# Usage : make network/stork
 
 - name: Provision Stork VM on Proxmox
   hosts: netservices_stork
