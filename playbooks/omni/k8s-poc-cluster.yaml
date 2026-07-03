@@ -1,0 +1,68 @@
+---
+# Crée les ressources Omni pour le cluster k8s-poc (Cluster + MachineSets + MachineSetNodes).
+# Prérequis : les VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
+# Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
+#
+# Usage : ansible-playbook playbooks/omni/k8s-poc-cluster.yaml -i inventories/infra/
+- name: Apply k8s-poc cluster resources to Omni
+  hosts: localhost
+  gather_facts: false
+  become: false
+
+  vars:
+    omni_k8s_poc_talos_version: "1.13.5"
+    omni_k8s_poc_kubernetes_version: "1.33.13"
+    manifest_dest: "/tmp/k8s-poc-cluster.yaml"
+
+  tasks:
+    - name: Fetch machine UUIDs and hostnames from Omni
+      ansible.builtin.shell:
+        cmd: |
+          omnictl get machinestatuses -o yaml | python3 -c "
+          import sys, re, json
+          content = sys.stdin.read()
+          # Split on document separator
+          docs = content.split('\n---\n')
+          result = {'cp': [], 'worker': []}
+          for doc in docs:
+              uuid_m = re.search(r'^\s+id:\s+([0-9a-f-]{36})', doc, re.MULTILINE)
+              host_m = re.search(r'hostname:\s+(k8s-poc-[a-z0-9-]+)', doc)
+              if uuid_m and host_m:
+                  uuid = uuid_m.group(1)
+                  host = host_m.group(1)
+                  if 'controlplane' in host:
+                      result['cp'].append(uuid)
+                  elif 'worker' in host:
+                      result['worker'].append(uuid)
+          print(json.dumps(result))
+          "
+      register: machine_uuids_raw
+      changed_when: false
+
+    - name: Parse machine UUID lists
+      ansible.builtin.set_fact:
+        omni_k8s_poc_cp_uuids: "{{ (machine_uuids_raw.stdout | from_json).cp }}"
+        omni_k8s_poc_worker_uuids: "{{ (machine_uuids_raw.stdout | from_json).worker }}"
+
+    - name: Show discovered machine counts
+      ansible.builtin.debug:
+        msg: "Found {{ omni_k8s_poc_cp_uuids | length }} control planes, {{ omni_k8s_poc_worker_uuids | length }} workers"
+
+    - name: Assert expected machine counts
+      ansible.builtin.assert:
+        that:
+          - omni_k8s_poc_cp_uuids | length == 5
+          - omni_k8s_poc_worker_uuids | length == 8
+        fail_msg: "Expected 5 CPs and 8 workers, got {{ omni_k8s_poc_cp_uuids | length }} CPs and {{ omni_k8s_poc_worker_uuids | length }} workers"
+
+    - name: Template k8s-poc cluster manifest
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../roles/omni/templates/k8s-poc-cluster.yaml.j2"
+        dest: "{{ manifest_dest }}"
+        mode: "0640"
+
+    - name: Apply k8s-poc cluster resources via omnictl
+      ansible.builtin.shell:
+        cmd: omnictl apply -f {{ manifest_dest }}
+      register: cluster_apply_result
+      changed_when: false

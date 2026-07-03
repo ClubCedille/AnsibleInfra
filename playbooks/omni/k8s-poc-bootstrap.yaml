@@ -1,0 +1,70 @@
+---
+# Bootstrap ArgoCD sur le cluster k8s-poc et applique k8s-base.
+# Prérequis : cluster k8s-poc sain (kubectl get nodes → 13 Ready).
+#
+# Variables requises (à passer via -e ou dans host_vars/group_vars) :
+#   k8s_poc_kubeconfig_path : chemin où sauvegarder le kubeconfig (défaut: /tmp/k8s-poc.kubeconfig)
+#   k8s_base_repo_url       : URL du fork k8s-base (ex. https://github.com/ClubCedille/k8s-poc-base)
+- name: Bootstrap ArgoCD on k8s-poc
+  hosts: omni
+  gather_facts: false
+  become: false
+
+  vars:
+    k8s_poc_kubeconfig_path: "/tmp/k8s-poc.kubeconfig"
+
+  tasks:
+    - name: Export kubeconfig for k8s-poc from Omni
+      ansible.builtin.shell:
+        cmd: >
+          omnictl cluster kubeconfig k8s-poc
+          --force
+          --merge-kubeconfig false
+          --kubeconfig-file {{ k8s_poc_kubeconfig_path }}
+      environment:
+        OMNI_ENDPOINT: "https://{{ omni_fqdn }}:443/"
+        OMNI_SERVICE_ACCOUNT_KEY: "{{ omni_service_account_key }}"
+      no_log: true
+      # Server URL dans le kubeconfig : https://omni.etsmtl.club:8100?cluster=k8s-poc
+
+    - name: Install ArgoCD via Helm
+      kubernetes.core.helm:
+        name: argocd
+        chart_ref: argo-cd
+        chart_repo_url: https://argoproj.github.io/argo-helm
+        chart_version: "7.8.x"
+        release_namespace: argocd
+        create_namespace: true
+        kubeconfig: "{{ k8s_poc_kubeconfig_path }}"
+        wait: true
+        timeout: "10m0s"
+
+    - name: Apply k8s-base common Application
+      kubernetes.core.k8s:
+        kubeconfig: "{{ k8s_poc_kubeconfig_path }}"
+        definition:
+          apiVersion: argoproj.io/v1alpha1
+          kind: Application
+          metadata:
+            name: common
+            namespace: argocd
+            annotations:
+              argocd.argoproj.io/sync-wave: "-100"
+          spec:
+            project: common
+            destination:
+              server: https://kubernetes.default.svc
+            source:
+              repoURL: "{{ k8s_base_repo_url }}"
+              path: common
+              targetRevision: HEAD
+              directory:
+                recurse: true
+                include: "{*.argoapp.yaml,*.argoapp.yml}"
+            syncPolicy:
+              automated:
+                selfHeal: true
+                prune: true
+              syncOptions:
+                - CreateNamespace=true
+        state: present
