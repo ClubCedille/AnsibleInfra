@@ -18,6 +18,7 @@
     - name: Fetch machine UUIDs and hostnames from Omni
       ansible.builtin.shell:
         cmd: |
+          set -o pipefail
           omnictl get machinestatuses -o yaml | python3 -c "
           import sys, re, json
           content = sys.stdin.read()
@@ -38,6 +39,8 @@
           "
       register: machine_uuids_raw
       changed_when: false
+      args:
+        executable: /bin/bash
 
     - name: Parse machine UUID lists
       ansible.builtin.set_fact:
@@ -62,7 +65,7 @@
         mode: "0640"
 
     - name: Apply k8s-poc cluster resources via omnictl
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: omnictl apply -f {{ manifest_dest }}
       register: cluster_apply_result
       changed_when: false
