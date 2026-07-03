@@ -30,6 +30,24 @@ metadata:
     omni.sidero.dev/role-worker: ""
 spec:
   updatestrategy: 1
+---
+metadata:
+  namespace: default
+  type: ConfigPatches.omni.sidero.dev
+  id: k8s-poc-lldpd-ext-config
+  labels:
+    omni.sidero.dev/cluster: k8s-poc
+spec:
+  data: |
+    ---
+    apiVersion: v1alpha1
+    kind: ExtensionServiceConfig
+    name: lldpd
+    configFiles:
+      - content: |
+          configure lldp portidsubtype ifname
+          configure system interface pattern *
+        mountPath: /usr/local/etc/lldpd/lldpd.conf
 {% for uuid in omni_k8s_poc_cp_uuids %}
 ---
 metadata:

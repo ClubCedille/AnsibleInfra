@@ -30,6 +30,7 @@
         bios: seabios
         machine: q35
         cpu: host
+        agent: enabled=1
         boot: "order=virtio0;ide2"
         virtio:
           virtio0: "{{ vm_disk_storage }}:{{ vm_disk_size | regex_replace('G$', '') }}"
@@ -40,6 +41,29 @@
         onboot: "{{ vm_onboot }}"
         state: present
       delegate_to: localhost
+
+    - name: Enable QEMU guest agent on existing VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        agent: enabled=1
+        state: present
+        update: true
+      delegate_to: localhost
+
+    - name: Power-cycle VM to apply hardware config changes (e.g. qemu guest agent channel)
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        state: restarted
+      delegate_to: localhost
+      when: vm_power_cycle | default(false) | bool
+      throttle: 1
 
     - name: Start VM
       community.proxmox.proxmox_kvm:
