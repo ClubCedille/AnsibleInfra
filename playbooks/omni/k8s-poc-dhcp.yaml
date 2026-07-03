@@ -1,0 +1,42 @@
+---
+# Provisioning et configuration des serveurs DHCP pour VLAN 1300 (k8s-poc).
+# 2 VMs Ubuntu avec Kea DHCP4 hot-standby HA.
+# Réservations statiques MAC→IP pour les 13 nœuds k8s-poc.
+#
+# Prérequis :
+#   - VLAN 1300 existant sur les hôtes Proxmox (update-vlans.yaml)
+#   - OPNsense : règles firewall opt16 existantes (opnsense-k8s-poc.yaml)
+#   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
+#
+# Usage :
+#   ansible-playbook playbooks/omni/k8s-poc-dhcp.yaml -i inventories/infra/
+
+- name: Provision DHCP VMs for k8s-poc
+  hosts: k8s_poc_dhcp
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on DHCP VMs
+  hosts: k8s_poc_dhcp
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+- name: Deploy Kea DHCP on k8s-poc DHCP VMs
+  hosts: k8s_poc_dhcp
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.dhcp
+  post_tasks:
+    - name: Validate Kea config
+      ansible.builtin.command:
+        cmd: kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+      changed_when: false
