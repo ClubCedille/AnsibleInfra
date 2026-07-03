@@ -1,0 +1,14 @@
+---
+vm_id: 1300104
+vm_name: k8s-poc-controlplane04
+vm_proxmox_node: pve04
+vm_disk_size: 50G
+vm_net:
+  bridge: vmbr1
+  vlan: 1300
+  device: virtio
+  ip: 10.0.130.14
+  gateway: 10.0.130.1
+  netmask: 24
+  nameservers: "1.1.1.1"
+  search_domain: k8s.etsmtl.club

@@ -1,0 +1,14 @@
+---
+vm_id: 1300202
+vm_name: k8s-poc-worker02
+vm_proxmox_node: pve02
+vm_disk_size: 100G
+vm_net:
+  bridge: vmbr1
+  vlan: 1300
+  device: virtio
+  ip: 10.0.130.22
+  gateway: 10.0.130.1
+  netmask: 24
+  nameservers: "1.1.1.1"
+  search_domain: k8s.etsmtl.club
