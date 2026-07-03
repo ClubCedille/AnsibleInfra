@@ -1,4 +1,6 @@
 ---
+# Installe Tailscale sur le serveur CS2 pour le VPN get5 (arrête le server, configure Tailscale, redémarre).
+# Hôtes : cs2
 
 - name: Install Tailscale on CS2 Server
   hosts: cs2

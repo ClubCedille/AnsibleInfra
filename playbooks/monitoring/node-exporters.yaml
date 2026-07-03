@@ -1,4 +1,8 @@
 ---
+# Déploie node_exporter (métriques système) sur les hôtes netservices de l'event SC.
+# Hôtes : netservices_node_exporter
+# Usage : make monitoring/node-exporters
+
 - name: Deploy node exporters on netservices hosts
   hosts: netservices_node_exporter
   gather_facts: true

@@ -1,4 +1,9 @@
 ---
+# Provision + déploie le portail captif nginx (challenge #5 — flag caché dans le HTML).
+# Accessible via http://portal.ctf/ pointé par l'option DHCP 114 (captive-portal URI).
+# Hôtes : http_portal
+# Usage : make sc/http-portal
+
 - name: Provision portal VM on Proxmox
   hosts: http_portal
   gather_facts: false

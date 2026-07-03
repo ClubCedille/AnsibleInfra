@@ -1,4 +1,8 @@
 ---
+# Déploie node_exporter (métriques système) sur tous les hôtes PVE et NAS (infra permanente).
+# Hôtes : monitoring_node_exporter
+# Usage : make monitoring/infra-node-exporters
+
 - name: Deploy node exporters on PVE and NAS hosts
   hosts: monitoring_node_exporter
   gather_facts: true

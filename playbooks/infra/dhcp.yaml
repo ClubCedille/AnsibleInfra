@@ -1,4 +1,10 @@
 ---
+# Provisionne les VMs et déploie Kea DHCP4 sur netservices_dhcp (infra permanente) avec validation post-deploy.
+# NOTE : doublon de netservices/dhcp.yaml — ce playbook ajoute `kea-dhcp4 -t` en post_task.
+# Conserver celui-ci comme référence pour les déploiements infra (valide la config avant de continuer).
+# Hôtes : netservices_dhcp
+# Usage : make infra/dhcp
+
 - name: Provision DHCP VMs on Proxmox
   hosts: netservices_dhcp
   gather_facts: false

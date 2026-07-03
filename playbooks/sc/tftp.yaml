@@ -1,4 +1,9 @@
 ---
+# OBSOLÈTE — ne pas utiliser pour le challenge DHCP SummerCamp.
+# Le TFTP est désormais co-localisé sur les VMs DHCP et déployé via sc/dhcp.yaml
+# (rôle cedille.netservices.tftp). Le groupe netservices_tftp (.41-.42) existe encore
+# dans l'inventaire mais n'est pas utilisé.
+
 - name: Provision TFTP VMs on Proxmox
   hosts: netservices_tftp
   gather_facts: false

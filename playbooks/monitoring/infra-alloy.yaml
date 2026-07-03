@@ -1,4 +1,9 @@
 ---
+# Déploie Grafana Alloy (log shipping) sur les hôtes PVE et NAS (infra permanente).
+# Pousse les logs système/PVE/Ceph vers Loki sur 10.0.21.95:3100.
+# Hôtes : monitoring_alloy
+# Usage : make monitoring/infra-alloy
+
 - name: Deploy Alloy log shipping on PVE and NAS hosts
   hosts: monitoring_alloy
   gather_facts: true

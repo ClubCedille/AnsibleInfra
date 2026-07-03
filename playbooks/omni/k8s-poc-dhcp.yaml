@@ -4,7 +4,7 @@
 # Réservations statiques MAC→IP pour les 13 nœuds k8s-poc.
 #
 # Prérequis :
-#   - VLAN 1300 existant sur les hôtes Proxmox (update-vlans.yaml)
+#   - VLAN 1300 existant sur les hôtes Proxmox (network/update-vlans.yaml)
 #   - OPNsense : règles firewall opt16 existantes (opnsense-k8s-poc.yaml)
 #   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
 #

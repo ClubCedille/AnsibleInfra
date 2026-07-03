@@ -1,4 +1,9 @@
 ---
+# apt dist-upgrade + installation/activation de qemu-guest-agent sur toutes les VMs SC.
+# À exécuter en début d'event pour s'assurer que les VMs sont à jour.
+# Hôtes : all:!pve:!switch
+# Usage : make sc/update
+
 - name: Update and install qemu-guest-agent on all VMs
   hosts: "all:!pve:!switch"
   gather_facts: false

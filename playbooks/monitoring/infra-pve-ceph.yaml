@@ -1,4 +1,9 @@
 ---
+# Active le module Prometheus du Ceph MGR sur le cluster PVE (expose les métriques Ceph sur port 9283).
+# Run-once via pve[0], mais le playbook cible tous les nœuds pour que Prometheus scrape le MGR actif.
+# Hôtes : pve
+# Usage : make monitoring/infra-pve-ceph
+
 - name: Enable Ceph MGR Prometheus module on PVE cluster
   hosts: pve
   gather_facts: false

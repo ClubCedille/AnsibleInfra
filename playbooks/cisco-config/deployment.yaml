@@ -1,3 +1,8 @@
+---
+# Pousse la configuration Day-1 sur les switches événement (trunk VLAN, ports access, AAA).
+# Hôtes : switches_event
+# Usage : make cisco-config/deployment
+
 - name: Deploy Day-1 Switch Configurations
   hosts: switches_event
   gather_facts: false

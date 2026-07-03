@@ -1,4 +1,10 @@
 ---
+# Correctif one-shot : force mtu=1 (héritage depuis le bridge Proxmox) sur net0 de toutes les VMs SC.
+# Utile si des VMs ont été créées avec un MTU fixe incompatible avec le trunk réseau de l'event.
+# Délègue `qm set` au nœud Proxmox hébergeant chaque VM.
+# Hôtes : all:!pve:!switch:!ctfd
+# Usage : make sc/fix-mtu-proxmox
+
 - name: Set mtu=1 (inherit from bridge) on all Proxmox VM network interfaces
   hosts: "all:!pve:!switch:!ctfd"
   gather_facts: false

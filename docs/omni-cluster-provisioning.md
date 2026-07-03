@@ -32,7 +32,7 @@ Ajouter l'ID VLAN dans `inventories/infra/group_vars/pve.yaml` sous `pve_vlans_d
 ```
 
 ```bash
-ansible-playbook playbooks/proxmox/update-vlans.yaml -i inventories/infra/
+ansible-playbook playbooks/network/update-vlans.yaml -i inventories/infra/
 ```
 
 > Le VLAN doit aussi être ajouté manuellement sur le switch (trunk vers les hôtes Proxmox).

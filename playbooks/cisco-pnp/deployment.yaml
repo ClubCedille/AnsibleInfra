@@ -1,4 +1,7 @@
 ---
+# Déploie le serveur Cisco PnP (Zero Touch Provisioning) et initialise les répertoires de profils/configs Day-0.
+# Hôtes : pnp-server
+# Usage : make cisco-pnp/deployment
 
 - name: Deploy Cisco PnP server
   hosts: pnp-server

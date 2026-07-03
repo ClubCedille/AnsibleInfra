@@ -1,4 +1,9 @@
 ---
+# Déploie les dashboards Grafana spécifiques à l'infra permanente (rôle monitoring-dashboard).
+# À exécuter après monitoring/infra-core.yaml.
+# Hôtes : monitoring_core
+# Usage : make monitoring/infra-dashboards
+
 - name: Deploy infra Grafana dashboards
   hosts: monitoring_core
   gather_facts: false

@@ -1,4 +1,8 @@
 ---
+# Dépose le fichier flag ShellCTF hardcodé dans /home/sc/flag sur les VMs shellctf.
+# Hôtes : shellctf
+# Usage : make sc/deploy_shellctf_flag
+
 - name: Deploy the ShellCTF flag file
   hosts: shellctf
   gather_facts: false

@@ -1,4 +1,9 @@
 ---
+# Provision + déploie les VMs ShellCTF (challenge shell basé sur SSH par mot de passe).
+# Active PasswordAuthentication dans sshd via le rôle cedille.proxmox.pwdssh.
+# Hôtes : shellctf
+# Usage : make sc/shellctf
+
 - name: Provision ShellCTF VMs on Proxmox
   hosts: shellctf
   gather_facts: false

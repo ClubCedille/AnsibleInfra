@@ -1,4 +1,9 @@
 ---
+# Hard-stop + redémarrage de toutes les VMs SC via l'API Proxmox (exclut pve/switch/ctfd).
+# Utile pour appliquer un changement kernel ou résoudre un état figé en masse.
+# Hôtes : all:!pve:!switch:!ctfd
+# Usage : make sc/reboot [LIMIT=<groupe>]
+
 - name: Hard-stop and reboot all VMs via Proxmox API
   hosts: "all:!pve:!switch:!ctfd"
   gather_facts: false

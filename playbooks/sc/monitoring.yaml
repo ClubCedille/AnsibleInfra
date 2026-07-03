@@ -1,4 +1,10 @@
 ---
+# Provision VM + déploie la stack monitoring CTF complète :
+# Loki + Prometheus + Grafana + blackbox + snmp + node_exporter sur tous les services SC.
+# Construit dynamiquement les jobs Prometheus (ICMP/TCP/node) depuis l'inventaire SC.
+# Hôtes : monitoring_core (stack) + monitoring_exporters (node_exporter)
+# Usage : make sc/monitoring
+
 - name: Provision monitoring VM
   hosts: monitoring_core
   gather_facts: false
