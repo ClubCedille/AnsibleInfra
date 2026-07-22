@@ -24,7 +24,7 @@ forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
 forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
 
 forgejo_runner_labels:
-  - "docker:docker://node:20-bookworm"
+  - "ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-latest"
 
 forgejo_runner_log_level: info
 forgejo_runner_capacity: 1

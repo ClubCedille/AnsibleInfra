@@ -1,8 +1,8 @@
 ---
 ansible_user: localadmin
 
-vm_cpu_cores: 2
-vm_memory_mb: 4096
+vm_cpu_cores: 8
+vm_memory_mb: 16384
 vm_disk_size: "40G"
 
 vm_disk_image_path: "/var/lib/vz/images/lanets/ubuntu_2404.img"
