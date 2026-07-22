@@ -1,0 +1,36 @@
+---
+forgejo_runner_version: "12.13.1"
+forgejo_runner_arch: amd64
+
+forgejo_runner_service:
+  name: forgejo-runner
+  user: forgejo-runner
+  group: forgejo-runner
+
+forgejo_runner_paths:
+  archive_download_dir: /tmp
+  binary: /usr/local/bin/forgejo-runner
+  config_dir: /etc/forgejo-runner
+  config: /etc/forgejo-runner/config.yml
+  data_dir: /var/lib/forgejo-runner
+  service_unit: /etc/systemd/system/forgejo-runner.service
+
+# Connection to the Forgejo instance, declared statically in config.yml under
+# server.connections.forgejo instead of via `forgejo-runner register`. url is
+# shared, uuid/token are per-runner (from /admin/actions/runners "New runner").
+# All three must be set to a real value before running the role.
+forgejo_runner_instance_url: "REPLACE_WITH_FORGEJO_INSTANCE_URL"
+forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
+forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
+
+forgejo_runner_labels:
+  - "docker:docker://node:20-bookworm"
+
+forgejo_runner_log_level: info
+forgejo_runner_capacity: 1
+forgejo_runner_timeout: 3h
+
+forgejo_runner_container:
+  privileged: false
+  docker_host: ""
+  force_pull: false

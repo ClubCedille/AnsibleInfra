@@ -1,0 +1,51 @@
+---
+- name: Provision Challenge VMs on Proxmox
+  hosts: dci_vms
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  vars:
+    vm_delete_if_exists: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on Challenge VMs
+  hosts: dci_vms
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Install the docker role on this VM
+  hosts: dci_vms
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Wait for DNS to be functional
+      ansible.builtin.command:
+        cmd: nslookup archive.ubuntu.com
+      retries: 10
+      delay: 5
+      register: dns_check
+      until: dns_check.rc == 0
+      changed_when: false
+    - name: Configure apt proxy
+      ansible.builtin.include_tasks: includes/apt_proxy.yaml
+    - name: Configure pip proxy
+      ansible.builtin.include_tasks: includes/pip_proxy.yaml
+  roles:
+    - cedille.docker.install
+  post_tasks:
+    - name: Pull the latest images for the challenge
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ install_docker_compose_target_dir }}"
+      notify: Recreate containers
+
+  handlers:
+    - name: Recreate containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ install_docker_compose_target_dir }}"
+        state: present

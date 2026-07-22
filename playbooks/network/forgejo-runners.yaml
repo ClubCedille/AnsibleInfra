@@ -1,0 +1,37 @@
+---
+# Provisionne une paire de VMs et y déploie des runners Forgejo Actions
+# (Docker + binaire forgejo-runner, exécuteur Docker).
+#
+# Prérequis :
+#   - forgejo_runner_instance_url / forgejo_runner_registration_token renseignés
+#     dans inventories/infra/group_vars/forgejo_runners.yaml (token généré sur
+#     /admin/actions/runners de l'instance Forgejo cible)
+#
+# Hôtes : forgejo_runners
+# Usage : make network/forgejo-runners
+
+- name: Provision Forgejo runner VMs on Proxmox
+  hosts: forgejo_runners
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on Forgejo runner VMs
+  hosts: forgejo_runners
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Deploy Forgejo Actions runners
+  hosts: forgejo_runners
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.docker.install
+    - forgejo-runner
