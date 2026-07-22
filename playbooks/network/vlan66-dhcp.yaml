@@ -1,0 +1,41 @@
+---
+# Provisioning et configuration des serveurs DHCP pour VLAN 66.
+# 2 VMs Ubuntu avec Kea DHCP4 hot-standby HA.
+# Pool dynamique 10.66.1.0 - 10.66.20.255 sur le réseau 10.66.0.0/16.
+#
+# Prérequis :
+#   - VLAN 66 existant sur les hôtes Proxmox (network/update-vlans.yaml)
+#   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
+#
+# Usage :
+#   ansible-playbook playbooks/omni/vlan66-dhcp.yaml -i inventories/infra/
+
+- name: Provision DHCP VMs for VLAN 66
+  hosts: vlan66_dhcp
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+# - name: Wait for SSH on DHCP VMs
+#   hosts: vlan66_dhcp
+#   gather_facts: false
+#   tasks:
+#     - name: Wait for SSH to be available
+#       ansible.builtin.wait_for_connection:
+#         timeout: 300
+
+- name: Deploy Kea DHCP on VLAN 66 DHCP VMs
+  hosts: vlan66_dhcp
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.dhcp
+  post_tasks:
+    - name: Validate Kea config
+      ansible.builtin.command:
+        cmd: kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+      changed_when: false

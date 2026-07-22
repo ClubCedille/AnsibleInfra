@@ -1,0 +1,169 @@
+
+sw001.etsmtl.club>
+sw001.etsmtl.club>
+sw001.etsmtl.club>enable
+sw001.etsmtl.club#terminal length 0
+sw001.etsmtl.club#show run interface gigabitEthernet 1/0/37
+Building configuration...
+
+Current configuration : 90 bytes
+!
+interface GigabitEthernet1/0/37
+ switchport access vlan 67
+ switchport mode access
+end
+
+sw001.etsmtl.club#show ip dhcp snooping
+Switch DHCP snooping is disabled
+Switch DHCP gleaning is disabled
+DHCP snooping is configured on following VLANs:
+none
+DHCP snooping is operational on following VLANs:
+none
+DHCP snooping is configured on the following L3 Interfaces:
+
+Insertion of option 82 is enabled
+   circuit-id default format: vlan-mod-port
+   remote-id: 8890.8d53.1680 (MAC)
+Option 82 on untrusted port is not allowed
+Verification of hwaddr field is enabled
+Verification of giaddr field is enabled
+DHCP snooping trust/rate is configured on the following Interfaces:
+
+Interface                  Trusted    Allow option    Rate limit (pps)
+-----------------------    -------    ------------    ----------------   
+GigabitEthernet1/0/47            yes        yes             unlimited
+  Custom circuit-ids:
+GigabitEthernet1/0/48            yes        yes             unlimited
+  Custom circuit-ids:
+sw001.etsmtl.club#show ip dhcp snooping
+Switch DHCP snooping is disabled
+Switch DHCP gleaning is disabled
+DHCP snooping is configured on following VLANs:
+none
+DHCP snooping is operational on following VLANs:
+none
+DHCP snooping is configured on the following L3 Interfaces:
+
+Insertion of option 82 is enabled
+   circuit-id default format: vlan-mod-port
+   remote-id: 8890.8d53.1680 (MAC)
+Option 82 on untrusted port is not allowed
+Verification of hwaddr field is enabled
+Verification of giaddr field is enabled
+DHCP snooping trust/rate is configured on the following Interfaces:
+
+Interface                  Trusted    Allow option    Rate limit (pps)
+-----------------------    -------    ------------    ----------------   
+GigabitEthernet1/0/47            yes        yes             unlimited
+  Custom circuit-ids:
+GigabitEthernet1/0/48            yes        yes             unlimited
+  Custom circuit-ids:
+sw001.etsmtl.club#show run interface gigabitEthernet 1/0/47
+Building configuration...
+
+Current configuration : 123 bytes
+!
+interface GigabitEthernet1/0/47
+ switchport trunk allowed vlan 66,67
+ switchport mode trunk
+ ip dhcp snooping trust
+end
+
+sw001.etsmtl.club#show run interface gigabitEthernet 1/0/48
+Building configuration...
+
+Current configuration : 123 bytes
+!
+interface GigabitEthernet1/0/48
+ switchport trunk allowed vlan 66,67
+ switchport mode trunk
+ ip dhcp snooping trust
+end
+
+sw001.etsmtl.club#
+*Jul 22 00:11:43.337: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet1/0/1, changed state to down
+*Jul 22 00:11:44.340: %LINK-3-UPDOWN: Interface GigabitEthernet1/0/1, changed state to down
+*Jul 22 00:11:47.240: %LINK-3-UPDOWN: Interface GigabitEthernet1/0/1, changed state to up
+*Jul 22 00:11:48.239: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet1/0/1, changed state to up
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sw001.etsmtl.club con0 is now available
+
+
+
+
+
+Press RETURN to get started.
+
+
+
+
+
+
+
+
+
+
+
+
+*Jul 22 00:18:31.429: %SYS-6-TTY_EXPIRE_TIMER: (exec timer expired, tty 0 (0.0.0.0)), user 
