@@ -27,8 +27,8 @@ forgejo_runner_labels:
   - "ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-latest"
 
 forgejo_runner_log_level: info
-forgejo_runner_capacity: 1
-forgejo_runner_timeout: 3h
+forgejo_runner_capacity: 4
+forgejo_runner_timeout: 1h
 
 forgejo_runner_container:
   privileged: false
