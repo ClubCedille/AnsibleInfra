@@ -1,0 +1,83 @@
+---
+# Crée les ressources Omni pour les 3 NOUVEAUX nodes de k8s-shared uniquement
+# (worker-6, worker-7, controlplane-4) — le cluster k8s-shared existe déjà (RUNNING
+# depuis 2025-04-24, cf. omnictl get machinesets), contrairement à k8s-poc-cluster.yaml
+# qui crée un cluster à partir de zéro.
+#
+# Ne touche PAS aux Clusters.omni.sidero.dev / MachineSets.omni.sidero.dev existants
+# (id: k8s-shared-control-planes / k8s-shared-workers, déjà présents) — applique
+# uniquement 3 nouvelles ressources MachineSetNodes.omni.sidero.dev, une par nouveau node.
+#
+# Prérequis : les 3 VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
+# Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
+#
+# Usage : ansible-playbook playbooks/omni/k8s-shared-cluster.yaml -i inventories/infra/
+- name: Apply new k8s-shared MachineSetNodes to Omni
+  hosts: localhost
+  gather_facts: false
+  become: false
+
+  vars:
+    manifest_dest: "/tmp/k8s-shared-new-nodes.yaml"
+
+  tasks:
+    - name: Fetch machine UUIDs and hostnames from Omni
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          omnictl get machinestatuses -o yaml | python3 -c "
+          import sys, re, json
+          content = sys.stdin.read()
+          docs = content.split('\n---\n')
+          result = {'cp': [], 'worker': []}
+          for doc in docs:
+              uuid_m = re.search(r'^\s+id:\s+([0-9a-f-]{36})', doc, re.MULTILINE)
+              host_m = re.search(r'hostname:\s+(k8s-shared-[a-z0-9-]+)', doc)
+              if uuid_m and host_m:
+                  uuid = uuid_m.group(1)
+                  host = host_m.group(1)
+                  if host == 'k8s-shared-controlplane-4':
+                      result['cp'].append(uuid)
+                  elif host in ('k8s-shared-worker-6', 'k8s-shared-worker-7'):
+                      result['worker'].append(uuid)
+          print(json.dumps(result))
+          "
+      register: machine_uuids_raw
+      changed_when: false
+      args:
+        executable: /bin/bash
+
+    - name: Parse machine UUID lists
+      ansible.builtin.set_fact:
+        omni_k8s_shared_new_cp_uuids: "{{ (machine_uuids_raw.stdout | from_json).cp }}"
+        omni_k8s_shared_new_worker_uuids: "{{ (machine_uuids_raw.stdout | from_json).worker }}"
+
+    - name: Show discovered machine counts
+      ansible.builtin.debug:
+        msg: >
+          Found {{ omni_k8s_shared_new_cp_uuids | length }} new control planes,
+          {{ omni_k8s_shared_new_worker_uuids | length }} new workers
+          (attendu : 1 CP, 2 workers)
+
+    - name: Assert expected new machine counts
+      ansible.builtin.assert:
+        that:
+          - omni_k8s_shared_new_cp_uuids | length == 1
+          - omni_k8s_shared_new_worker_uuids | length == 2
+        fail_msg: >
+          Expected 1 new CP (controlplane-4) and 2 new workers (worker-6, worker-7), got
+          {{ omni_k8s_shared_new_cp_uuids | length }} CPs and {{ omni_k8s_shared_new_worker_uuids | length }} workers.
+          Vérifier que les VMs sont bien "Available" dans Omni et que leur hostname suit le
+          pattern attendu avant de relancer.
+
+    - name: Template k8s-shared new-nodes manifest
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../roles/omni/templates/k8s-shared-new-nodes.yaml.j2"
+        dest: "{{ manifest_dest }}"
+        mode: "0640"
+
+    - name: Apply k8s-shared MachineSetNodes via omnictl
+      ansible.builtin.command:
+        cmd: omnictl apply -f {{ manifest_dest }}
+      register: cluster_apply_result
+      changed_when: false

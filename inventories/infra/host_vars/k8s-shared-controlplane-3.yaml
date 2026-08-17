@@ -1,0 +1,9 @@
+---
+vm_id: 1009003
+vm_name: k8s-shared-controlplane-3
+vm_proxmox_node: pve07
+vm_disk_size: 250G
+vm_cpu_cores: 4
+vm_memory_mb: 8192
+# Usage réel mesuré via talosctl (pas pvesh) le 2026-08-16 : 41.6% — sous le seuil de 65%,
+# ne pas augmenter (décision opérateur, cf. notes.md section 2).
