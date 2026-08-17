@@ -101,12 +101,19 @@
           correspondent à la cible (CP: {{ hostvars['k8s-shared-controlplane-4'].vm_cpu_cores }},
           workers: {{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}) avant de relancer.
 
-    # Idempotent : relit la machine, saute si les 2 labels sont déjà présents. Préserve tout
-    # le reste du document (metadata.labels existants type omni.sidero.dev/address, et tout
-    # spec) — un `omnictl apply` avec un document incomplet REMPLACE la ressource entière
-    # (constaté en dry-run : un spec vide met connected à false, managementaddress à "" et
-    # supprime les autres labels). Ne jamais appliquer autre chose que le document tel que
-    # récupéré + les 2 lignes de labels ajoutées.
+    # Cible MachineLabels.omni.sidero.dev (id = UUID machine), PAS Machines.omni.sidero.dev :
+    # rencontré en exécution réelle "PermissionDenied ... only read access is permitted" en
+    # ciblant Machines (owner: MachineController, géré par un controller, en lecture seule
+    # pour les clients API). MachineLabels est la ressource dédiée aux labels posés par
+    # l'utilisateur (owner vide, confirmé éditable), visible dans l'UI Omni via le bouton
+    # "+ new label" sur chaque machine.
+    #
+    # Idempotent : relit la ressource, saute si les 2 labels sont déjà présents. Préserve tout
+    # le reste du document (ex. annotations "platform-tag-labels-initialized") — un
+    # `omnictl apply` avec un document incomplet REMPLACE la ressource entière (constaté en
+    # dry-run sur Machines : un spec vide remettait connected à false). Gère les deux cas :
+    # une machine déjà labellisée a un bloc "labels:" existant (on y ajoute nos 2 entrées) ;
+    # une machine neuve n'en a aucun (on insère le bloc "labels:" avant "spec: {}").
     - name: Label new control-plane machine for automated allocation
       ansible.builtin.shell:
         cmd: |
@@ -114,11 +121,15 @@
           python3 -c "
           import re, subprocess, sys
           uuid = '{{ item }}'
-          current = subprocess.run(['omnictl', 'get', 'machine', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
+          current = subprocess.run(['omnictl', 'get', 'machinelabel', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
           if re.search(r'^\s+role:\s*controlplane\s*$', current, re.MULTILINE) and re.search(r'^\s+cluster-candidate:\s*k8s-shared\s*$', current, re.MULTILINE):
               print(uuid + ': already labeled, skipping')
               sys.exit(0)
-          patched = re.sub(r'(    labels:\n)', r'\1        role: controlplane\n        cluster-candidate: k8s-shared\n', current, count=1)
+          label_lines = '    labels:\n        role: controlplane\n        cluster-candidate: k8s-shared\n'
+          if re.search(r'^    labels:\s*$', current, re.MULTILINE):
+              patched = re.sub(r'(    labels:\n)', r'\1        role: controlplane\n        cluster-candidate: k8s-shared\n', current, count=1)
+          else:
+              patched = current.replace('spec: {}', label_lines + 'spec: {}')
           dest = '/tmp/omni-label-' + uuid + '.yaml'
           with open(dest, 'w') as f:
               f.write(patched)
@@ -138,11 +149,15 @@
           python3 -c "
           import re, subprocess, sys
           uuid = '{{ item }}'
-          current = subprocess.run(['omnictl', 'get', 'machine', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
+          current = subprocess.run(['omnictl', 'get', 'machinelabel', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
           if re.search(r'^\s+role:\s*worker\s*$', current, re.MULTILINE) and re.search(r'^\s+cluster-candidate:\s*k8s-shared\s*$', current, re.MULTILINE):
               print(uuid + ': already labeled, skipping')
               sys.exit(0)
-          patched = re.sub(r'(    labels:\n)', r'\1        role: worker\n        cluster-candidate: k8s-shared\n', current, count=1)
+          label_lines = '    labels:\n        role: worker\n        cluster-candidate: k8s-shared\n'
+          if re.search(r'^    labels:\s*$', current, re.MULTILINE):
+              patched = re.sub(r'(    labels:\n)', r'\1        role: worker\n        cluster-candidate: k8s-shared\n', current, count=1)
+          else:
+              patched = current.replace('spec: {}', label_lines + 'spec: {}')
           dest = '/tmp/omni-label-' + uuid + '.yaml'
           with open(dest, 'w') as f:
               f.write(patched)
