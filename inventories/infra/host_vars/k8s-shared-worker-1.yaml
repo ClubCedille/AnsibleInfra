@@ -2,7 +2,6 @@
 vm_id: 1009011
 vm_name: k8s-shared-worker-1
 vm_proxmox_node: pve02
-vm_disk_size: 250G
 # pve02 = tier "big" (1.2TiB/88 cores) → cible 24 cores / 64GB (RAM déjà à la cible).
 vm_cpu_cores: 24
 vm_memory_mb: 65536

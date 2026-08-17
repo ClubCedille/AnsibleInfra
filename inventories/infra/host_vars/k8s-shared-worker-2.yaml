@@ -2,7 +2,6 @@
 vm_id: 1009012
 vm_name: k8s-shared-worker-2
 vm_proxmox_node: pve03
-vm_disk_size: 250G
 # pve03 = tier "big" (1.2TiB/88 cores) → cible 24 cores / 64GB.
 # État actuel réel : 8c/24GB — PAS encore à la cible (RAM à corriger, contrairement aux
 # autres workers big-tier). Voir runbook de resize.
