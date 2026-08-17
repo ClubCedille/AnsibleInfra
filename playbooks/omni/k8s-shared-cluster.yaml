@@ -1,12 +1,18 @@
 ---
-# Crée les ressources Omni pour les 3 NOUVEAUX nodes de k8s-shared uniquement
-# (worker-6, worker-7, controlplane-4) — le cluster k8s-shared existe déjà (RUNNING
-# depuis 2025-04-24, cf. omnictl get machinesets), contrairement à k8s-poc-cluster.yaml
-# qui crée un cluster à partir de zéro.
+# Rattache les 3 NOUVEAUX nodes de k8s-shared (worker-6, worker-7, controlplane-4) au
+# cluster existant (RUNNING depuis 2025-04-24, cf. omnictl get machinesets).
 #
-# Ne touche PAS aux Clusters.omni.sidero.dev / MachineSets.omni.sidero.dev existants
-# (id: k8s-shared-control-planes / k8s-shared-workers, déjà présents) — applique
-# uniquement 3 nouvelles ressources MachineSetNodes.omni.sidero.dev, une par nouveau node.
+# Contrairement à k8s-poc (MachineSetNodes créés manuellement, cf. k8s-poc-cluster.yaml),
+# les MachineSets de k8s-shared utilisent l'allocation automatisée par MachineClass
+# (constaté en exécution réelle le 2026-08-17 : "adding machine set node ... is not allowed:
+# the machine set is using automated machine allocation"). Vérifié via
+# `omnictl get machinesets/machineclasses` : k8s-shared-control-planes/k8s-shared-workers
+# référencent les MachineClasses k8s-shared-controlplane/k8s-shared-worker, qui matchent sur
+# les labels `role` + `cluster-candidate` (mécanisme documenté dans notes.md section 1). Ce
+# playbook labellise donc les machines au lieu de créer des MachineSetNodes — Omni les
+# rattache lui-même automatiquement une fois les labels posés.
+#
+# Ne touche PAS aux Clusters.omni.sidero.dev / MachineSets.omni.sidero.dev existants.
 #
 # Prérequis : les 3 VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
 # Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
@@ -20,13 +26,10 @@
 # exacts sont attendus parmi les machines non assignées de tout l'organisme Omni.
 #
 # Usage : ansible-playbook playbooks/omni/k8s-shared-cluster.yaml -i inventories/infra/
-- name: Apply new k8s-shared MachineSetNodes to Omni
+- name: Label new k8s-shared machines for automated Omni allocation
   hosts: localhost
   gather_facts: false
   become: false
-
-  vars:
-    manifest_dest: "/tmp/k8s-shared-new-nodes.yaml"
 
   tasks:
     - name: Fetch machine UUIDs from Omni (unassigned machines, matched by hardware spec)
@@ -98,14 +101,63 @@
           correspondent à la cible (CP: {{ hostvars['k8s-shared-controlplane-4'].vm_cpu_cores }},
           workers: {{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}) avant de relancer.
 
-    - name: Template k8s-shared new-nodes manifest
-      ansible.builtin.template:
-        src: "{{ playbook_dir }}/../../roles/omni/templates/k8s-shared-new-nodes.yaml.j2"
-        dest: "{{ manifest_dest }}"
-        mode: "0640"
+    # Idempotent : relit la machine, saute si les 2 labels sont déjà présents. Préserve tout
+    # le reste du document (metadata.labels existants type omni.sidero.dev/address, et tout
+    # spec) — un `omnictl apply` avec un document incomplet REMPLACE la ressource entière
+    # (constaté en dry-run : un spec vide met connected à false, managementaddress à "" et
+    # supprime les autres labels). Ne jamais appliquer autre chose que le document tel que
+    # récupéré + les 2 lignes de labels ajoutées.
+    - name: Label new control-plane machine for automated allocation
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          python3 -c "
+          import re, subprocess, sys
+          uuid = '{{ item }}'
+          current = subprocess.run(['omnictl', 'get', 'machine', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
+          if re.search(r'^\s+role:\s*controlplane\s*$', current, re.MULTILINE) and re.search(r'^\s+cluster-candidate:\s*k8s-shared\s*$', current, re.MULTILINE):
+              print(uuid + ': already labeled, skipping')
+              sys.exit(0)
+          patched = re.sub(r'(    labels:\n)', r'\1        role: controlplane\n        cluster-candidate: k8s-shared\n', current, count=1)
+          dest = '/tmp/omni-label-' + uuid + '.yaml'
+          with open(dest, 'w') as f:
+              f.write(patched)
+          subprocess.run(['omnictl', 'apply', '-f', dest], check=True)
+          print(uuid + ': labeled role=controlplane cluster-candidate=k8s-shared')
+          "
+      loop: "{{ omni_k8s_shared_new_cp_uuids }}"
+      register: cp_label_result
+      changed_when: "'labeled role=' in cp_label_result.stdout"
+      args:
+        executable: /bin/sh
 
-    - name: Apply k8s-shared MachineSetNodes via omnictl
-      ansible.builtin.command:
-        cmd: omnictl apply -f {{ manifest_dest }}
-      register: cluster_apply_result
-      changed_when: false
+    - name: Label new worker machines for automated allocation
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          python3 -c "
+          import re, subprocess, sys
+          uuid = '{{ item }}'
+          current = subprocess.run(['omnictl', 'get', 'machine', uuid, '-o', 'yaml'], capture_output=True, text=True, check=True).stdout
+          if re.search(r'^\s+role:\s*worker\s*$', current, re.MULTILINE) and re.search(r'^\s+cluster-candidate:\s*k8s-shared\s*$', current, re.MULTILINE):
+              print(uuid + ': already labeled, skipping')
+              sys.exit(0)
+          patched = re.sub(r'(    labels:\n)', r'\1        role: worker\n        cluster-candidate: k8s-shared\n', current, count=1)
+          dest = '/tmp/omni-label-' + uuid + '.yaml'
+          with open(dest, 'w') as f:
+              f.write(patched)
+          subprocess.run(['omnictl', 'apply', '-f', dest], check=True)
+          print(uuid + ': labeled role=worker cluster-candidate=k8s-shared')
+          "
+      loop: "{{ omni_k8s_shared_new_worker_uuids }}"
+      register: worker_label_result
+      changed_when: "'labeled role=' in worker_label_result.stdout"
+      args:
+        executable: /bin/sh
+
+    - name: Remind operator to verify automated attachment
+      ansible.builtin.debug:
+        msg: >-
+          Labels posés. Omni devrait rattacher automatiquement les 3 machines aux MachineSets
+          (allocation automatisée, pas de MachineSetNode à créer). Vérifier avec :
+          omnictl cluster status k8s-shared ; kubectl --context=cedille-k8s-shared get nodes -o wide
