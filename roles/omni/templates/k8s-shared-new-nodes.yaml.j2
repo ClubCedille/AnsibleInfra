@@ -1,0 +1,30 @@
+# Managed by Ansible — do not edit manually
+# Generated and applied by: ansible-playbook playbooks/omni/k8s-shared-cluster.yaml -i inventories/infra/
+#
+# N'inclut PAS de ressource Clusters.omni.sidero.dev ni MachineSets.omni.sidero.dev :
+# le cluster k8s-shared et ses 2 MachineSets (k8s-shared-control-planes, k8s-shared-workers)
+# existent déjà. Ce manifest ajoute uniquement les MachineSetNodes des 3 nouveaux nodes.
+{% for uuid in omni_k8s_shared_new_cp_uuids %}
+---
+metadata:
+  namespace: default
+  type: MachineSetNodes.omni.sidero.dev
+  id: {{ uuid }}
+  labels:
+    omni.sidero.dev/cluster: k8s-shared
+    omni.sidero.dev/machine-set: k8s-shared-control-planes
+    omni.sidero.dev/role-controlplane: ""
+spec: {}
+{% endfor %}
+{% for uuid in omni_k8s_shared_new_worker_uuids %}
+---
+metadata:
+  namespace: default
+  type: MachineSetNodes.omni.sidero.dev
+  id: {{ uuid }}
+  labels:
+    omni.sidero.dev/cluster: k8s-shared
+    omni.sidero.dev/machine-set: k8s-shared-workers
+    omni.sidero.dev/role-worker: ""
+spec: {}
+{% endfor %}

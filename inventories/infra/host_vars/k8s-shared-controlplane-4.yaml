@@ -1,0 +1,11 @@
+---
+# NOUVEAU — n'existe pas encore. vm_id choisi en suivant la séquence des CP existants
+# (1009000-1009003) ; à revalider comme libre juste avant provisionnement réel.
+# 5e control-plane : raison topologique (nombre impair pour éviter le split-brain etcd),
+# pas une question de charge — cf. notes.md section 2. Config uniforme avec les 4 autres CP.
+vm_id: 1009004
+vm_name: k8s-shared-controlplane-4
+vm_proxmox_node: pve01
+vm_disk_size: 250G
+vm_cpu_cores: 4
+vm_memory_mb: 8192
