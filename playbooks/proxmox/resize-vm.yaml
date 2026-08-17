@@ -2,12 +2,13 @@
 # Resize cores/memory d'une ou plusieurs VMs Proxmox existantes vers les valeurs cibles
 # définies dans host_vars (vm_cpu_cores, vm_memory_mb).
 #
-# ⚠️ Ne PAS lancer contre plusieurs nodes k8s-shared à la fois : cores/memory ne sont pas
+# Ne PAS lancer contre plusieurs nodes k8s-shared à la fois : cores/memory ne sont pas
 # garantis hot-plug sur ce setup, la VM doit être arrêtée puis redémarrée pour que le
 # changement soit pris en compte côté guest — deux nodes resize+reboot simultanément peut
 # réduire la capacité du cluster sous ce qui est nécessaire pour servir le trafic. Toujours
 # limiter avec --limit à un seul host, et suivre le cycle drain → stop → resize → start →
-# uncordon décrit dans docs/resize-runbook.md (un node à la fois).
+# uncordon décrit dans ~/Cedille/docs/migration-prodv2-to-k8s-shared/resize-runbook.md
+# (un node à la fois).
 #
 # Usage (un node à la fois, ex. worker-2) :
 #   ansible-playbook playbooks/proxmox/resize-vm.yaml -i inventories/infra/ \

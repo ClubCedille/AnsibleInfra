@@ -2,7 +2,7 @@
 # Provision les 3 nouveaux nodes k8s-shared (worker-6/pve05, worker-7/pve08,
 # controlplane-4/pve01) sur Proxmox via boot ISO, sur le modèle de k8s-poc-vms.yaml.
 #
-# ⚠️ Les VMs k8s-shared existantes (worker-0..5, controlplane-0..3) n'ont PAS été
+# Les VMs k8s-shared existantes (worker-0..5, controlplane-0..3) n'ont PAS été
 # provisionnées avec ce pattern exact — leur disque est sur "ide0" (250G, boot direct,
 # pas de CDROM d'installation visible) plutôt que "virtio0" avec ide2 en CDROM comme dans
 # k8s-poc-vms.yaml. Aucun playbook d'origine retrouvé pour ces 9 VMs (cf. group_vars/k8s_shared.yaml).
@@ -10,7 +10,8 @@
 # reboot, cf. docs/omni-cluster-provisioning.md étape 4) en alignant le device disque sur
 # "ide0" (group_vars/k8s_shared.yaml: vm_disk_device) pour rester cohérent avec les 9 nodes
 # existants. À VALIDER par l'opérateur avant toute exécution réelle — voir le runbook
-# resize-runbook.md pour le rappel explicite de ce point.
+# ~/Cedille/docs/migration-prodv2-to-k8s-shared/resize-runbook.md pour le rappel explicite
+# de ce point.
 #
 # Prerequisites (NON remplis à ce stade, cf. tâche 4 du prompt de délégation) :
 #   - Image Talos générée depuis l'UI Omni pour k8s-shared (token d'enrôlement propre au
