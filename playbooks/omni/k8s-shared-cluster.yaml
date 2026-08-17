@@ -45,7 +45,10 @@
       register: machine_uuids_raw
       changed_when: false
       args:
-        executable: /bin/bash
+        # /bin/bash n'existe pas sur NixOS (pas de FHS /bin standard) — /bin/sh est le seul
+        # chemin garanti présent partout ; ici c'est un lien vers bash, donc "set -o pipefail"
+        # fonctionne quand même.
+        executable: /bin/sh
 
     - name: Parse machine UUID lists
       ansible.builtin.set_fact:
