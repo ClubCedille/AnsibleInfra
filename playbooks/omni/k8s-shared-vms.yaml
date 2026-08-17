@@ -1,28 +1,33 @@
 ---
 # Provision les 3 nouveaux nodes k8s-shared (worker-6/pve05, worker-7/pve08,
-# controlplane-4/pve01) sur Proxmox via boot ISO, sur le modèle de k8s-poc-vms.yaml.
+# controlplane-4/pve01) sur Proxmox, en reproduisant la configuration exacte des 10 VMs
+# k8s-shared existantes — vérifiée via `pvesh get .../qemu/<vmid>/config` sur les 10 nodes
+# le 2026-08-17 (aucun playbook d'origine retrouvé, tag Proxmox "TF" présent sur ces VMs mais
+# sans correspondance dans les repos Terraform clonés localement — origine non déterminée) :
 #
-# Les VMs k8s-shared existantes (worker-0..5, controlplane-0..3) n'ont PAS été
-# provisionnées avec ce pattern exact — leur disque est sur "ide0" (250G, boot direct,
-# pas de CDROM d'installation visible) plutôt que "virtio0" avec ide2 en CDROM comme dans
-# k8s-poc-vms.yaml. Aucun playbook d'origine retrouvé pour ces 9 VMs (cf. group_vars/k8s_shared.yaml).
-# Ce playbook reproduit le pattern k8s-poc connu et documenté (ISO boot → self-install →
-# reboot, cf. docs/omni-cluster-provisioning.md étape 4) en alignant le device disque sur
-# "ide0" (group_vars/k8s_shared.yaml: vm_disk_device) pour rester cohérent avec les 9 nodes
-# existants. À VALIDER par l'opérateur avant toute exécution réelle — voir le runbook
-# ~/Cedille/docs/migration-prodv2-to-k8s-shared/resize-runbook.md pour le rappel explicite
-# de ce point.
+#   - Control-planes : disque unique scsi0 (40G, virtio-scsi), 2 NICs (VLAN 500 + VLAN 1009).
+#   - Workers : disque unique ide0 (250G), 3 NICs (VLAN 500 + VLAN 1009 + VLAN 247/IP publique).
+#   - ostype "other" (pas l26), pas de cloud-init, pas de CDROM d'installation résiduel — le
+#     disque est pré-peuplé par import d'image (proxmox_disk/import_from), pas par boot ISO
+#     self-install comme k8s-poc-vms.yaml.
+#   - VLAN 1009 (tag net1) = réseau réel des nodes Talos/Kubernetes (10.5.9.0/24, confirmé via
+#     l'interface OPNsense vtnet0_vlan1009) ; usage exact de VLAN 500 (net0) non déterminé.
 #
-# Prerequisites (NON remplis à ce stade, cf. tâche 4 du prompt de délégation) :
-#   - Image Talos générée depuis l'UI Omni pour k8s-shared (token d'enrôlement propre au
-#     cluster — ne PAS réutiliser celle de k8s-poc) et uploadée sur pve01/pve05/pve08 :
-#     ansible-playbook playbooks/proxmox/upload-talos-iso.yaml
-#   - VLAN 500 déjà actif sur tous les hosts PVE (utilisé par les VMs k8s-shared existantes,
-#     aucune action réseau attendue ici contrairement à l'étape 1 de k8s-poc)
+# Reconstruction sur la base de l'état observé, sans playbook source retrouvé — à valider par
+# l'opérateur avant toute exécution réelle (cf.
+# ~/Cedille/docs/migration-prodv2-to-k8s-shared/resize-runbook.md), en particulier l'image
+# Talos à importer (vm_disk_image_path, group_vars/k8s_shared.yaml).
+#
+# Prerequisites (non remplis à ce stade) :
+#   - Image Talos générée pour k8s-shared et présente sur les hôtes PVE cibles au chemin
+#     vm_disk_image_path (token d'enrôlement propre au cluster — ne pas réutiliser celui de
+#     k8s-poc)
+#   - VLANs 500/1009/247 déjà actifs sur pve01/pve05/pve08 (utilisés par les VMs k8s-shared
+#     existantes, aucune action réseau attendue ici)
 #   - Les 3 VMs ne doivent pas déjà exister
 
-- name: Provision new k8s-shared nodes on Proxmox (ISO boot)
-  hosts: k8s-shared-worker-6,k8s-shared-worker-7,k8s-shared-controlplane-4
+- name: Provision new k8s-shared control-plane (scsi0 disk, 2 NICs)
+  hosts: k8s-shared-controlplane-4
   gather_facts: false
   become: false
   module_defaults:
@@ -30,7 +35,7 @@
       validate_certs: false
 
   tasks:
-    - name: Create VM with blank boot disk
+    - name: Create VM shell
       community.proxmox.proxmox_kvm:
         api_user: "{{ vm_proxmox_api.user }}"
         api_password: "{{ vm_proxmox_api.password }}"
@@ -43,41 +48,129 @@
         bios: seabios
         machine: q35
         cpu: host
-        agent: enabled=1
-        boot: "order=ide0;ide2"
-        ide:
-          # ide0 hardcodé (pas templé depuis vm_disk_device) : fixe pour tout le groupe
-          # k8s_shared, cf. group_vars/k8s_shared.yaml.
-          ide0: "{{ vm_disk_storage }}:{{ vm_disk_size | regex_replace('G$', '') }}"
-          ide2: "local:iso/talos-k8s-shared-bios-nocloud-amd64.iso,media=cdrom"
+        ostype: "{{ vm_ostype }}"
+        agent: "{{ vm_agent }}"
+        scsihw: "{{ vm_scsihw }}"
         net:
-          net0: "virtio,bridge={{ vm_net.bridge }},tag={{ vm_net.vlan }},mtu={{ vm_net.mtu | default(1500) }}"
+          net0: "{{ vm_net_device }},bridge={{ vm_net_bridge }},tag={{ vm_net_mgmt_vlan }},mtu={{ vm_net_mtu }}"
+          net1: "{{ vm_net_device }},bridge={{ vm_net_bridge }},tag={{ vm_net_pod_vlan }},mtu={{ vm_net_mtu }}"
         onboot: "{{ vm_onboot }}"
         state: present
       delegate_to: localhost
 
-    - name: Enable QEMU guest agent on existing VM
+    - name: Import Talos disk image onto scsi0
+      community.proxmox.proxmox_disk:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        disk: "{{ vm_disk_device }}"
+        import_from: "{{ vm_disk_image_path }}"
+        storage: "{{ vm_disk_storage }}"
+        format: "{{ vm_disk_format }}"
+        discard: true
+        state: present
+      delegate_to: localhost
+
+    - name: Resize the VM disk
+      community.proxmox.proxmox_disk:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        disk: "{{ vm_disk_device }}"
+        size: "{{ vm_disk_size }}"
+        state: resized
+      delegate_to: localhost
+
+    - name: Set boot order
       community.proxmox.proxmox_kvm:
         api_user: "{{ vm_proxmox_api.user }}"
         api_password: "{{ vm_proxmox_api.password }}"
         api_host: "{{ vm_proxmox_api.host }}"
         vmid: "{{ vm_id }}"
         node: "{{ vm_proxmox_node }}"
-        agent: enabled=1
-        state: present
+        boot: "order={{ vm_disk_device }};net0"
         update: true
       delegate_to: localhost
 
-    - name: Power-cycle VM to apply hardware config changes (e.g. qemu guest agent channel)
+    - name: Start VM
       community.proxmox.proxmox_kvm:
         api_user: "{{ vm_proxmox_api.user }}"
         api_password: "{{ vm_proxmox_api.password }}"
         api_host: "{{ vm_proxmox_api.host }}"
         vmid: "{{ vm_id }}"
-        state: restarted
+        state: started
       delegate_to: localhost
-      when: vm_power_cycle | default(false) | bool
-      throttle: 1
+      when: vm_start_after_creation | default(true)
+
+- name: Provision new k8s-shared workers (ide0 disk, 3 NICs)
+  hosts: k8s-shared-worker-6,k8s-shared-worker-7
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: Create VM shell
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        name: "{{ vm_name }}"
+        node: "{{ vm_proxmox_node }}"
+        memory: "{{ vm_memory_mb }}"
+        cores: "{{ vm_cpu_cores }}"
+        bios: seabios
+        machine: q35
+        cpu: host
+        ostype: "{{ vm_ostype }}"
+        agent: "{{ vm_agent }}"
+        net:
+          net0: "{{ vm_net_device }},bridge={{ vm_net_bridge }},tag={{ vm_net_mgmt_vlan }},mtu={{ vm_net_mtu }}"
+          net1: "{{ vm_net_device }},bridge={{ vm_net_bridge }},tag={{ vm_net_pod_vlan }},mtu={{ vm_net_mtu }}"
+          net2: "{{ vm_net_device }},bridge={{ vm_net_bridge }},tag={{ vm_net_public_vlan }},mtu={{ vm_net_mtu }}"
+        onboot: "{{ vm_onboot }}"
+        state: present
+      delegate_to: localhost
+
+    - name: Import Talos disk image onto ide0
+      community.proxmox.proxmox_disk:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        disk: "{{ vm_disk_device }}"
+        import_from: "{{ vm_disk_image_path }}"
+        storage: "{{ vm_disk_storage }}"
+        format: "{{ vm_disk_format }}"
+        discard: true
+        state: present
+      delegate_to: localhost
+
+    - name: Resize the VM disk
+      community.proxmox.proxmox_disk:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        disk: "{{ vm_disk_device }}"
+        size: "{{ vm_disk_size }}"
+        state: resized
+      delegate_to: localhost
+
+    - name: Set boot order
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        boot: "order={{ vm_disk_device }};net0"
+        update: true
+      delegate_to: localhost
 
     - name: Start VM
       community.proxmox.proxmox_kvm:

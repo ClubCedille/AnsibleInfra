@@ -1,0 +1,8 @@
+---
+# Overrides spécifiques aux 5 control-planes de k8s-shared (4 existants + controlplane-4,
+# nouveau). Vérifié via pvesh sur les 4 CP existants le 2026-08-17 : disque unique "scsi0"
+# (40G, virtio-scsi), 2 NICs (pas de net2/IP publique sur les CP — cohérent, seuls les workers
+# exposent une IP publique).
+vm_disk_device: scsi0
+vm_disk_size: 40G
+vm_scsihw: virtio-scsi-pci

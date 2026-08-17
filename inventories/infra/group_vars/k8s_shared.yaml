@@ -2,7 +2,9 @@
 # Shared configuration for all k8s-shared nodes (controlplanes + workers).
 # Adopte dans l'inventaire Ansible des VMs qui existaient déjà avant ce repo
 # (aucune trace de k8s-shared dans AnsibleInfra avant l'issue AnsibleInfra#30).
-# Per-node overrides (vm_id, vm_name, vm_proxmox_node, vm_cpu_cores, vm_memory_mb) sont dans host_vars.
+# Overrides par rôle (disque, réseau) dans group_vars/k8s_shared_controlplanes.yaml et
+# group_vars/k8s_shared_workers.yaml. Overrides par node (vm_id, vm_name, vm_proxmox_node,
+# vm_cpu_cores, vm_memory_mb) dans host_vars.
 #
 # NOTE API password : réutilise le mot de passe vaulté de group_vars/pve.yaml (ansible_password)
 # plutôt que d'en re-vaulter une copie locale comme le fait k8s_poc.yaml — évite de dupliquer un
@@ -13,33 +15,36 @@ vm_proxmox_api:
   password: "{{ ansible_password }}"
   host: "10.0.21.51"
 
-# NOTE disque : les VMs k8s-shared existantes (worker-0..5, controlplane-0..3) ont été
-# provisionnées AVANT ce repo, avec un layout différent du pattern k8s-poc connu :
-# disque unique "ide0" (250G), pas de disque cloud-init, boot order "ide0;net0" (ou "ide3;net0"
-# sur certains nodes — CDROM d'installation déjà détaché). Aucun playbook d'origine retrouvé.
-# vm_disk_device ci-dessous documente cet état observé (vérifié via pvesh le 2026-08-16) pour
-# rester cohérent avec les nodes existants — à valider par l'opérateur avant toute exécution réelle,
-# en particulier pour le provisionnement des 3 nouveaux nodes (playbooks/omni/k8s-shared-vms.yaml).
 vm_disk_storage: RBD_Common
-vm_disk_device: ide0
 vm_disk_format: raw
+vm_ostype: other
+# agent activé sous la forme exacte observée sur les 10 VMs existantes (vérifié via pvesh
+# le 2026-08-17), pas juste "agent: true" — inclut fstrim_cloned_disks et le type de canal.
+vm_agent: "enabled=1,fstrim_cloned_disks=0,type=virtio"
 # Image Talos à confirmer par l'opérateur (probablement une version plus récente que k8s-poc,
 # k8s-shared existant depuis avril 2025 — cf. omnictl get machinesets, created: 2025-04-24).
+# Les VMs existantes n'ont ni CDROM résiduel ni disque cloud-init : le disque est pré-peuplé
+# par import d'image (mécanisme proxmox_disk/import_from, comme le rôle cedille.proxmox.vm),
+# pas par boot ISO self-install comme k8s-poc. À valider avant toute exécution réelle.
 vm_disk_image_path: /var/lib/vz/template/iso/talos-1.13.5-bios-nocloud-amd64.raw.xz
 
-# Réseau : VLAN 500 (vmbr1, tag=500), adressage DHCP dynamique (10.5.9.0/24 observé) — pas de
-# cloud-init/ipconfig statique sur les VMs existantes. Le mécanisme de réservation DHCP pour ce
-# VLAN n'a été trouvé dans aucun repo cloné (contrairement à k8s_poc_dhcp, géré par ce repo) —
-# hors scope de cette issue, à documenter séparément si besoin.
-vm_net:
-  bridge: vmbr1
-  vlan: 500
-  device: virtio
-  mtu: 1500
+# Réseau : adressage DHCP dynamique (10.5.9.0/24 observé sur le VLAN 1009, vérifié via
+# l'interface OPNsense vtnet0_vlan1009) — pas de cloud-init/ipconfig statique sur les VMs
+# existantes. Chaque VM k8s-shared a 2 ou 3 NICs (cf. group_vars par rôle) :
+#   net0 → VLAN 500  (10.5.0.0/24, usage exact non déterminé — présent sur tous les nodes)
+#   net1 → VLAN 1009 (10.5.9.0/24, réseau réel des nodes Talos/Kubernetes)
+#   net2 → VLAN 247  (IP publique, workers uniquement — cf. AnsibleRoles/proxmox create_vm.yaml)
+# Le mécanisme de réservation/attribution DHCP pour ces VLANs n'a été trouvé dans aucun repo
+# cloné (contrairement à k8s_poc_dhcp, géré par ce repo) — hors scope de cette issue.
+vm_net_bridge: vmbr1
+vm_net_device: virtio
+vm_net_mtu: 1500
+vm_net_mgmt_vlan: 500
+vm_net_pod_vlan: 1009
 
-# Talos ne lit pas cloud-init — champs requis par le rôle cedille.proxmox.vm mais ignorés ici
-# (VMs existantes n'ont pas de disque cloud-init ; à revalider si le provisioning des nouveaux
-# nodes suit finalement un flux cloud-init).
+# Talos ne lit pas cloud-init — champs requis par le rôle cedille.proxmox.vm mais non utilisés
+# par les playbooks de ce groupe (aucune tâche cloud-init dans k8s-shared-vms.yaml, les VMs
+# existantes n'ont pas de disque cloud-init).
 vm_user: "unused"
 vm_password: "unused"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"

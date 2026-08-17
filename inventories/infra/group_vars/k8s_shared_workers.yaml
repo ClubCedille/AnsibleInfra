@@ -1,0 +1,7 @@
+---
+# Overrides spécifiques aux 8 workers de k8s-shared (6 existants + worker-6/worker-7,
+# nouveaux). Vérifié via pvesh sur les 6 workers existants le 2026-08-17 : disque unique
+# "ide0" (250G), 3 NICs (net2 = VLAN 247, IP publique — absent chez les control-planes).
+vm_disk_device: ide0
+vm_disk_size: 250G
+vm_net_public_vlan: 247

@@ -6,6 +6,5 @@
 vm_id: 1009004
 vm_name: k8s-shared-controlplane-4
 vm_proxmox_node: pve01
-vm_disk_size: 250G
 vm_cpu_cores: 4
 vm_memory_mb: 8192

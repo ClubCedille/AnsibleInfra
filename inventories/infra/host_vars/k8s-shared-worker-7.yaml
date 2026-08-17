@@ -4,7 +4,6 @@
 vm_id: 1009017
 vm_name: k8s-shared-worker-7
 vm_proxmox_node: pve08
-vm_disk_size: 250G
 # pve08 = tier "small" (125GiB/56 cores) → cible 16 cores / 24GB.
 vm_cpu_cores: 16
 vm_memory_mb: 24576
