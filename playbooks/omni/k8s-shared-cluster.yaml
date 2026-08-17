@@ -11,6 +11,14 @@
 # Prérequis : les 3 VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
 # Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
 #
+# Découverte des machines par cores (pas par hostname) : constaté en exécution réelle le
+# 2026-08-17, Omni n'assigne pas de hostname à ces machines (VLANs 500/1009 n'ont pas de
+# mécanisme DHCP/reverse-DNS documenté, cf. notes.md) — l'UI affiche l'UUID brut à la place.
+# La tâche identifie donc les 3 nouvelles machines par : pas encore assignées à un cluster
+# (absence du label omni.sidero.dev/cluster) + nombre de cores correspondant à la cible
+# (host_vars controlplane-4/worker-6). Sûr ici car un seul CP et deux workers avec ces cores
+# exacts sont attendus parmi les machines non assignées de tout l'organisme Omni.
+#
 # Usage : ansible-playbook playbooks/omni/k8s-shared-cluster.yaml -i inventories/infra/
 - name: Apply new k8s-shared MachineSetNodes to Omni
   hosts: localhost
@@ -21,7 +29,14 @@
     manifest_dest: "/tmp/k8s-shared-new-nodes.yaml"
 
   tasks:
-    - name: Fetch machine UUIDs and hostnames from Omni
+    - name: Fetch machine UUIDs from Omni (unassigned machines, matched by hardware spec)
+      # Ne peut pas discriminer par hostname : Omni n'a pas de hostname pour ces machines
+      # (aucun mécanisme DHCP/reverse-DNS documenté pour ces VLANs — cf. notes.md, section
+      # "Réseau" — omnictl affiche l'UUID brut à la place, constaté en exécution réelle le
+      # 2026-08-17). Discrimine plutôt par : (a) absence du label
+      # "omni.sidero.dev/cluster" (= pas encore assigné à un cluster/MachineSet), (b) cores
+      # correspondant à la cible controlplane-4 (vm_cpu_cores du group_vars CP) ou
+      # worker-6/worker-7 (vm_cpu_cores du group_vars workers).
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
@@ -32,17 +47,25 @@
           result = {'cp': [], 'worker': []}
           for doc in docs:
               uuid_m = re.search(r'^\s+id:\s+([0-9a-f-]{36})', doc, re.MULTILINE)
-              host_m = re.search(r'hostname:\s+(k8s-shared-[a-z0-9-]+)', doc)
-              if uuid_m and host_m:
-                  uuid = uuid_m.group(1)
-                  host = host_m.group(1)
-                  if host == 'k8s-shared-controlplane-4':
-                      result['cp'].append(uuid)
-                  elif host in ('k8s-shared-worker-6', 'k8s-shared-worker-7'):
-                      result['worker'].append(uuid)
+              if not uuid_m:
+                  continue
+              if re.search(r'omni\.sidero\.dev/cluster:', doc):
+                  continue
+              cores_m = re.search(r'omni\.sidero\.dev/cores:\s+(\d+)', doc)
+              if not cores_m:
+                  continue
+              uuid = uuid_m.group(1)
+              cores = int(cores_m.group(1))
+              if cores == {{ cp_target_cores }}:
+                  result['cp'].append(uuid)
+              elif cores == {{ worker_target_cores }}:
+                  result['worker'].append(uuid)
           print(json.dumps(result))
           "
       register: machine_uuids_raw
+      vars:
+        cp_target_cores: "{{ hostvars['k8s-shared-controlplane-4'].vm_cpu_cores }}"
+        worker_target_cores: "{{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}"
       changed_when: false
       args:
         # /bin/bash n'existe pas sur NixOS (pas de FHS /bin standard) — /bin/sh est le seul
@@ -70,8 +93,10 @@
         fail_msg: >
           Expected 1 new CP (controlplane-4) and 2 new workers (worker-6, worker-7), got
           {{ omni_k8s_shared_new_cp_uuids | length }} CPs and {{ omni_k8s_shared_new_worker_uuids | length }} workers.
-          Vérifier que les VMs sont bien "Available" dans Omni et que leur hostname suit le
-          pattern attendu avant de relancer.
+          Vérifier que les 3 VMs sont bien "Available"/"connected" dans Omni (omnictl get
+          machines), qu'aucune n'est déjà assignée à un cluster, et que leurs cores
+          correspondent à la cible (CP: {{ hostvars['k8s-shared-controlplane-4'].vm_cpu_cores }},
+          workers: {{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}) avant de relancer.
 
     - name: Template k8s-shared new-nodes manifest
       ansible.builtin.template:
