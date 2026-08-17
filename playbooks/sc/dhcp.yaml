@@ -30,7 +30,7 @@
     - ../../roles/kea/vars/flags.yml
   pre_tasks:
     - name: Configure apt proxy
-      ansible.builtin.include_tasks: includes/apt_proxy.yaml
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/apt_proxy.yaml"
   vars:
     tftp_extra_files:
       - src: "{{ playbook_dir }}/../../files/sc/pxe/netboot.ipxe"

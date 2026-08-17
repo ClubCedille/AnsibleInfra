@@ -30,8 +30,8 @@
     - ../../roles/kea/vars/flags.yml
   pre_tasks:
     - name: Configure apt proxy
-      ansible.builtin.include_tasks: includes/apt_proxy.yaml
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/apt_proxy.yaml"
     - name: Configure pip proxy
-      ansible.builtin.include_tasks: includes/pip_proxy.yaml
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/pip_proxy.yaml"
   roles:
     - cedille.netservices.dns
