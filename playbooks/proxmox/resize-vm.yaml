@@ -18,6 +18,9 @@
   gather_facts: false
   become: false
   serial: 1
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
 
   tasks:
     - name: Resize VM cores/memory
