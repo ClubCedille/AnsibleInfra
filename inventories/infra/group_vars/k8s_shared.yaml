@@ -6,13 +6,17 @@
 # group_vars/k8s_shared_workers.yaml. Overrides par node (vm_id, vm_name, vm_proxmox_node,
 # vm_cpu_cores, vm_memory_mb) dans host_vars.
 #
-# NOTE API password : réutilise le mot de passe vaulté de group_vars/pve.yaml (ansible_password)
-# plutôt que d'en re-vaulter une copie locale comme le fait k8s_poc.yaml — évite de dupliquer un
-# secret sans avoir accès au vault-password dans cette session. À aligner sur le pattern k8s_poc
-# si l'opérateur préfère une entrée vault dédiée.
+# NOTE API password : réutilise le mot de passe vaulté de group_vars/pve.yaml plutôt que d'en
+# re-vaulter une copie locale comme le fait k8s_poc.yaml — évite de dupliquer un secret sans
+# avoir accès au vault-password dans cette session. À aligner sur le pattern k8s_poc si
+# l'opérateur préfère une entrée vault dédiée.
+# Référencé via hostvars d'un host du groupe [pve] (pas directement "ansible_password") : les
+# hosts k8s_shared ne sont pas membres du groupe pve, donc group_vars/pve.yaml ne s'applique
+# pas à eux — "ansible_password" seul y est undefined (piège rencontré en exécution réelle le
+# 2026-08-17). pve01.mgmt.etsmtl.club est le host dont l'IP sert déjà d'endpoint API ci-dessous.
 vm_proxmox_api:
   user: "root@pam"
-  password: "{{ ansible_password }}"
+  password: "{{ hostvars['pve01.mgmt.etsmtl.club'].pve_api_password }}"
   host: "10.0.21.51"
 
 vm_disk_storage: RBD_Common
