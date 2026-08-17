@@ -1,0 +1,28 @@
+---
+# Télécharge l'ISO Talos pour k8s-shared sur les 3 hôtes PVE cibles des nouveaux nodes
+# (pve01/controlplane-4, pve05/worker-6, pve08/worker-7).
+# Requis avant playbooks/omni/k8s-shared-vms.yaml (boot CDROM, cf. commentaire en tête de
+# ce playbook).
+#
+# Schematic et version confirmés en direct via `omnictl get machinestatuses -o yaml` sur les
+# 10 VMs k8s-shared existantes le 2026-08-17 (champ spec.schematic.fullid, identique sur les
+# 10 machines) — pas une valeur copiée de k8s-poc. Extensions : intel-ucode + qemu-guest-agent
+# (pas de lldpd, contrairement à k8s-poc).
+#
+# Usage : ansible-playbook playbooks/proxmox/upload-talos-iso-k8s-shared.yaml -i inventories/infra/
+- name: Upload Talos ISO for k8s-shared to target Proxmox hosts
+  hosts: pve01.mgmt.etsmtl.club,pve05.mgmt.etsmtl.club,pve08.mgmt.etsmtl.club
+  gather_facts: false
+  become: true
+  vars:
+    pull_disk_image_path: /var/lib/vz/template/iso
+    talos_version: "1.13.7"
+    talos_schematic_id: "1c8dd53e05ebedfc2cb12090b31b5dc2c16bdba3c42d8e18e717ef5cecc0dfc2"
+    # dest_filename doit rester synchronisé avec vm_talos_iso_filename dans
+    # inventories/infra/group_vars/k8s_shared.yaml (référencé par k8s-shared-vms.yaml pour
+    # le CDROM d'installation).
+    pull_disk_images:
+      - url: "https://factory.talos.dev/image/{{ talos_schematic_id }}/{{ talos_version }}/nocloud-amd64.iso"
+        dest_filename: "talos-{{ talos_version }}-k8s-shared-nocloud-amd64.iso"
+  roles:
+    - cedille.proxmox.pull_disk
