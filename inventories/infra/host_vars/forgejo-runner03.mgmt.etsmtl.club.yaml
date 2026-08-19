@@ -27,11 +27,13 @@ forgejo_runner_registration_token: !vault |
   64316161346361353032313266333565323165653234393233396564323737376666613537353133
   3865613861363462366565643236356232376538663232653964
 
-# Host-native execution (no docker:// scheme) so the job gets direct access
-# to /dev/kvm — needed for the opnsense-cloudinit Packer/QEMU image builds.
-# Kept off the default "ubuntu-latest" pool used by the two Docker runners.
+# Host-native execution so the job gets direct access to /dev/kvm — needed
+# for the opnsense-cloudinit Packer/QEMU image builds. Kept off the default
+# "ubuntu-latest" pool used by the two Docker runners.
+# The ":host" suffix is required: act_runner falls back to Docker execution
+# (image node:22-bookworm, no /dev/kvm) on any label without a scheme.
 forgejo_runner_labels:
-  - "kvm-runner"
+  - "kvm-runner:host"
 
 # Image builds are long (~10+ min under KVM) and CPU/IO heavy — avoid
 # running more than one at a time on this box.
