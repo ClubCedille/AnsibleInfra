@@ -1,0 +1,47 @@
+---
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  64613237333732346537383739363265363864376365626439666635396537616635623439633830
+  3035666561663830326636616362363765376637636266360a323532653664653939393435343539
+  61656132336332386339656135383832306664333764646538623533346265366334623664343031
+  3963306233666237310a393232383861376537356239623738363739353932663333663437656430
+  36616261323634376163376335613437623934643861656633643466626136383261626633343164
+  6231626565633931323962636333613132353430323539623931
+
+vm_user: "{{ ansible_user }}"
+vm_password: "{{ ansible_password }}"
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
+
+# Heavier build box: KVM-accelerated Packer/QEMU builds (opnsense-cloudinit
+# image-build CI job) need more headroom than the plain Docker runners.
+vm_disk_size: "60G"
+
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "c2c93cdc-59dc-4fc0-9cef-78316f79f92b"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  37636537656637343361633332343063663835396130386462643234303363633336303236613861
+  3432363537393130343330363965323465643532353666660a653364346133633732353338376432
+  34386539646362633562653362636435343365356661663166646133366232363233376564336461
+  3764653132316664320a643736303635623761363333346662653862346262633661333566333439
+  64316161346361353032313266333565323165653234393233396564323737376666613537353133
+  3865613861363462366565643236356232376538663232653964
+
+# Host-native execution (no docker:// scheme) so the job gets direct access
+# to /dev/kvm — needed for the opnsense-cloudinit Packer/QEMU image builds.
+# Kept off the default "ubuntu-latest" pool used by the two Docker runners.
+forgejo_runner_labels:
+  - "kvm-runner"
+
+# Image builds are long (~10+ min under KVM) and CPU/IO heavy — avoid
+# running more than one at a time on this box.
+forgejo_runner_capacity: 1
+
+forgejo_runner_extra_groups:
+  - kvm
+
+forgejo_runner_extra_packages:
+  - qemu-guest-agent
+  - qemu-system-x86
+  - qemu-utils
+  - ovmf
