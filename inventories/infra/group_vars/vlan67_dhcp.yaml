@@ -1,0 +1,157 @@
+---
+ansible_user: localadmin
+
+vm_cpu_cores: 2
+vm_memory_mb: 2048
+vm_disk_size: "20G"
+
+vm_disk_image_path: "/var/lib/vz/images/lanets/ubuntu_2404.img"
+vm_disk_storage: "RBD_Common"
+vm_disk_format: "raw"
+vm_disk_device: "virtio0"
+vm_cloud_init_storage: "RBD_Common"
+
+vm_delete_if_exists: false
+vm_start_after_creation: true
+vm_onboot: true
+
+vm_name: "{{ inventory_hostname }}"
+vm_proxmox_node: "{{ 'pve01' if inventory_hostname.startswith('dhcp01') else 'pve02' }}"
+
+vm_net:
+  bridge: "vmbr1"
+  vlan: "67"
+  device: virtio
+  ip: "{{ ansible_host }}"
+  netmask: "16"
+  gateway: "10.67.0.1"
+  nameservers: "1.1.1.1,8.8.8.8"
+  search_domain: "lanets.etsmtl.club"
+
+vm_proxmox_api:
+  user: "root@pam"
+  password: !vault |
+    $ANSIBLE_VAULT;1.1;AES256
+    34643833613139363839333538346531643266666335613638643163356333666365646261313737
+    3465336365643965666263353239626531316165653435330a663161363934316130656564663965
+    65323739663838396635353365336366373566353763623536366163633664333763356438643965
+    3362383962636166360a666435613766656230623739366464623735323264643035636537383134
+    3633
+  host: "10.0.21.51"
+
+# Réplique la config DHCP du WLC (VLAN 67, "AP-MGMT" pool):
+#   network 10.67.0.0 255.255.0.0 / dns-server 1.1.1.1 8.8.8.8
+#   option 43 hex f104.0a43.0032 (AP-manager suboption -> WLC 10.67.0.50)
+#   default-router 10.67.0.50 / lease 0 4 (4h)
+# Kea n'a pas de mot-clé "exclude" : l'exclusion se fait en scindant le pool
+# en plusieurs plages qui contournent les adresses réservées :
+#   - 10.67.0.1 - 10.67.2.1 hors pool (infra statique : gateway, DHCP01/02, WLC .50)
+#   - 10.67.5.100 hors pool (IP statique AP-24)
+netservices_dhcp:
+  enabled: true
+  supported_distribution: Ubuntu
+  supported_distribution_version: "24.04"
+
+  install:
+    update_cache: true
+    package_state: present
+    packages:
+      - kea-dhcp4-server
+      - kea-ctrl-agent
+
+  service:
+    dhcp4_name: kea-dhcp4-server
+    ctrl_agent_name: kea-ctrl-agent
+    state: started
+    enabled: true
+
+  paths:
+    dhcp4_config: /etc/kea/kea-dhcp4.conf
+    ctrl_agent_config: /etc/kea/kea-ctrl-agent.conf
+    dhcp4_control_socket: /run/kea/kea4-ctrl-socket
+
+  ha:
+    enabled: true
+    mode: hot-standby
+    this_server_name: "{{ 'primary' if inventory_hostname.startswith('dhcp01') else 'standby' }}"
+    heartbeat_delay: 10000
+    max_response_delay: 60000
+    max_ack_delay: 5000
+    max_unacked_clients: 10
+    sync_page_limit: 10000
+    primary:
+      name: primary
+      url: "http://10.67.0.31:8000/"
+    standby:
+      name: standby
+      url: "http://10.67.0.32:8000/"
+
+  client_classes: []
+  extra_hook_libraries: []
+
+  kea_dhcp4_config:
+    Dhcp4:
+      interfaces-config:
+        interfaces:
+          - "*"
+      control-socket:
+        socket-type: unix
+        socket-name: /run/kea/kea4-ctrl-socket
+      lease-database:
+        type: memfile
+        persist: true
+        name: /var/lib/kea/kea-leases4.csv
+      valid-lifetime: 14400
+      renew-timer: 3600
+      rebind-timer: 7200
+      subnet4:
+        - subnet: "10.67.0.0/16"
+          id: 67
+          pools:
+            - pool: "10.67.2.2 - 10.67.5.99"
+            - pool: "10.67.5.101 - 10.67.20.255"
+          option-data:
+            - name: routers
+              data: "10.67.0.50"
+            - name: domain-name-servers
+              data: "1.1.1.1,8.8.8.8"
+            - name: vendor-encapsulated-options
+              data: "f1040a430032"
+              csv-format: false
+          reservations: []
+      option-data: []
+      hooks-libraries:
+        - library: /usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so
+        - library: /usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_ha.so
+          parameters:
+            high-availability:
+              - this-server-name: "{{ 'primary' if inventory_hostname.startswith('dhcp01') else 'standby' }}"
+                mode: hot-standby
+                heartbeat-delay: 10000
+                max-response-delay: 60000
+                max-ack-delay: 5000
+                max-unacked-clients: 10
+                sync-page-limit: 10000
+                peers:
+                  - name: primary
+                    url: "http://10.67.0.31:8000/"
+                    role: primary
+                    auto-failover: true
+                  - name: standby
+                    url: "http://10.67.0.32:8000/"
+                    role: standby
+                    auto-failover: true
+      loggers:
+        - name: kea-dhcp4
+          output_options:
+            - output: stdout
+          severity: INFO
+
+  kea_ctrl_agent_config:
+    Control-agent:
+      http-host: 0.0.0.0
+      http-port: 8000
+      control-sockets:
+        dhcp4:
+          socket-type: unix
+          socket-name: /run/kea/kea4-ctrl-socket

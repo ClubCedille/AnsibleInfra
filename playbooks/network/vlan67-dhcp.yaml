@@ -1,0 +1,44 @@
+---
+# Provisioning et configuration des serveurs DHCP pour VLAN 67.
+# 2 VMs Ubuntu avec Kea DHCP4 hot-standby HA.
+# Réplique la config du pool DHCP "AP-MGMT" du WLC Cisco :
+#   réseau 10.67.0.0/16, dns-server 1.1.1.1 8.8.8.8, default-router 10.67.0.50,
+#   option 43 hex f104.0a43.0032 (AP-manager), lease 0 4 (4h).
+# Pool dynamique restreint à 10.67.1.0 - 10.67.20.255.
+#
+# Prérequis :
+#   - VLAN 67 existant sur les hôtes Proxmox (network/update-vlans.yaml)
+#   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
+#
+# Usage :
+#   ansible-playbook playbooks/network/vlan67-dhcp.yaml -i inventories/infra/
+
+- name: Provision DHCP VMs for VLAN 67
+  hosts: vlan67_dhcp
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+# - name: Wait for SSH on DHCP VMs
+#   hosts: vlan67_dhcp
+#   gather_facts: false
+#   tasks:
+#     - name: Wait for SSH to be available
+#       ansible.builtin.wait_for_connection:
+#         timeout: 300
+
+- name: Deploy Kea DHCP on VLAN 67 DHCP VMs
+  hosts: vlan67_dhcp
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.netservices.dhcp
+  post_tasks:
+    - name: Validate Kea config
+      ansible.builtin.command:
+        cmd: kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+      changed_when: false
