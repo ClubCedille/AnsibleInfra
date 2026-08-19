@@ -37,6 +37,7 @@ forgejo_runner_container:
 
 # Extra system groups (e.g. "kvm") and apt packages (e.g. qemu-system-x86)
 # for runners that execute jobs natively on the host instead of in Docker
-# (label without a docker:// scheme).
+# (label with a ":host" scheme, e.g. "kvm-runner:host" — a label with no
+# scheme suffix at all falls back to Docker execution, not host-native).
 forgejo_runner_extra_groups: []
 forgejo_runner_extra_packages: []
