@@ -34,3 +34,9 @@ forgejo_runner_container:
   privileged: false
   docker_host: ""
   force_pull: false
+
+# Extra system groups (e.g. "kvm") and apt packages (e.g. qemu-system-x86)
+# for runners that execute jobs natively on the host instead of in Docker
+# (label without a docker:// scheme).
+forgejo_runner_extra_groups: []
+forgejo_runner_extra_packages: []

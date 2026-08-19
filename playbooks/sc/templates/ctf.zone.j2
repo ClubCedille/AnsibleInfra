@@ -1,6 +1,6 @@
 $TTL 300
 @ IN SOA dns01.camp. hostmaster.camp. (
-  {{ ansible_date_time.epoch }}
+  {{ ansible_facts['date_time'].epoch }}
   3600
   900
   604800

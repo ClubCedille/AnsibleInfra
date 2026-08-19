@@ -32,7 +32,7 @@ install_docker_compose_content: |
       restart: unless-stopped
 
 vm_name: "{{ inventory_hostname }}"
-vm_proxmox_node: "{{ 'pve01' if inventory_hostname.startswith('forgejo-runner01') else 'pve02' }}"
+vm_proxmox_node: "{{ 'pve02' if inventory_hostname.startswith('forgejo-runner02') else 'pve01' }}"
 
 vm_net:
   bridge: "vmbr1"
