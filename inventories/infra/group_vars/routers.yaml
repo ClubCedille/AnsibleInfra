@@ -34,6 +34,21 @@ vm_password: !vault |
   6333623135383336610a343532623531353331643164353261666333663637643437383861373161
   3564
 
+# cedille.pkgcache.opnsense — expérimental, pointe le repo FreeBSD de base
+# vers le cache interne freebsd-pkg. Ne gère PAS le dépôt OPNsense
+# lui-même (pkg.opnsense.org, firmware, plugins) — aucun backend serveur
+# dédié n'existe pour celui-ci. Voir cedille.pkgcache docs/README.md.
+pkgcache_opnsense:
+  credentials:
+    username: fleet
+    password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      65353737656265633264313431313534666138366363323461376536663439656432346638313931
+      6432343037646361633664326466363732353862373837630a333839613866383839653837626339
+      38643632386439333235623531653666653031666533643239313532323737646131663832646464
+      6461303965343232320a393263663231373932626637396235396532386335636339363536643061
+      32343734376134333132313865336239323635313534366461363039346663393031
+
 # VLAN trunk — all VLANs on vtnet0, shared between both nodes.
 # VLAN 247 (vtnet0_vlan247): WAN delivery VLAN managed at Proxmox/switch level —
 # intentionally not managed by this role. Candidate for removal from OPNsense config.

@@ -27,7 +27,8 @@
   gather_facts: true
   become: true
   pre_tasks:
-    - name: Configure apt proxy
-      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/apt_proxy.yaml"
+    - name: Configure pkgcache apt mirror
+      ansible.builtin.include_role:
+        name: cedille.pkgcache.apt
   roles:
     - cedille.netservices.tftp

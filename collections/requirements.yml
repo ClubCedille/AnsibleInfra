@@ -16,3 +16,5 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/monitoring
     type: dir
+  - name: .cache/AnsibleRoles/pkgcache
+    type: dir
