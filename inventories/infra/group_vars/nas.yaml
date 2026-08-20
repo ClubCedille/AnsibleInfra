@@ -7,3 +7,29 @@ ansible_password: !vault |
   61653665626562323564346563336463393633663231653063616566353961353434363338353531
   6333623135383336610a343532623531353331643164353261666333663637643437383861373161
   3564
+
+# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Mirrors Debian (nas est Debian, pas Ubuntu) — pas les défauts du rôle.
+pkgcache_apt:
+  credentials:
+    username: fleet
+    password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      35306164376262316562363839363532303038323932623039663366353135343238323436643836
+      3665306163643439376231356166636632376332643262630a376566323130303631306433353238
+      36616232373532333666356631626665356336323138343335333931656636313437316438326161
+      3232356636616438660a636464356266306234643934376433366261373061393336633838633939
+      61613838343263353662643033653836656131663637313035666233303736356238
+  mirrors:
+    - name: debian-base
+      origin: ftp.debian.org/debian
+      suites: >-
+        {{ ansible_distribution_release }}
+        {{ ansible_distribution_release }}-updates
+      components: main contrib non-free non-free-firmware
+      signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
+    - name: debian-security
+      origin: security.debian.org/debian-security
+      suites: "{{ ansible_distribution_release }}-security"
+      components: main contrib non-free non-free-firmware
+      signed_by: /usr/share/keyrings/debian-archive-keyring.gpg

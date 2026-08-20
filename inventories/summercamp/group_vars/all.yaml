@@ -1,6 +1,5 @@
 ---
 docker_registry_mirror_host: 10.150.0.100
-apt_proxy_enabled: true
 
 # Matches cedille.docker.install's role default for install_docker_compose_target_dir.
 # Defined here (not just as a role default) so it's still available in plays that
