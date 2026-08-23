@@ -11,8 +11,8 @@ Date: 2026-08-23 (mise à jour ; état initial au 2026-06-24 conservé en histor
 | blackbox_icmp_pve | ✅ 8/8 | |
 | ceph | ✅ 8/8 | pve05 revenu réseau |
 | garagehq | ✅ 1/1 | metrics_token en clair dans monitoring_core.yaml (lecture seule, intentionnel) |
-| ipmi_ilo | ⚠️ 3/5 | 10.0.21.43 (pve03), 10.0.21.44 (pve04) — injoignables réseau, pas juste un mdp |
-| ipmi_idrac | ⚠️ 1/3 | 10.0.21.45 (pve05), 10.0.21.46 (pve06) — injoignables réseau |
+| ipmi_ilo | ⚠️ 4/5 | pve04 corrigé (voir ci-dessous) ; pve03 (10.0.21.43) répond au ping/HTTPS mais pas RMCP/IPMI-LAN |
+| ipmi_idrac | ⚠️ 1/3 | pve05 (10.0.21.45), pve06 (10.0.21.46) — pas de lien physique sur le port dédié (voir ci-dessous) |
 | ipmi_nas | ✅ 1/1 | |
 | loki | ✅ 1/1 | |
 | nas_node_exporter | ✅ 1/1 | |
@@ -46,6 +46,24 @@ sans serveur DNS configuré, donc `/etc/resolv.conf` vide → tout `apt-get upda
 échouait. DNS ajouté (`1.1.1.1`, search `prod.lanets.ca`, cohérent avec les
 autres hôtes infra) directement sur la machine.
 
+### pve04 iLO — corrigé (2026-08-23)
+En vérifiant la config in-band (`ipmitool lan print` via `/dev/ipmi0`, accessible
+même quand le port réseau dédié ne répond pas), l'iLO de pve04 était en
+**DHCP** et avait reçu `10.0.21.154` au lieu de `10.0.21.44` — Prometheus
+scrutait donc la mauvaise IP depuis le début, ce n'était pas un problème réseau.
+Fix : `ipmitool lan set 2 ipsrc static` + `ipaddr 10.0.21.44` + `netmask
+255.255.255.0` + `defgw ipaddr 10.0.21.1`, puis `ipmitool mc reset cold` pour
+faire réinitialiser l'interface. Confirmé `up` côté Prometheus après reset.
+
+Méthode utile pour auditer les 8 BMC d'un coup (nécessite `ipmitool` installé
+sur chaque hôte PVE, `apt-get install ipmitool`) :
+```
+ipmitool lan print   # auto-détecte le bon channel (2 pour iLO HP, 1 pour iDRAC Dell)
+```
+Comparer le champ `IP Address` avec le mapping attendu (`pveNN` ↔ `.4N`/`.4N+…`
+dans hosts.ini) — ça a permis de trouver le mismatch DHCP sur pve04 en plus des
+IP à 0.0.0.0 sur pve06 (voir ci-dessous).
+
 ## Issues à régler
 
 ### SNMP IOS (axs01 10.0.21.31, mgmt01 10.0.21.32) — priorité moyenne
@@ -61,15 +79,76 @@ Pistes toujours valables :
   (CISCO-PROCESS-MIB, CISCO-MEMORY-POOL-MIB) qui peuvent ne pas être supportés
   sur certains modèles IOS. Fallback : module `if_mib` pour ces switches.
 
-### IPMI iLO/iDRAC — injoignables au niveau réseau
-- pve03 iLO (10.0.21.43), pve04 iLO (10.0.21.44)
-- pve05 iDRAC (10.0.21.45), pve06 iDRAC (10.0.21.46)
+### pve05 / pve06 iDRAC — pas de lien physique sur le port dédié
+Diagnostic approfondi le 2026-08-23 avec `racadm` (voir installation ci-dessous) :
 
-Confirmé le 2026-08-23 : ces IP ne répondent même pas au ping — ce n'est donc
-pas (seulement) un mot de passe expiré, il faut une intervention physique
-(vérifier le câblage du port mgmt dédié, éventuellement reset factory du BMC).
-Rien de plus à faire côté Ansible tant que le matériel n'est pas accessible
-réseau.
+```
+NIC Selection   = Dedicated
+Link Detected   = No
+Speed           = 10Mb/s
+Active NIC      = None
+
+Static IPv4 settings:
+Static IP Address    = 10.0.21.45   # (ou .46 pour pve06)
+Static Subnet Mask   = 255.255.255.0
+Static Gateway       = 10.0.21.1
+```
+
+La config IP stockée est **correcte** sur les deux — ce n'est ni un mot de
+passe, ni un mauvais paramétrage. Le port réseau dédié de l'iDRAC ne détecte
+tout simplement aucun lien physique. Aucune commande logicielle (`ipmitool`,
+`racadm`, `mc reset cold`) ne peut réparer ça — il faut vérifier/reconnecter
+le câble sur le port mgmt dédié de ces deux serveurs, ou le port switch en
+face (potentiellement désactivé ou down côté switch).
+
+SEL (`ipmitool sel list`) ne montre aucun évènement matériel récent sur ces
+deux hôtes (dernier évènement pve05 : perte AC PSU le 2026-06-24 ; pve06 :
+pic de température en mars) — rien qui explique une panne du lien réseau
+aujourd'hui, donc pas de piste "défaillance matérielle active" à creuser.
+
+Avant de trouver ce diagnostic, plusieurs `ipmitool lan set` sur pve06 ont
+timeout/laissé le BMC en `Set in Progress` — ce n'était pas un bug logiciel
+récupérable par reset, juste le symptôme du lien absent (rien ne confirme
+l'écriture côté réseau). Ne pas re-tenter `ipmitool lan set` sur ces deux hôtes
+tant que le lien physique n'est pas rétabli.
+
+**Installation de racadm (Dell) pour diagnostic approfondi**, utile pour tout
+futur iDRAC à dépanner :
+```bash
+curl -fsSL https://linux.dell.com/repo/pgp_pubkeys/0x1285491434D8786F.asc \
+  | gpg --dearmor -o /etc/apt/trusted.gpg.d/dell-apt-key.gpg
+echo 'deb [signed-by=/etc/apt/trusted.gpg.d/dell-apt-key.gpg] https://linux.dell.com/repo/community/openmanage/11000/jammy jammy main' \
+  > /etc/apt/sources.list.d/dell-openmanage.list
+apt-get update
+apt-get install -y srvadmin-idracadm7 libargtable2-0   # libargtable2-0 dispo direct dans Debian trixie
+/opt/dell/srvadmin/bin/idracadm7 getniccfg
+```
+Notes : utiliser `https://` (pas `http://`, filtré en sortie sur ce réseau) ;
+le paquet Dell est buildé pour Ubuntu jammy mais tourne sans souci sur Debian
+13/trixie (glibc plus récente, compatible ascendante) ; `idracadm7` couvre
+iDRAC7/8/9 malgré le nom.
+
+### pve03 iLO — lien réseau OK mais IPMI-over-LAN ne répond pas
+Contrairement à pve05/06, pve03 répond au ping et sur le port HTTPS (443)
+après `ipmitool mc reset cold`. La config du channel LAN est correcte
+(`ipmitool channel info 2` → `Access Mode: always available`). Mais le port
+RMCP/UDP 623 utilisé par `ipmi_exporter` ne répond toujours pas, testé
+directement depuis un autre hôte PVE (`ipmitool -I lanplus -H 10.0.21.43 ...`
+→ timeout). Semble être un service IPMI-LAN bloqué indépendamment du reste du
+firmware (iLO 2.82, assez ancien — HP ProLiant Gen8). `ilorest` (RESTful HP
+tool) est installé sur pve03 mais échoue en local
+(`chif library not found`) — le module noyau `hpilo` est bien chargé et
+`/dev/hpilo/*` existe, il manque juste la lib userspace `ilorest_chif`,
+pas creusé plus loin.
+
+### pve04 (résolu, voir plus haut) et récapitulatif des 4 BMC problématiques
+
+| Hôte | Type | Cause réelle | Statut |
+|---|---|---|---|
+| pve03 | iLO | Service IPMI-LAN bloqué, firmware ancien | Ping/HTTPS OK, RMCP toujours down |
+| pve04 | iLO | DHCP au lieu de static, mauvaise IP | ✅ Corrigé |
+| pve05 | iDRAC | Pas de lien physique sur le port dédié | Bloqué — intervention physique requise |
+| pve06 | iDRAC | Pas de lien physique sur le port dédié | Bloqué — intervention physique requise |
 
 Credentials dans `inventories/infra/group_vars/monitoring_core.yaml` :
 `monitoring_ipmi_username` / `monitoring_ipmi_password` (vaultés).
