@@ -23,76 +23,103 @@
         labels:
           job: ceph
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: samba_logs
         paths:
           - /var/log/samba/log.*
         labels:
           job: nas
+          unit: samba
           env: infra
+          instance: "{{ ansible_hostname }}"
     alloy_journal_sources:
       # ── PVE — daemons Proxmox/cluster ─────────────────────────────────────
       - name: corosync
         matches: "_SYSTEMD_UNIT=corosync.service"
         labels:
           job: pve
+          unit: corosync
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: pvedaemon
         matches: "_SYSTEMD_UNIT=pvedaemon.service"
         labels:
           job: pve
+          unit: pvedaemon
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: pveproxy
         matches: "_SYSTEMD_UNIT=pveproxy.service"
         labels:
           job: pve
+          unit: pveproxy
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: pvestatd
         matches: "_SYSTEMD_UNIT=pvestatd.service"
         labels:
           job: pve
+          unit: pvestatd
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: ceph_crash
         matches: "_SYSTEMD_UNIT=ceph-crash.service"
         labels:
           job: ceph
+          unit: ceph-crash
           env: infra
+          instance: "{{ ansible_hostname }}"
       # ── NAS — daemons applicatifs ──────────────────────────────────────────
       - name: garage
         matches: "_SYSTEMD_UNIT=garage.service"
         labels:
           job: nas
+          unit: garage
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: nfs_mountd
         matches: "_SYSTEMD_UNIT=nfs-mountd.service"
         labels:
           job: nas
+          unit: nfs-mountd
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: nfsdcld
         matches: "_SYSTEMD_UNIT=nfsdcld.service"
         labels:
           job: nas
+          unit: nfsdcld
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: network_manager
         matches: "_SYSTEMD_UNIT=NetworkManager.service"
         labels:
           job: nas
+          unit: NetworkManager
           env: infra
+          instance: "{{ ansible_hostname }}"
       # ── Système — commun PVE + NAS (rsyslog absent, journald-only) ────────
       - name: ssh
         matches: "_SYSTEMD_UNIT=ssh.service"
         labels:
           job: system
+          unit: ssh
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: sudo
         matches: "_COMM=sudo"
         labels:
           job: system
+          unit: sudo
           env: infra
+          instance: "{{ ansible_hostname }}"
       - name: kernel
         matches: "_TRANSPORT=kernel"
         labels:
           job: system
+          unit: kernel
           env: infra
+          instance: "{{ ansible_hostname }}"
         # pve03/pve04 (HPE Gen9, PCIe root port 00:02.2 hosting the 82599ES
         # 10G NIC) are stuck in a PCIe PME spurious-interrupt storm — known
         # ixgbe/82599 kernel bug, not fixable without a reboot
