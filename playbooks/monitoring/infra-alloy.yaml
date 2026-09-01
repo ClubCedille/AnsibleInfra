@@ -1,6 +1,10 @@
 ---
 # Déploie Grafana Alloy (log shipping) sur les hôtes PVE et NAS (infra permanente).
-# Pousse les logs système/PVE/Ceph vers Loki sur 10.0.21.95:3100.
+# Pousse les logs système/PVE/Ceph/NAS vers Loki sur 10.0.21.95:3100.
+# PVE et NAS sont journald-only (rsyslog désactivé) : les daemons applicatifs
+# sont donc collectés via loki.source.journal, pas des fichiers /var/log/*.log
+# qui n'existent plus. HA (pve-ha-crm/lrm, watchdog-mux), ZFS (zfs-zed) et le
+# firewall PVE sont volontairement exclus (non utilisés en prod).
 # Hôtes : monitoring_alloy
 # Usage : make monitoring/infra-alloy
 
@@ -13,26 +17,81 @@
       - name: infra_loki
         url: "http://10.0.21.95:3100/loki/api/v1/push"
     alloy_file_sources:
-      - name: system_logs
-        paths:
-          - /var/log/syslog
-          - /var/log/auth.log
-          - /var/log/*.log
-        labels:
-          job: system
-          env: infra
-      - name: pve_logs
-        paths:
-          - /var/log/pve/*.log
-          - /var/log/pve-firewall.log
-        labels:
-          job: pve
-          env: infra
       - name: ceph_logs
         paths:
           - /var/log/ceph/*.log
         labels:
           job: ceph
+          env: infra
+      - name: samba_logs
+        paths:
+          - /var/log/samba/log.*
+        labels:
+          job: nas
+          env: infra
+    alloy_journal_sources:
+      # ── PVE — daemons Proxmox/cluster ─────────────────────────────────────
+      - name: corosync
+        matches: "_SYSTEMD_UNIT=corosync.service"
+        labels:
+          job: pve
+          env: infra
+      - name: pvedaemon
+        matches: "_SYSTEMD_UNIT=pvedaemon.service"
+        labels:
+          job: pve
+          env: infra
+      - name: pveproxy
+        matches: "_SYSTEMD_UNIT=pveproxy.service"
+        labels:
+          job: pve
+          env: infra
+      - name: pvestatd
+        matches: "_SYSTEMD_UNIT=pvestatd.service"
+        labels:
+          job: pve
+          env: infra
+      - name: ceph_crash
+        matches: "_SYSTEMD_UNIT=ceph-crash.service"
+        labels:
+          job: ceph
+          env: infra
+      # ── NAS — daemons applicatifs ──────────────────────────────────────────
+      - name: garage
+        matches: "_SYSTEMD_UNIT=garage.service"
+        labels:
+          job: nas
+          env: infra
+      - name: nfs_mountd
+        matches: "_SYSTEMD_UNIT=nfs-mountd.service"
+        labels:
+          job: nas
+          env: infra
+      - name: nfsdcld
+        matches: "_SYSTEMD_UNIT=nfsdcld.service"
+        labels:
+          job: nas
+          env: infra
+      - name: network_manager
+        matches: "_SYSTEMD_UNIT=NetworkManager.service"
+        labels:
+          job: nas
+          env: infra
+      # ── Système — commun PVE + NAS (rsyslog absent, journald-only) ────────
+      - name: ssh
+        matches: "_SYSTEMD_UNIT=ssh.service"
+        labels:
+          job: system
+          env: infra
+      - name: sudo
+        matches: "_COMM=sudo"
+        labels:
+          job: system
+          env: infra
+      - name: kernel
+        matches: "_TRANSPORT=kernel"
+        labels:
+          job: system
           env: infra
   roles:
     - cedille.monitoring.alloy
