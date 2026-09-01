@@ -93,5 +93,11 @@
         labels:
           job: system
           env: infra
+        # pve03/pve04 (HPE Gen9, PCIe root port 00:02.2 hosting the 82599ES
+        # 10G NIC) are stuck in a PCIe PME spurious-interrupt storm — known
+        # ixgbe/82599 kernel bug, not fixable without a reboot
+        # (pcie_pme=nomsi) or a live PCI rescan. Drop it here so it doesn't
+        # flood Loki in the meantime — see Plateforme-Cedille#657.
+        drop_regex: "PME: Spurious native interrupt"
   roles:
     - cedille.monitoring.alloy
