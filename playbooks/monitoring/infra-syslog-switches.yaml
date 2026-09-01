@@ -1,0 +1,29 @@
+---
+# Déploie Grafana Alloy sur monitoring01 en mode récepteur syslog, pour les
+# switches qui forwardent leurs logs (data01/Core01 pour l'instant).
+# Filtre en allowlist : ne garde que les événements interfaces/port-channel/STP
+# (voir la conf "logging server" sur le switch lui-même, appliquée manuellement).
+# Hôtes : monitoring_core
+# Usage : make monitoring/infra-syslog-switches
+
+- name: Deploy Alloy syslog receiver on monitoring01
+  hosts: monitoring_core
+  gather_facts: true
+  become: true
+  vars:
+    alloy_loki_endpoints:
+      - name: local_loki
+        url: "http://127.0.0.1:3100/loki/api/v1/push"
+    alloy_syslog_sources:
+      - name: core01
+        listen_address: "0.0.0.0:514"
+        protocol: udp
+        labels:
+          job: switch
+          instance: data01
+          env: infra
+        # Interfaces (up/down/flap, transceivers), port-channels, STP —
+        # tout le reste du syslog de data01 est jeté (voir stage.drop).
+        keep_regex: "(?P<interesting>%ETHPORT-|%ETH_PORT_CHANNEL-|%STP-)"
+  roles:
+    - cedille.monitoring.alloy
