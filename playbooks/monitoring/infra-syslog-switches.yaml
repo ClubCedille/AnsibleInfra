@@ -18,6 +18,12 @@
       - name: core01
         listen_address: "0.0.0.0:514"
         protocol: udp
+        # NX-OS syslog isn't strictly RFC3164-compliant (no conventional
+        # program TAG after hostname) — the rfc3164 parser silently drops
+        # every message with no error logged anywhere. "raw" sidesteps
+        # header parsing entirely; we only need the message content for
+        # the allowlist regex below anyway.
+        syslog_format: raw
         labels:
           job: switch
           instance: data01
