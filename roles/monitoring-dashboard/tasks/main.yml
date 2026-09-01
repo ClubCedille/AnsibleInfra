@@ -38,5 +38,11 @@
     - infra-nas.json
     - infra-blackbox.json
     - infra-smart.json
+    - infra-logs-overview.json
+    - infra-logs-pve.json
+    - infra-logs-nas.json
+    - infra-logs-ceph.json
+    - infra-logs-system.json
+    - infra-logs-switch.json
   notify: Restart Grafana
   become: true
