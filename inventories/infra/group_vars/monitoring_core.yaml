@@ -112,6 +112,23 @@ prometheus_scrape_configs:
     targets:
       - "10.0.21.50:9100" # nas01
 
+  # ── PVE hosts — smartctl_exporter (S.M.A.R.T. disques) ─────────────────────
+  - job_name: pve_smartctl_exporter
+    targets:
+      - "10.0.21.51:9633" # pve01
+      - "10.0.21.52:9633" # pve02
+      - "10.0.21.53:9633" # pve03
+      - "10.0.21.54:9633" # pve04
+      - "10.0.21.55:9633" # pve05
+      - "10.0.21.56:9633" # pve06
+      - "10.0.21.57:9633" # pve07
+      - "10.0.21.58:9633" # pve08
+
+  # ── NAS — smartctl_exporter (S.M.A.R.T. disques) ───────────────────────────
+  - job_name: nas_smartctl_exporter
+    targets:
+      - "10.0.21.50:9633" # nas01
+
   # ── GarageHQ — native /metrics on admin port ───────────────────────────────
   # Requires GarageHQ admin API to listen on 0.0.0.0 (see garage.toml [admin])
   # Token = admin_token from /etc/garage.toml on nas01 — vault-encrypt it in

@@ -1,0 +1,12 @@
+---
+# Déploie smartctl_exporter (métriques S.M.A.R.T. des disques) sur tous les
+# hôtes PVE et NAS (infra permanente).
+# Hôtes : monitoring_node_exporter
+# Usage : make monitoring/infra-smartctl-exporter
+
+- name: Deploy smartctl exporters on PVE and NAS hosts
+  hosts: monitoring_node_exporter
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.monitoring.smartctl_exporter
