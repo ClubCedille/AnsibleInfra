@@ -37,5 +37,6 @@
     - infra-network.json
     - infra-nas.json
     - infra-blackbox.json
+    - infra-smart.json
   notify: Restart Grafana
   become: true
