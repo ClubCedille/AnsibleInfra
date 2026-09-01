@@ -372,8 +372,8 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "sum by (endpoint) (rate(garage_s3_request_duration_seconds_count{job=\"garagehq\"}[5m]))",
-          "legendFormat": "{{endpoint}}",
+          "expr": "sum by (api_endpoint) (rate(api_s3_request_duration_count{job=\"garagehq\"}[5m]))",
+          "legendFormat": "{{api_endpoint}}",
           "refId": "A"
         }
       ],
@@ -407,7 +407,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "histogram_quantile(0.99, rate(garage_rpc_request_duration_seconds_bucket{job=\"garagehq\"}[5m]))",
+          "expr": "histogram_quantile(0.99, rate(rpc_duration_bucket{job=\"garagehq\"}[5m]))",
           "legendFormat": "p99 RPC",
           "refId": "A"
         }
