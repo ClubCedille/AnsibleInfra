@@ -243,16 +243,15 @@ prometheus_scrape_configs:
       - "10.0.21.57:9283" # pve07
       - "10.0.21.58:9283" # pve08
 
-  # ── SNMP — Cisco IOS switches (axs01, mgmt01) ──────────────────────────────
+  # ── SNMP — Cisco IOS switch (management.prod.lanets.ca) ────────────────────
   - job_name: snmp_ios_switches
     metrics_path: /snmp
     scrape_timeout: 30s
     params:
-      module: [cisco_ios]
+      module: [if_mib, cisco_device]
       auth: [infra_v2]
     targets:
-      - "10.0.21.31" # axs01
-      - "10.0.21.32" # mgmt01
+      - "10.0.21.21" # management.prod.lanets.ca
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -265,7 +264,7 @@ prometheus_scrape_configs:
   - job_name: snmp_nxos_switches
     metrics_path: /snmp
     params:
-      module: [cisco_nxos]
+      module: [if_mib, cisco_device]
       auth: [infra_v2]
     targets:
       - "10.0.21.11" # data01
