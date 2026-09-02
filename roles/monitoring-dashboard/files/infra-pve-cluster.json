@@ -27,15 +27,15 @@
       {
         "current": {},
         "datasource": {"type": "prometheus", "uid": "${datasource}"},
-        "definition": "label_values(pve_up{job=\"pve_cluster\"}, node)",
+        "definition": "label_values(pve_node_info, name)",
         "hide": 0,
         "includeAll": true,
-        "allValue": ".*",
+        "allValue": ".+",
         "multi": true,
         "name": "node",
         "options": [],
         "query": {
-          "query": "label_values(pve_up{job=\"pve_cluster\"}, node)",
+          "query": "label_values(pve_node_info, name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -83,7 +83,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count(pve_up{job=\"pve_cluster\",type=\"node\"} == 1)",
+          "expr": "count(count by (id) (pve_up{job=\"pve_cluster\",id=~\"node/.+\"} == 1))",
           "legendFormat": "",
           "refId": "A"
         }
@@ -120,7 +120,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count(pve_up{job=\"pve_cluster\",type=\"qemu\"} == 1)",
+          "expr": "count(count by (id) (pve_up{job=\"pve_cluster\",id=~\"qemu/.+\"} == 1))",
           "legendFormat": "",
           "refId": "A"
         }
@@ -157,7 +157,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count(pve_up{job=\"pve_cluster\",type=\"lxc\"} == 1)",
+          "expr": "count(count by (id) (pve_up{job=\"pve_cluster\",id=~\"lxc/.+\"} == 1)) OR vector(0)",
           "legendFormat": "",
           "refId": "A"
         }
@@ -194,7 +194,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count(pve_up{job=\"pve_cluster\",type=~\"qemu|lxc\"})",
+          "expr": "count(count by (id) (pve_up{job=\"pve_cluster\",id=~\"qemu/.+|lxc/.+\"}))",
           "legendFormat": "",
           "refId": "A"
         }
@@ -250,7 +250,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "pve_cpu_usage_ratio{job=\"pve_cluster\",type=\"node\",node=~\"$node\"} * 100",
+          "expr": "label_replace(avg by (id) (pve_cpu_usage_ratio{job=\"pve_cluster\",id=~\"node/($node)\"}), \"node\", \"$1\", \"id\", \"node/(.+)\") * 100",
           "legendFormat": "{{node}}",
           "refId": "A"
         }
@@ -306,7 +306,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "pve_memory_usage_bytes{job=\"pve_cluster\",type=\"node\",node=~\"$node\"} / pve_memory_size_bytes{job=\"pve_cluster\",type=\"node\",node=~\"$node\"} * 100",
+          "expr": "label_replace(avg by (id) (pve_memory_usage_bytes{job=\"pve_cluster\",id=~\"node/($node)\"}) / avg by (id) (pve_memory_size_bytes{job=\"pve_cluster\",id=~\"node/($node)\"}), \"node\", \"$1\", \"id\", \"node/(.+)\") * 100",
           "legendFormat": "{{node}}",
           "refId": "A"
         }
@@ -362,7 +362,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "pve_disk_usage_bytes{job=\"pve_cluster\",type=\"node\",node=~\"$node\"} / pve_disk_size_bytes{job=\"pve_cluster\",type=\"node\",node=~\"$node\"} * 100",
+          "expr": "label_replace(avg by (id) (pve_disk_usage_bytes{job=\"pve_cluster\",id=~\"node/($node)\"}) / avg by (id) (pve_disk_size_bytes{job=\"pve_cluster\",id=~\"node/($node)\"}), \"node\", \"$1\", \"id\", \"node/(.+)\") * 100",
           "legendFormat": "{{node}}",
           "refId": "A"
         }
@@ -413,7 +413,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count by (node) (pve_up{job=\"pve_cluster\",type=\"qemu\",node=~\"$node\"} == 1)",
+          "expr": "count by (node) (count by (node, id) (pve_guest_info{job=\"pve_cluster\",type=\"qemu\",node=~\"$node\"}))",
           "legendFormat": "{{node}}",
           "refId": "A"
         }
