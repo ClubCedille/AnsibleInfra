@@ -3,6 +3,9 @@
 # switches qui forwardent leurs logs (data01/Core01 pour l'instant).
 # Filtre en allowlist : ne garde que les événements interfaces/port-channel/STP
 # (voir la conf "logging server" sur le switch lui-même, appliquée manuellement).
+# Pousse vers Loki centralisé dans k8s-shared (voir k8s-shared#429/#430) --
+# mêmes identifiants BasicAuth que infra-alloy.yaml (Vault kv/data/
+# monitoring/loki-push-htpasswd, username "alloy").
 # Hôtes : monitoring_core
 # Usage : make monitoring/infra-syslog-switches
 
@@ -20,9 +23,16 @@
     # n'a besoin que du contenu du message pour le filtre allowlist.
     alloy_custom_args:
       - "--stability.level=experimental"
+    # TODO: vault-encrypt once terraform/monitoring/push-auth-vault has been
+    # applied -- fetch with `vault kv get kv/monitoring/loki-push-htpasswd`.
+    monitoring_loki_password: !vault |
+      REPLACE_WITH_VAULTED_LOKI_PASSWORD
     alloy_loki_endpoints:
-      - name: local_loki
-        url: "http://127.0.0.1:3100/loki/api/v1/push"
+      - name: infra_loki
+        url: "https://loki.etsmtl.club/loki/api/v1/push"
+        basic_auth:
+          username: alloy
+          password: "{{ monitoring_loki_password }}"
     alloy_syslog_sources:
       - name: core01
         listen_address: "0.0.0.0:514"
