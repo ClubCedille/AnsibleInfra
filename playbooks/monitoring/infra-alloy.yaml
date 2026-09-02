@@ -2,8 +2,8 @@
 # Déploie Grafana Alloy (log shipping) sur les hôtes PVE et NAS (infra permanente).
 # Pousse les logs système/PVE/Ceph/NAS vers Loki centralisé dans k8s-shared
 # (voir k8s-shared#429/#430) -- BasicAuth requise, identifiants générés par
-# terraform/monitoring/push-auth-vault (Vault kv/data/monitoring/
-# loki-push-htpasswd), username "alloy" fixé côté Terraform.
+# terraform/monitoring/push-auth-vault (Vault kv/data/monitoring/default/
+# loki-push-htpasswd, déjà appliqué), username "alloy" fixé côté Terraform.
 # PVE et NAS sont journald-only (rsyslog désactivé) : les daemons applicatifs
 # sont donc collectés via loki.source.journal, pas des fichiers /var/log/*.log
 # qui n'existent plus. HA (pve-ha-crm/lrm, watchdog-mux), ZFS (zfs-zed) et le
@@ -16,10 +16,14 @@
   gather_facts: true
   become: true
   vars:
-    # TODO: vault-encrypt once terraform/monitoring/push-auth-vault has been
-    # applied -- fetch with `vault kv get kv/monitoring/loki-push-htpasswd`.
     monitoring_loki_password: !vault |
-      REPLACE_WITH_VAULTED_LOKI_PASSWORD
+      $ANSIBLE_VAULT;1.1;AES256
+      64363037346364313763656362363133383538653937633935626133636338373634343436303139
+      6633346333323936343031643264333564363164343563650a366536346137373039323236363563
+      63363362613331306137386433313837653865643035326630336330623435316165373635333637
+      6635326439646463380a396362363932353666353334616339623337373034353330643962366635
+      33306331373062396134376439363863383034336336386466373461636163656635356239343131
+      3165313631653863376563346233366634353734646262363163
     alloy_loki_endpoints:
       - name: infra_loki
         url: "https://loki.etsmtl.club/loki/api/v1/push"
