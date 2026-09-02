@@ -11,6 +11,15 @@
   gather_facts: true
   become: true
   vars:
+    # NX-OS (7.0.3.I6(2) sur data01) émet un syslog non conforme RFC3164
+    # ("<189>: 2026 Sep 2 18:24:04 UTC: %VSHD-..." — deux-points + année sur
+    # 4 chiffres juste après le PRI), rejeté silencieusement par le parser
+    # rfc3164 (aucune erreur nulle part, juste zéro donnée dans Loki — root
+    # cause trouvée en confirmant par tcpdump qu'un paquet réel arrivait
+    # bien côté réseau). "raw" évite le parsing d'en-tête entièrement — on
+    # n'a besoin que du contenu du message pour le filtre allowlist.
+    alloy_custom_args:
+      - "--stability.level=experimental"
     alloy_loki_endpoints:
       - name: local_loki
         url: "http://127.0.0.1:3100/loki/api/v1/push"
@@ -18,7 +27,7 @@
       - name: core01
         listen_address: "0.0.0.0:514"
         protocol: udp
-        syslog_format: rfc3164
+        syslog_format: raw
         labels:
           job: switch
           instance: data01
