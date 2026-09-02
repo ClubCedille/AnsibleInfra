@@ -158,6 +158,53 @@ Playbook `playbooks/infra/opnsense-telegraf.yaml` écrit mais jamais run.
 Cible : opnsense01/02 → remote_write vers http://10.0.21.95:9090/api/v1/write.
 Prérequis : plugin `os-telegraf` installé sur les OPNsense.
 
+### Syslog forwarding NX-OS → Loki — résolu (2026-09-02)
+Deux causes distinctes empêchaient tout syslog de sortir de data01 (Core01)
+vers monitoring01, découvertes et corrigées en deux temps.
+
+**1. VRF incorrecte** (trouvé côté AnsibleInfra) : `logging server 10.0.21.95
+5 use-vrf management` pointait vers une VRF vide — l'IP 10.0.21.11 est en
+réalité sur `Vlan21` en VRF `default` (`show ip interface brief vrf all` le
+révèle). Corrigé en `use-vrf default`.
+
+**2. Socket syslogd jamais ouvert** (trouvé en direct sur le switch) : même
+avec la bonne VRF, `show logging server` restait bloqué sur "This server is
+temporarily unreachable" malgré routage/ARP/ping/ACL/CoPP tous corrects (CoPP
+ne filtre que le trafic *entrant* vers le control-plane, jamais le trafic que
+le switch génère lui-même). La vraie cause : le syslogd de ce NX-OS ancien
+(7.0.3.I6(2), ~2017) **n'ouvre jamais le socket UDP d'émission** tant qu'aucun
+`logging source-interface` n'est configuré. La commande elle-même le révèle :
+```
+core01(config)# logging source-interface Vlan21
+Configuring logging source-interface will open UDP/syslog socket(514).
+```
+**Sur tout futur switch NX-OS à configurer pour du syslog forwarding, penser à
+`logging source-interface <interface>` en plus de `logging server` — sans
+ça, aucun paquet ne sort jamais, peu importe le reste de la config.**
+
+Config finale sur data01 :
+```
+logging level spanning-tree 5
+logging server 10.0.21.95 5 use-vrf default
+logging source-interface Vlan21
+```
+
+**3. Format non-RFC3164** (trouvé côté Alloy, après le fix switch) : une fois
+les paquets réellement délivrés (confirmé par `tcpdump`), Alloy ne produisait
+toujours aucune donnée dans Loki, sans la moindre erreur — `loki.source.syslog`
+avec `syslog_format = "rfc3164"` rejette silencieusement chaque message NX-OS
+car son format n'est pas conforme : `<189>: 2026 Sep 2 18:24:04 UTC:
+%VSHD-...` (un `:` et une année sur 4 chiffres juste après le PRI, que RFC3164
+n'autorise pas). Fix : `syslog_format = "raw"` (évite le parsing d'en-tête
+entièrement) — nécessite `--stability.level=experimental` sur le binaire Alloy
+(géré via `alloy_custom_args` dans le rôle, écrit dans `/etc/default/alloy`).
+Vérification utile en cas de doute sur le pipeline : les métriques internes
+d'Alloy sur `:12345/metrics` (`loki_source_syslog_entries_total`,
+`loki_source_syslog_parsing_errors_total`,
+`loki_process_dropped_lines_total{reason="..."}`)  distinguent clairement
+"jamais reçu" / "reçu mais rejeté au parsing" / "reçu, parsé, filtré par
+l'allowlist" — bien plus rapide qu'un tcpdump pour diagnostiquer où ça bloque.
+
 ### Mimir remote_write — cible à corriger vers k8s-shared
 Commenté dans monitoring_core.yaml, ciblait encore k8s-cedille-production-v2
 (en décommission). À réécrire pour pointer vers Mimir dans k8s-shared une fois
