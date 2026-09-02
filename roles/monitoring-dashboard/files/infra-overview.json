@@ -187,7 +187,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "count(pve_up{type=\"qemu\"} == 1)",
+          "expr": "count(count by (id) (pve_up{job=\"pve_cluster\",id=~\"qemu/.+\"} == 1))",
           "legendFormat": "",
           "refId": "A"
         }
@@ -351,13 +351,13 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "irate(ceph_osd_op_r[5m])",
+          "expr": "sum(rate(ceph_pool_rd[5m]))",
           "legendFormat": "Read ops/s",
           "refId": "A"
         },
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "irate(ceph_osd_op_w[5m])",
+          "expr": "sum(rate(ceph_pool_wr[5m]))",
           "legendFormat": "Write ops/s",
           "refId": "B"
         }

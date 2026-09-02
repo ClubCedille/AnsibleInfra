@@ -329,8 +329,8 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "ciscoMemoryPoolUsed{instance=~\"$instance\"} / (ciscoMemoryPoolUsed{instance=~\"$instance\"} + ciscoMemoryPoolFree{instance=~\"$instance\"}) * 100",
-          "legendFormat": "{{instance}} {{ciscoMemoryPoolName}}",
+          "expr": "cempMemPoolUsed{instance=~\"$instance\"} / (cempMemPoolUsed{instance=~\"$instance\"} + cempMemPoolFree{instance=~\"$instance\"}) * 100",
+          "legendFormat": "{{instance}} {{entPhysicalName}}",
           "refId": "A"
         }
       ],
