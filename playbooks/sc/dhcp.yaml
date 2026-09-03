@@ -1,6 +1,6 @@
 ---
 # Provision + déploie Kea DHCP4 CTF (flags dans options 15/43/114/119) et TFTP co-localisé.
-# Charge les flags depuis roles/kea/vars/flags.yml. Valide la config Kea avant redémarrage.
+# Charge les flags depuis playbooks/sc/vars/flags.yml. Valide la config Kea avant redémarrage.
 # Hôtes : netservices_dhcp (inventaire SC)
 # Usage : make sc/dhcp
 
@@ -27,7 +27,7 @@
   gather_facts: true
   become: true
   vars_files:
-    - ../../roles/kea/vars/flags.yml
+    - vars/flags.yml
   pre_tasks:
     - name: Configure pkgcache apt mirror
       ansible.builtin.include_role:

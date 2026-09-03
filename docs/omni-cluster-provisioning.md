@@ -172,7 +172,7 @@ ansible-playbook playbooks/omni/k8s-poc-cluster.yaml -i inventories/infra/
 
 Ce playbook :
 1. Récupère automatiquement les UUIDs des machines depuis Omni (par hostname)
-2. Génère le manifest depuis `roles/omni/templates/k8s-poc-cluster.yaml.j2`
+2. Génère le manifest depuis `playbooks/omni/templates/k8s-poc-cluster.yaml.j2`
 3. Applique via `omnictl apply`
 
 Le manifest crée :
@@ -306,7 +306,7 @@ C'est la source authoritative — les exemples en ligne peuvent être outdatés.
 2. Adapter subnet/VLAN/IPs, vm_ids, distribution sur les nœuds Proxmox
 3. Créer les host_vars pour chaque nœud
 4. Copier `playbooks/omni/k8s-poc-vms.yaml` et `k8s-poc-cluster.yaml`, adapter les noms
-5. Copier `roles/omni/templates/k8s-poc-cluster.yaml.j2`, adapter l'id du cluster et les counts dans l'assert
+5. Copier `playbooks/omni/templates/k8s-poc-cluster.yaml.j2`, adapter l'id du cluster et les counts dans l'assert
 6. Générer une nouvelle image Talos depuis l'UI Omni (chaque cluster a son propre token d'enrôlement)
 
 Le playbook `k8s-poc-cluster.yaml` découvre automatiquement les UUIDs des machines par hostname — le seul prérequis est que les machines soient nommées avec un pattern incluant `controlplane` ou `worker`.

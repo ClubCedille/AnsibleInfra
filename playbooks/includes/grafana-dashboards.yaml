@@ -1,0 +1,20 @@
+---
+# Copie une liste de dashboards Grafana JSON statiques vers le répertoire de
+# provisioning. Contenu réel dans playbooks/monitoring/files/dashboards/
+# (dashboards spécifiques à l'infra Cedille — trop context-specific pour être
+# un rôle réutilisable, voir docs/revue-infra-2026-09/14-ansibleroles-consolidation.md).
+#
+# Usage : include_tasks avec deux vars définies par l'appelant :
+#   dashboard_src_dir : répertoire contenant les fichiers JSON source
+#   dashboard_files    : liste des noms de fichiers à copier
+
+- name: Copy Grafana dashboards
+  ansible.builtin.copy:
+    src: "{{ dashboard_src_dir }}/{{ item }}"
+    dest: "/etc/grafana/provisioning/dashboards/{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop: "{{ dashboard_files }}"
+  notify: Restart Grafana
+  become: true

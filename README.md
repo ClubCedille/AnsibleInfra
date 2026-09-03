@@ -2,6 +2,23 @@
 
 Gestion de l'infrastructure physique de Cedille via Ansible
 
+## Séparation rôles / exécution
+
+Ce repository ne contient **aucun rôle Ansible local**. Tous les rôles
+réutilisables (Proxmox, OPNsense, DHCP/DNS/TFTP, monitoring, Docker, Forgejo,
+Omni, Cisco 3850, CS2, pkgcache…) vivent dans
+[AnsibleRoles](https://github.com/ClubCedille/AnsibleRoles) et sont consommés
+ici via `collections/requirements.yml` (résolu par `make galaxy-install`, qui
+clone AnsibleRoles dans `.cache/AnsibleRoles/` et matérialise chaque rôle sous
+`.cache/roles/cedille.<collection>.<role>` — voir `ansible.cfg` / `roles_path`).
+
+AnsibleInfra ne garde localement que ce qui est intrinsèquement lié à un
+contexte d'exécution précis et ne se prête pas à la réutilisation : les
+templates de manifest du cluster k8s-poc (`playbooks/omni/templates/`), les
+dashboards Grafana JSON de cette infra (`playbooks/monitoring/files/dashboards/`,
+copiés via des tasks inline plutôt qu'un faux rôle), et les secrets/flags de
+l'événement SummerCamp (`playbooks/sc/vars/flags.yml`).
+
 ## Layout
 
 ```
@@ -14,12 +31,15 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │   ├─ cisco-config/   ← config switches (Day-1, SNMP)
 │   ├─ cisco-pnp/      ← serveur Zero Touch Provisioning
 │   ├─ cs2_server/     ← serveur CS2 (LanETS)
+│   ├─ includes/       ← fragments de tasks réutilisables entre playbooks (pip_proxy, grafana-dashboards…)
 │   ├─ infra/          ← OPNsense CARP (config, diff, interface-provision, règles k8s-poc, telegraf)
 │   ├─ monitoring/     ← Prometheus/Grafana/Loki (infra-* = infra permanente, sans préfixe = event SC)
+│   │   └─ files/dashboards/  ← dashboards Grafana JSON statiques, spécifiques à cette infra
 │   ├─ network/        ← réseau transverse : VLANs PVE+NX-OS, DHCP Kea, DNS BIND9, Stork
 │   ├─ omni/           ← Omni (gestionnaire Talos k8s) + cycle de vie cluster k8s-poc
 │   ├─ proxmox/        ← images cloud, audit réseau PVE
 │   └─ sc/             ← infra événementielle SummerCamp (DHCP CTF, challenges, portails…)
+│       └─ vars/flags.yml  ← valeurs des flags CTF (source de vérité unique, non réutilisable ailleurs)
 │
 ├─ scripts/
 │   ├─ expand_switch_selection.py
@@ -29,7 +49,7 @@ Gestion de l'infrastructure physique de Cedille via Ansible
 │      ├─ lanets-inventaire-switch.csv
 │      └─ passwords.csv  ← mots de passe et tokens par équipe (non versionné)
 ├─ collections/
-│   └─ requirements.yml
+│   └─ requirements.yml  ← collections Galaxy + rôles AnsibleRoles consommés (type: dir)
 ├─ ansible.cfg
 ├─ Makefile
 └─ requirements.txt

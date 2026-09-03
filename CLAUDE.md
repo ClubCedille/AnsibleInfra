@@ -34,10 +34,13 @@ The infrastructure is deployed on a **dedicated event network** (no pre-existing
 - **HTTP**: nginx (captive portal page)
 - **PXE**: iPXE or PXELINUX chain
 
-Existing roles already handle: VM creation, Kea install/deploy, BIND9 install/deploy.
-You can look for them in ./.cache/roles (cedille.proxmox.vm, cedille.netservices.dhcp/dns)
-
-Rôles locaux existants : `roles/tftp/` (tftpd-hpa + iPXE + PXE files), `roles/http-portal/` (nginx + page portail).
+AnsibleInfra ne contient plus aucun rôle Ansible local (voir
+`docs/revue-infra-2026-09/14-ansibleroles-consolidation.md`) : tous les rôles
+réutilisables vivent dans le repo `AnsibleRoles` et sont consommés ici via
+`collections/requirements.yml` + `make galaxy-install`, qui les matérialise
+sous `.cache/roles/cedille.<collection>.<role>` (ex. `cedille.proxmox.vm`,
+`cedille.netservices.dhcp`, `cedille.netservices.dns`, `cedille.netservices.tftp`,
+`cedille.netservices.nginx_portal`, `cedille.monitoring.docker_state_exporter`).
 Manquant : logique de construction de l'image PXE (flag #7).
 
 ---
@@ -45,29 +48,28 @@ Manquant : logique de construction de l'image PXE (flag #7).
 ## Ansible Repository Structure
 
 ```txt
-roles/
-├── tftp/                          # tftpd-hpa + iPXE; files/: bzImage, initrd, netboot.ipxe
-├── http-portal/                   # nginx + page portail (flag #5 en commentaire HTML)
-├── secret-portal/                 # nginx + page narrative (secret.ctf)
-├── docker-state-exporter/         # Prometheus textfile exporter for Docker Compose challenges
-├── monitoring-dashboard/          # Grafana dashboards summercamp
-└── kea/vars/flags.yml             # Toutes les valeurs de flags CTF (source de vérité unique)
 playbooks/sc/
 ├── dhcp.yaml                      # VMs DHCP (Kea + TFTP co-localisé)
 ├── dns.yaml                       # VMs DNS (BIND9 + zones camp/ctf)
-├── http-portal.yaml               # VM portail captif
+├── http-portal.yaml               # VM portail captif (cedille.netservices.nginx_portal)
 ├── secret_portal.yaml             # VM secret.ctf
 ├── chall.yaml                     # Challenges par équipe (Docker Compose sur VM)
 ├── single_instance_chall.yaml     # Challenges à instance unique
-├── monitoring.yaml                # Stack Prometheus/Grafana/Loki
-└── includes/                      # Fragments réutilisables (apt_proxy, pip_proxy)
+├── monitoring.yaml                # Stack Prometheus/Grafana/Loki + dashboards inline (tasks, pas un rôle)
+├── vars/flags.yml                 # Toutes les valeurs de flags CTF (source de vérité unique)
+└── includes/                      # Fragments réutilisables (apt_proxy, pip_proxy, grafana-dashboards)
+playbooks/monitoring/files/dashboards/  # JSON Grafana statiques (summercamp + infra), copiés en tasks inline
 scripts/
 └── encode_tlv.py                  # Encodes a flag string to TLV hex for option 43
 ```
 
+Le déploiement TFTP/nginx-portail/docker-state-exporter passe par les rôles
+Galaxy `cedille.netservices.tftp`, `cedille.netservices.nginx_portal` et
+`cedille.monitoring.docker_state_exporter` (AnsibleRoles) — pas de rôle local.
+
 ### Key conventions
 
-- **All flags live in `roles/kea/vars/flags.yml`** — never hardcode flag values in templates
+- **All flags live in `playbooks/sc/vars/flags.yml`** — never hardcode flag values in templates
 - Flags are injected into templates via Jinja2 variables
 - Run `kea-dhcp4 -t /etc/kea/kea-dhcp4.conf` to validate before restart (add as Ansible task)
 - Kea supports C-style `//` comments in its JSON config natively
@@ -114,7 +116,8 @@ python3 scripts/encode_tlv.py "DCI{xxx}"
 
 **Flag #5 — Option 114 (captive portal)**
 Points to `http://portal.ctf/index.html`. Flag is hidden in the nginx-served HTML
-(HTML comment, HTTP response header, or body text). Configured in `roles/http-portal`.
+(HTML comment, HTTP response header, or body text). Deployed via
+`playbooks/sc/http-portal.yaml` using the `cedille.netservices.nginx_portal` role.
 
 **Flag #6 — `summercamp` class (active)**
 Kea returns a different option 43 payload only when the DISCOVER contains
@@ -169,10 +172,10 @@ secret.ctf.  IN  TXT  "DCI{xxx}"
 ## Status
 
 **Implémenté :**
-- `roles/tftp/` — tftpd-hpa + iPXE (undionly.kpxe, ipxe.efi, netboot.ipxe, bzImage, initrd)
-- `roles/http-portal/` — nginx + page portail (flag #5)
+- `cedille.netservices.tftp` (AnsibleRoles) — tftpd-hpa + iPXE (undionly.kpxe, ipxe.efi, netboot.ipxe, bzImage, initrd)
+- `cedille.netservices.nginx_portal` (AnsibleRoles) — nginx + page portail (flag #5)
 - `scripts/encode_tlv.py` — génération hex TLV option 43
-- Flags #1–#3, #5–#7, #9 définis dans `roles/kea/vars/flags.yml`
+- Flags #1–#3, #5–#7, #9 définis dans `playbooks/sc/vars/flags.yml`
 - BIND9 zone files `playbooks/sc/templates/ctf.zone.j2` et `camp.zone.j2`
 
 **Non implémenté / hors scope Ansible :**

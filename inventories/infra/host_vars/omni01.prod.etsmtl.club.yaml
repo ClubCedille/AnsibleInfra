@@ -162,7 +162,7 @@ omni_eula_name: "Club Cedille"
 omni_eula_email: "infra@etsmtl.club"
 
 # omni.asc — GPG key RSA4096 (no passphrase) for etcd encryption
-# Generate (see roles/omni/defaults/main.yaml for full instructions), then:
+# Generate (see AnsibleRoles omni/roles/deploy/defaults/main.yaml for full instructions), then:
 #   gpg --export-secret-key --armor omni@internal.local | ansible-vault encrypt_string --stdin-name omni_wireguard_private_key
 omni_wireguard_private_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256

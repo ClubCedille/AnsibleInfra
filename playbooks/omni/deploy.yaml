@@ -24,12 +24,15 @@
     install_docker_registry_mirror_enabled: false
     docker_registry_mirror_enabled: false
     # Point cedille.docker.install at our compose template so it handles
-    # both the initial `docker compose up` and subsequent updates
+    # both the initial `docker compose up` and subsequent updates.
+    # The template ships with the cedille.omni.deploy role (AnsibleRoles) and
+    # is fetched locally by `make galaxy-install` under .cache/roles/, same
+    # convention as every other Galaxy-installed role consumed here.
     install_docker_compose_source_type: template
-    install_docker_compose_template_src: "{{ playbook_dir + '/../../roles/omni/templates/docker-compose.yml.j2' }}"
+    install_docker_compose_template_src: "{{ playbook_dir + '/../../.cache/roles/cedille.omni.deploy/templates/docker-compose.yml.j2' }}"
     install_docker_compose_target_dir: "{{ omni_deploy_dir }}"
     install_docker_compose_filename: docker-compose.yml
     install_docker_compose_owner: root
   roles:
-    - omni                   # creates /opt/omni, omni.asc, certs/, Caddyfile
+    - cedille.omni.deploy    # creates /opt/omni, omni.asc, certs/, Caddyfile
     - cedille.docker.install # installs Docker, writes compose, runs `docker compose up`
