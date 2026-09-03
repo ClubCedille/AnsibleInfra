@@ -60,7 +60,7 @@
 
     - name: Template k8s-poc cluster manifest
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../../roles/omni/templates/k8s-poc-cluster.yaml.j2"
+        src: "{{ playbook_dir }}/templates/k8s-poc-cluster.yaml.j2"
         dest: "{{ manifest_dest }}"
         mode: "0640"
 

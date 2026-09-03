@@ -1,12 +1,41 @@
 ---
-# Déploie les dashboards Grafana spécifiques à l'infra permanente (rôle monitoring-dashboard).
+# Déploie les dashboards Grafana (JSON statiques dans files/dashboards/, spécifiques
+# à l'infra Cedille — pas un rôle réutilisable, voir
+# docs/revue-infra-2026-09/14-ansibleroles-consolidation.md).
 # À exécuter après monitoring/infra-core.yaml.
 # Hôtes : monitoring_core
 # Usage : make monitoring/infra-dashboards
 
-- name: Deploy infra Grafana dashboards
+- name: Deploy Grafana dashboards
   hosts: monitoring_core
   gather_facts: false
   become: true
-  roles:
-    - monitoring-dashboard
+  vars:
+    dashboard_src_dir: "{{ playbook_dir }}/files/dashboards"
+    dashboard_files:
+      - summercamp-infra.json
+      - summercamp-challenges.json
+      - infra-overview.json
+      - infra-pve-nodes.json
+      - infra-pve-cluster.json
+      - infra-ceph.json
+      - infra-ipmi.json
+      - infra-network.json
+      - infra-nas.json
+      - infra-blackbox.json
+      - infra-smart.json
+      - infra-logs-overview.json
+      - infra-logs-pve.json
+      - infra-logs-nas.json
+      - infra-logs-ceph.json
+      - infra-logs-system.json
+      - infra-logs-switch.json
+  tasks:
+    - name: Copy Grafana dashboards
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/grafana-dashboards.yaml"
+  handlers:
+    - name: Restart Grafana
+      ansible.builtin.service:
+        name: grafana-server
+        state: restarted
+      become: true

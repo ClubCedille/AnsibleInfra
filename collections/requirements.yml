@@ -18,3 +18,7 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/pkgcache
     type: dir
+  - name: .cache/AnsibleRoles/forgejo
+    type: dir
+  - name: .cache/AnsibleRoles/omni
+    type: dir

@@ -290,7 +290,32 @@
     - cedille.monitoring.snmp_exporter
     - cedille.monitoring.prometheus
     - cedille.monitoring.grafana
-    - monitoring-dashboard
+
+  tasks:
+    # Dashboards JSON statiques (playbooks/monitoring/files/dashboards/) — pas un
+    # rôle réutilisable, voir docs/revue-infra-2026-09/14-ansibleroles-consolidation.md.
+    - name: Copy Grafana dashboards
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/grafana-dashboards.yaml"
+      vars:
+        dashboard_src_dir: "{{ playbook_dir }}/../monitoring/files/dashboards"
+        dashboard_files:
+          - summercamp-infra.json
+          - summercamp-challenges.json
+          - infra-overview.json
+          - infra-pve-nodes.json
+          - infra-pve-cluster.json
+          - infra-ceph.json
+          - infra-ipmi.json
+          - infra-network.json
+          - infra-nas.json
+          - infra-blackbox.json
+          - infra-smart.json
+          - infra-logs-overview.json
+          - infra-logs-pve.json
+          - infra-logs-nas.json
+          - infra-logs-ceph.json
+          - infra-logs-system.json
+          - infra-logs-switch.json
 
   post_tasks:
     # cedille.monitoring.grafana datasource template does not write uid — dashboard

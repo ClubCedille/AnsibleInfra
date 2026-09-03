@@ -85,5 +85,5 @@
   roles:
     - cedille.monitoring.blackbox_exporter
     - cedille.monitoring.snmp_exporter
-    - pve-exporter
-    - ipmi-exporter
+    - cedille.monitoring.pve_exporter
+    - cedille.monitoring.ipmi_exporter

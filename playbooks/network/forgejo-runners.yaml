@@ -34,4 +34,4 @@
   become: true
   roles:
     - cedille.docker.install
-    - forgejo-runner
+    - cedille.forgejo.runner
