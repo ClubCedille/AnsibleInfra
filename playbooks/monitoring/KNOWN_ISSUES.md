@@ -153,10 +153,37 @@ pas creusé plus loin.
 Credentials dans `inventories/infra/group_vars/monitoring_core.yaml` :
 `monitoring_ipmi_username` / `monitoring_ipmi_password` (vaultés).
 
-### OPNsense Telegraf → Prometheus remote_write
-Playbook `playbooks/infra/opnsense-telegraf.yaml` écrit mais jamais run.
-Cible : opnsense01/02 → remote_write vers http://10.0.21.95:9090/api/v1/write.
-Prérequis : plugin `os-telegraf` installé sur les OPNsense.
+### OPNsense observability (Telegraf + syslog) — écrit mais jamais run (2026-09-03)
+`playbooks/infra/opnsense-telegraf.yaml` (l'ancien playbook, jamais exécuté)
+supprimé et remplacé par `playbooks/monitoring/infra-opnsense.yaml` +
+rôles `cedille.monitoring.opnsense_telegraf` / `cedille.monitoring.opnsense_syslog`
+(AnsibleRoles). L'ancien playbook partait d'une hypothèse fausse : os-telegraf
+n'a **aucun** output remote_write (vérifié dans le code source du plugin,
+`Output.xml` — seul un exporter Prometheus natif en pull existe, port 9273).
+Le nouveau design scrape ce port depuis Prometheus (monitoring01) au lieu de
+pousser, comme tous les autres exporters de la stack ; il remote_write ensuite
+vers Mimir comme le reste. Trois autres bugs corrigés (endpoints inexistants
+`setInputs`/`setOutputs`/`service/reload`, champ `input.net` au lieu de
+`input.network`, `general.enabled` jamais positionné donc le daemon ne
+redémarrait jamais) — détail complet dans le README du rôle
+`opnsense_telegraf`.
+
+Toujours **non exécuté contre la prod** (voir README des deux rôles, section
+"État de validation") : les endpoints ont été vérifiés ligne à ligne contre
+le code source du plugin/API OPNsense, mais jamais contre une instance
+réelle. Le format syslog émis par OPNsense (legacy/BSD vs RFC5424) n'a pas
+non plus été vérifié empiriquement — exactement le type de piège qui a cassé
+l'intégration NX-OS pendant un cycle d'investigation complet (voir plus bas).
+À valider via les métriques internes d'Alloy (`loki_source_syslog_entries_total`
+etc. sur `monitoring01:12345/metrics`) après application, avant de faire
+confiance aux données.
+
+Cible : opnsense01/02 (10.0.21.2/.3:9273) scrapés par Prometheus
+(`monitoring_core.yaml` job `opnsense_telegraf`). Syslog : ports dédiés
+5140/5141 sur le récepteur Alloy (`infra-syslog-switches.yaml`).
+Prérequis : plugin `os-telegraf` installé sur les OPNsense (le rôle
+`opnsense_telegraf` s'en charge via `oxlorg.opnsense.package`, sauf si
+`opnsense_telegraf_manage_plugin: false`).
 
 ### Syslog forwarding NX-OS → Loki — résolu (2026-09-02)
 Deux causes distinctes empêchaient tout syslog de sortir de data01 (Core01)

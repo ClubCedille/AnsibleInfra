@@ -1,0 +1,60 @@
+---
+# Observability parity with pve01-08 for the OPNsense CARP cluster:
+#   1. os-telegraf plugin — system/interface/PF metrics, native Prometheus
+#      exporter (pull, port 9273). monitoring01's Prometheus must scrape it
+#      (see prometheus_scrape_configs.opnsense_telegraf in
+#      inventories/infra/group_vars/monitoring_core.yaml) — it then
+#      remote_writes onward to Mimir like everything else in that stack.
+#   2. Remote syslog (system + firewall + CARP/HA) -> Alloy receiver on
+#      monitoring01 -> Loki (see infra-syslog-switches.yaml for the receiver
+#      side, which this playbook does NOT touch).
+#
+# This playbook runs from the Ansible control machine (connection: local),
+# same pattern as opnsense-config.yaml. API calls go to vm_net.ip on each
+# node.
+#
+# ⚠ PRODUCTION FIREWALLS, NEVER RUN BY AN AGENT WITHOUT EXPLICIT HUMAN
+# SIGN-OFF. Neither role in this playbook has been exercised against a live
+# OPNsense instance — see the opnsense_telegraf and opnsense_syslog role
+# READMEs ("État de validation") for exactly what was verified (against
+# published plugin/API source) versus what remains to be confirmed live
+# (endpoint behavior, syslog wire format). Validate on a lab OPNsense first
+# if one is available.
+#
+# Usage:
+#   make monitoring/infra-opnsense                   # apply
+#   make monitoring/infra-opnsense DRY_RUN=1         # check + diff (no changes)
+#   make monitoring/infra-opnsense LIMIT=opnsense01  # single node
+#
+# Prerequisites:
+#   make galaxy-install-dev   (or galaxy-install on main branch)
+#   host_vars: opnsense_syslog_alloy_port set per node (5140 / 5141)
+#   infra-syslog-switches.yaml already applied on monitoring01 with the
+#   matching alloy_syslog_sources entries for opnsense01/02
+
+- name: Configure OPNsense observability (Telegraf metrics + syslog)
+  hosts: routers
+  gather_facts: false
+  connection: local
+
+  pre_tasks:
+    - name: Verify API connectivity before applying changes
+      ansible.builtin.uri:
+        url: "https://{{ vm_net.ip }}/api/core/firmware/info"
+        method: GET
+        user: "{{ opnsense_api_key }}"
+        password: "{{ opnsense_api_secret }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: 200
+      register: _api_check
+      no_log: true
+      failed_when: _api_check.status != 200
+
+    - name: Show OPNsense version
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} — OPNsense {{ _api_check.json.product_version | default('unknown') }}"
+
+  roles:
+    - role: cedille.monitoring.opnsense_telegraf
+    - role: cedille.monitoring.opnsense_syslog

@@ -36,3 +36,8 @@ vm_net:
 # HA sync interface addressing (opt15 / vtnet2, 10.255.254.252/30)
 opnsense_ha_device_ip: "10.255.254.253"
 opnsense_ha_peer_ip: "10.255.254.254"
+
+# Dedicated Alloy syslog listener port on monitoring01 (see
+# AnsibleRoles monitoring/roles/opnsense_syslog README — one port per node,
+# config.alloy.j2 only supports static labels per listener).
+opnsense_syslog_alloy_port: 5140

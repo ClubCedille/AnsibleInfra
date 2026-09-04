@@ -1,8 +1,15 @@
 ---
-# Déploie Grafana Alloy sur monitoring01 en mode récepteur syslog, pour les
-# switches qui forwardent leurs logs (data01/Core01 pour l'instant).
-# Filtre en allowlist : ne garde que les événements interfaces/port-channel/STP
-# (voir la conf "logging server" sur le switch lui-même, appliquée manuellement).
+# Déploie Grafana Alloy sur monitoring01 en mode récepteur syslog. Un seul
+# Alloy tourne sur monitoring01 (un seul config.alloy possible), donc TOUTES
+# les sources syslog du site sont déclarées ici, pas seulement les switches
+# malgré le nom du fichier -- inclut maintenant le cluster CARP OPNsense
+# (opnsense01/02), voir infra-opnsense.yaml pour la configuration côté
+# OPNsense (destination syslog distante, rôle cedille.monitoring.opnsense_syslog).
+# Filtre en allowlist pour les switches : ne garde que les événements
+# interfaces/port-channel/STP (voir la conf "logging server" sur le switch
+# lui-même, appliquée manuellement). Pas de filtre pour OPNsense (system +
+# firewall + CARP/HA -- portée volontairement large, voir README du rôle
+# opnsense_syslog).
 # Pousse vers Loki centralisé dans k8s-shared (voir k8s-shared#429/#430) --
 # mêmes identifiants BasicAuth que infra-alloy.yaml (Vault kv/data/
 # monitoring/default/loki-push-htpasswd, username "alloy").
@@ -49,5 +56,46 @@
         # Interfaces (up/down/flap, transceivers), port-channels, STP —
         # tout le reste du syslog de data01 est jeté (voir stage.drop).
         keep_regex: "(?P<interesting>%ETHPORT-|%ETH_PORT_CHANNEL-|%STP-)"
+
+      # OPNsense — un port dédié par nœud (voir host_vars
+      # opnsense_syslog_alloy_port) car config.alloy.j2 applique un jeu de
+      # labels STATIQUE par listener : deux nœuds sur un seul port seraient
+      # indistinguables dans Loki (voir README du rôle opnsense_syslog).
+      #
+      # ⚠ Format non vérifié empiriquement (voir README opnsense_syslog
+      # "État de validation") -- rfc3164 est un pari raisonnable (OPNsense
+      # utilise syslog-ng avec framing legacy/BSD par défaut, rfc5424=false
+      # côté destination), mais data01/NX-OS a déjà démontré qu'un firmware
+      # peut émettre un framing non conforme que rfc3164 rejette
+      # silencieusement (zéro erreur nulle part, juste zéro donnée). Avant de
+      # faire confiance à ces deux sources : vérifier
+      # loki_source_syslog_entries_total / _parsing_errors_total sur
+      # monitoring01:12345/metrics après un peu de trafic réel. Si ça reste à
+      # zéro malgré des paquets confirmés (tcpdump port 5140/5141), basculer
+      # syslog_format en "raw" comme pour data01 -- rien à changer côté
+      # OPNsense pour ce fallback.
+      - name: opnsense01
+        listen_address: "0.0.0.0:5140"
+        protocol: udp
+        syslog_format: rfc3164
+        labels:
+          job: opnsense
+          instance: opnsense01
+          env: infra
+        # Pas d'allowlist -- portée volontairement large (system + firewall
+        # + CARP/HA), voir README du rôle opnsense_syslog. keep_regex reste
+        # requis par le template (boucle for inconditionnelle) : "." matche
+        # toute ligne non vide, donc ne filtre rien en pratique.
+        keep_regex: "(?P<interesting>.)"
+
+      - name: opnsense02
+        listen_address: "0.0.0.0:5141"
+        protocol: udp
+        syslog_format: rfc3164
+        labels:
+          job: opnsense
+          instance: opnsense02
+          env: infra
+        keep_regex: "(?P<interesting>.)"
   roles:
     - cedille.monitoring.alloy

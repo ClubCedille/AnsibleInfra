@@ -30,6 +30,7 @@
       - infra-logs-ceph.json
       - infra-logs-system.json
       - infra-logs-switch.json
+      - infra-opnsense.json
   tasks:
     - name: Copy Grafana dashboards
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/grafana-dashboards.yaml"
