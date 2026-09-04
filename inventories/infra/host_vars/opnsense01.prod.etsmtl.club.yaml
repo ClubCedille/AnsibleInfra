@@ -41,3 +41,11 @@ opnsense_ha_peer_ip: "10.255.254.254"
 # AnsibleRoles monitoring/roles/opnsense_syslog README — one port per node,
 # config.alloy.j2 only supports static labels per listener).
 opnsense_syslog_alloy_port: 5140
+
+# os-telegraf is installed (confirmed 2026-09-04). The oxlorg.opnsense.package
+# module fires an async "install" job without waiting for it (see
+# AnsibleRoles monitoring/roles/opnsense_telegraf), so re-running the install
+# task on an already-installed plugin just wastes a call and can hit "system
+# needs to be upgraded beforehand" if a firmware check is pending. Once
+# installed, skip it here rather than teaching the role to poll.
+opnsense_telegraf_manage_plugin: false
