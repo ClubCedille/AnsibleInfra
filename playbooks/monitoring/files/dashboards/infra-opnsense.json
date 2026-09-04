@@ -2,7 +2,7 @@
   "__inputs": [],
   "__requires": [],
   "annotations": {"list": []},
-  "description": "OPNsense CARP cluster — os-telegraf metrics (CPU/mem/net/PF) + syslog (system/firewall/CARP)",
+  "description": "OPNsense CARP cluster — os-telegraf metrics (CPU/mem/net) + syslog (system/firewall/CARP). No PF state metrics: os-telegraf's pf input has no exposed sudo/privilege config, only works as root.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -38,7 +38,7 @@
       {
         "current": {},
         "datasource": {"type": "prometheus", "uid": "${datasource}"},
-        "definition": "label_values(telegraf_system_uptime{job=\"opnsense_telegraf\"}, instance)",
+        "definition": "label_values(system_uptime{job=\"opnsense_telegraf\"}, instance)",
         "hide": 0,
         "includeAll": true,
         "allValue": ".*",
@@ -46,7 +46,7 @@
         "name": "instance",
         "options": [],
         "query": {
-          "query": "label_values(telegraf_system_uptime{job=\"opnsense_telegraf\"}, instance)",
+          "query": "label_values(system_uptime{job=\"opnsense_telegraf\"}, instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -134,7 +134,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "100 * (1 - avg by (instance) (mem_available{job=\"opnsense_telegraf\",instance=~\"$instance\"} / telegraf_mem_total{job=\"opnsense_telegraf\",instance=~\"$instance\"}))",
+          "expr": "100 * (1 - avg by (instance) (mem_available{job=\"opnsense_telegraf\",instance=~\"$instance\"} / mem_total{job=\"opnsense_telegraf\",instance=~\"$instance\"}))",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -221,35 +221,8 @@
       "type": "timeseries"
     },
     {
-      "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "palette-classic"},
-          "mappings": [],
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
-      "id": 5,
-      "options": {
-        "legend": {"displayMode": "list", "placement": "bottom"},
-        "tooltip": {"mode": "multi"}
-      },
-      "targets": [
-        {
-          "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "telegraf_pf_state_table_current{job=\"opnsense_telegraf\",instance=~\"$instance\"}",
-          "legendFormat": "{{instance}} states",
-          "refId": "A"
-        }
-      ],
-      "title": "PF State Table",
-      "type": "timeseries"
-    },
-    {
       "datasource": {"type": "loki", "uid": "${loki_datasource}"},
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
       "id": 6,
       "options": {
         "showTime": true,
