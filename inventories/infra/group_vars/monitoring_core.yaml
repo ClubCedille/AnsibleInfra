@@ -255,6 +255,17 @@ prometheus_scrape_configs:
       - "10.0.21.57:9283" # pve07
       - "10.0.21.58:9283" # pve08
 
+  # ── OPNsense — os-telegraf native Prometheus exporter (pull, port 9273) ────
+  # Pull-based, not remote_write: os-telegraf has no remote_write output (see
+  # AnsibleRoles monitoring/roles/opnsense_telegraf README). Scraped here like
+  # every other exporter in this file; prometheus_remote_write below carries
+  # it onward to Mimir same as everything else.
+  - job_name: opnsense_telegraf
+    scrape_interval: 60s
+    targets:
+      - "10.0.21.2:9273" # opnsense01
+      - "10.0.21.3:9273" # opnsense02
+
   # ── SNMP — Cisco IOS switch (management.prod.lanets.ca) ────────────────────
   - job_name: snmp_ios_switches
     metrics_path: /snmp
