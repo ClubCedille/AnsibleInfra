@@ -95,7 +95,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "100 - avg by (instance) (rate(telegraf_cpu_usage_idle{job=\"opnsense_telegraf\",instance=~\"$instance\",cpu=\"cpu-total\"}[5m]))",
+          "expr": "100 - avg by (instance) (rate(cpu_usage_idle{job=\"opnsense_telegraf\",instance=~\"$instance\",cpu=\"cpu-total\"}[5m]))",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -134,7 +134,7 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "100 * (1 - avg by (instance) (telegraf_mem_available{job=\"opnsense_telegraf\",instance=~\"$instance\"} / telegraf_mem_total{job=\"opnsense_telegraf\",instance=~\"$instance\"}))",
+          "expr": "100 * (1 - avg by (instance) (mem_available{job=\"opnsense_telegraf\",instance=~\"$instance\"} / telegraf_mem_total{job=\"opnsense_telegraf\",instance=~\"$instance\"}))",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -161,13 +161,13 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_bytes_recv{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m]) * 8",
+          "expr": "rate(net_bytes_recv{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m]) * 8",
           "legendFormat": "{{instance}} {{interface}} rx",
           "refId": "A"
         },
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_bytes_sent{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m]) * 8",
+          "expr": "rate(net_bytes_sent{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m]) * 8",
           "legendFormat": "{{instance}} {{interface}} tx",
           "refId": "B"
         }
@@ -194,25 +194,25 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_err_in{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
+          "expr": "rate(net_err_in{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
           "legendFormat": "{{instance}} {{interface}} err_in",
           "refId": "A"
         },
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_err_out{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
+          "expr": "rate(net_err_out{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
           "legendFormat": "{{instance}} {{interface}} err_out",
           "refId": "B"
         },
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_drop_in{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
+          "expr": "rate(net_drop_in{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
           "legendFormat": "{{instance}} {{interface}} drop_in",
           "refId": "C"
         },
         {
           "datasource": {"type": "prometheus", "uid": "${datasource}"},
-          "expr": "rate(telegraf_net_drop_out{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
+          "expr": "rate(net_drop_out{job=\"opnsense_telegraf\",instance=~\"$instance\"}[5m])",
           "legendFormat": "{{instance}} {{interface}} drop_out",
           "refId": "D"
         }
