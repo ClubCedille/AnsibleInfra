@@ -1,21 +1,24 @@
 ---
-# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
-# provisionnée tant que ces placeholders ne sont pas remplacés :
-#
-# 1. Mot de passe VM (localadmin), vaulté :
-#      ansible-vault encrypt_string '<password>' --name ansible_password
-#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
-ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32313932616162323561633735633936653061366633326131333434303930383534356266383930
+  3230666439316564356531343339656266663039373539620a333236353364373130363730333162
+  30656535663162666637313832633234393232356465323538643464346364613464323132383762
+  3130393338633161300a303235303637656634373331333833396630616262656630383161353331
+  36333432666639663964303462326666656561636164363161646332323835343232313765646633
+  3832613630613661383731633566333237373733303561656263
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
 
-# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
-#    ("New runner"), renseigner son uuid, puis vaulter son token :
-#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
-forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
-forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
-
-# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
-vm_proxmox_node: "pve07"
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "2301a3e9-67cd-42e8-8a49-5dd713018dbb"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  65653363653930333432616339326532353962613635383266623132646638323561343031656335
+  6334363039366165633738633036396465393333363833320a646438653539396633376364613262
+  63616366386232353237323930353536386538366133656133623738393439636566393539336265
+  6265316163636633340a653762623062616334336530316561373235356432306430643631636435
+  65646237336137653865653962663563363663343033336535323939316637333761646363386162
+  3730346133353433386362346564373834346366323865333930

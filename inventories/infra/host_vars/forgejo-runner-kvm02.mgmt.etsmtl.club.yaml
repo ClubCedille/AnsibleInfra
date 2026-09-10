@@ -1,21 +1,24 @@
 ---
-# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
-# provisionnée tant que ces placeholders ne sont pas remplacés :
-#
-# 1. Mot de passe VM (localadmin), vaulté :
-#      ansible-vault encrypt_string '<password>' --name ansible_password
-#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
-ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32313932616162323561633735633936653061366633326131333434303930383534356266383930
+  3230666439316564356531343339656266663039373539620a333236353364373130363730333162
+  30656535663162666637313832633234393232356465323538643464346364613464323132383762
+  3130393338633161300a303235303637656634373331333833396630616262656630383161353331
+  36333432666639663964303462326666656561636164363161646332323835343232313765646633
+  3832613630613661383731633566333237373733303561656263
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
 
-# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
-#    ("New runner"), renseigner son uuid, puis vaulter son token :
-#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
-forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
-forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
-
-# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
-vm_proxmox_node: "pve04"
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "d4b540f3-6204-4d07-b7de-21433c2925d8"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  34393931623535613139313835366439346666373265653763346636313334366331643539656434
+  3831613635613162363339393361326363333366386263380a616363353338643231386336386433
+  36346465343936616637666334313866316530633030353937656333393261666437306333343634
+  6363623730333438300a646565656433326238303664656434353862386664663733316533346334
+  38653534613535396132376462646332323136306630313634393931663533613732363837343231
+  3433643365623434303465613866346439346264346665383938

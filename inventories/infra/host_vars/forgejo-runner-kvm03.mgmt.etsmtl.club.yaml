@@ -1,21 +1,24 @@
 ---
-# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
-# provisionnée tant que ces placeholders ne sont pas remplacés :
-#
-# 1. Mot de passe VM (localadmin), vaulté :
-#      ansible-vault encrypt_string '<password>' --name ansible_password
-#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
-ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32313932616162323561633735633936653061366633326131333434303930383534356266383930
+  3230666439316564356531343339656266663039373539620a333236353364373130363730333162
+  30656535663162666637313832633234393232356465323538643464346364613464323132383762
+  3130393338633161300a303235303637656634373331333833396630616262656630383161353331
+  36333432666639663964303462326666656561636164363161646332323835343232313765646633
+  3832613630613661383731633566333237373733303561656263
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
 
-# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
-#    ("New runner"), renseigner son uuid, puis vaulter son token :
-#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
-forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
-forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
-
-# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
-vm_proxmox_node: "pve05"
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "f9f5d9d1-80e9-40e5-8986-8e9184c94667"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  30323234303563633566326465366537393062386135393963643436373438396230373964306662
+  6636356538643036353738643165303433353935663365310a363463333662666334663664656661
+  36636661373538396630313838363333633066366263363333636430396635613630373530323830
+  3437643832396631380a373333643338363830303162636263356165656333646631363631613262
+  66306466313638613731343538623736383339636333633938393538636239316161313530313037
+  6235323035666535316433626336333334373239323936373862
