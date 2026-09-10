@@ -1,0 +1,6 @@
+---
+# Pool "générique" — exécution Docker standard (act_runner sibling-container
+# pattern via le socket Docker de l'hôte). Reprend tel quel le comportement
+# historique de forgejo-runner01/02 — pas de spécialisation nécessaire, ce
+# fichier existe pour que les 3 pools soient explicites et symétriques dans
+# l'inventaire.

@@ -1,0 +1,14 @@
+---
+# Pool "Docker-in-Docker" — pour les jobs de build/push d'images (docker
+# build, buildx). container.privileged permet à act_runner de lancer des
+# conteneurs de job privilégiés capables de démarrer leur propre dockerd
+# imbriqué (ou un service "docker:dind" dans le workflow).
+vm_disk_size: "80G" # cache de layers Docker plus gourmand que le pool générique
+
+forgejo_runner_container:
+  privileged: true
+  docker_host: ""
+  force_pull: true # jobs de build d'image — toujours repartir d'une base fraîche
+
+forgejo_runner_labels:
+  - "docker-dind:docker://ghcr.io/catthehacker/ubuntu:act-latest"

@@ -1,0 +1,21 @@
+---
+# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
+# provisionnée tant que ces placeholders ne sont pas remplacés :
+#
+# 1. Mot de passe VM (localadmin), vaulté :
+#      ansible-vault encrypt_string '<password>' --name ansible_password
+#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
+ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+
+vm_user: "{{ ansible_user }}"
+vm_password: "{{ ansible_password }}"
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
+
+# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
+#    ("New runner"), renseigner son uuid, puis vaulter son token :
+#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
+forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
+forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
+
+# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
+vm_proxmox_node: "pve07"

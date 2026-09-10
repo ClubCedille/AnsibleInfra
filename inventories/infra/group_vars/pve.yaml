@@ -47,6 +47,12 @@ pve_vlans_desired:
     comment: "LAN management"
   - id: 30
     comment: "Deploiement Day 0 - Switches"
+  - id: 40
+    comment: "CI/CD - runners Forgejo (chantier segmentation VLAN21)"
+  - id: 45
+    comment: "Monitoring (chantier segmentation VLAN21)"
+  - id: 48
+    comment: "Utilitaires/Sandbox (chantier segmentation VLAN21)"
   - id: 65
     comment: "Eclipse link (conservé explicitement - ne pas supprimer)"
   - id: 66
