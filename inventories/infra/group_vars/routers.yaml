@@ -20,8 +20,20 @@ opnsense_manage_nat: false
 # try to create duplicates. Skip — assert task confirms they're present.
 opnsense_skip_vlan_create: true
 
-# CARP shared password — empty string = no CARP authentication (OPNsense default).
-vip_password: ""
+# CARP shared password. The "empty = no auth" assumption below was never
+# actually exercised (opnsense_manage_vips was always false, so no VIP
+# creation call had gone through this var) — turned out the live cluster
+# already shares one real password across all 7 existing VIPs (read from
+# config.xml, 2026-09-10) and the API rejects an empty one on create.
+# Reusing the same shared secret for new VIPs for consistency.
+vip_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  37646663356365333531393061333039376233326636336238376132313565633464356533336230
+  3531303335373466323533313233653036616634343037390a303035316532333239323063636433
+  30343435363039323134373266646236343261333265626462356561616237356234333964326163
+  3766333935343132620a353162393538653031353361613535333364376532363666323833623634
+  62393361366139623866303338363639326133623038353837376533326136313565373237306531
+  3162666230663663313262623165386562383361623537343266
 
 # XMLRPC sync credentials (used by hasync_general on the master node).
 # To vault: ansible-vault encrypt_string '<password>' --name vm_password

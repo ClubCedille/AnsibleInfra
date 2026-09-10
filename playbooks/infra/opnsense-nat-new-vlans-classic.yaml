@@ -1,0 +1,94 @@
+---
+# One-off: add classic-format outbound NAT rules for the newly segmented
+# VLANs (40 CI/CD, 45 Monitoring, 48 Utilities) — matching the exact
+# format of the 7 existing outbound NAT rules (all classic, "<interface
+# name> → WAN CARP"). The new-format module (oxlorg.opnsense.nat_source)
+# doesn't work against this cluster: outbound NAT is in "advanced"
+# (manual) mode, and the module expects an API response shape that only
+# exists in automatic/hybrid mode — confirmed live, 2026-09-10.
+#
+# Interface names differ per node (GUI-assigned, not synced — see
+# host_vars comments on opnsense01/02):
+#   opnsense01: opt1=VLAN40, opt2=VLAN45, opt4=VLAN48
+#   opnsense02: opt2=VLAN40, opt4=VLAN45, opt6=VLAN48
+#
+# Usage: ansible-playbook -i inventories/infra/hosts.ini \
+#   playbooks/infra/opnsense-nat-new-vlans-classic.yaml --ask-vault-pass
+
+- name: Add classic outbound NAT rules for VLAN 40/45/48
+  hosts: routers
+  gather_facts: false
+  connection: ssh
+
+  vars:
+    _new_nat_rules:
+      opnsense01.prod.etsmtl.club:
+        - { iface: opt1, vlan: 40 }
+        - { iface: opt2, vlan: 45 }
+        - { iface: opt4, vlan: 48 }
+      opnsense02.prod.etsmtl.club:
+        - { iface: opt2, vlan: 40 }
+        - { iface: opt4, vlan: 45 }
+        - { iface: opt6, vlan: 48 }
+
+  tasks:
+    - name: "Backup config.xml before editing"
+      ansible.builtin.command:
+        cmd: "cp /conf/config.xml /conf/backup/config-pre-nat-vlan40-45-48-{{ lookup('pipe', 'date +%s') }}.xml"
+      changed_when: true
+
+    - name: "Insert classic NAT rules for VLAN 40/45/48"
+      ansible.builtin.shell: |
+        python3 << 'PYEOF'
+        import xml.etree.ElementTree as ET
+
+        rules = {{ _new_nat_rules[inventory_hostname] | to_json }}
+
+        tree = ET.parse('/conf/config.xml')
+        root = tree.getroot()
+        outbound = root.find('.//nat/outbound')
+
+        existing_ifaces = {(r.findtext('interface'), (r.find('source').findtext('network') or ''))
+                            for r in outbound.findall('rule')}
+
+        added = 0
+        for r in rules:
+            key = ('wan', r['iface'])
+            if key in existing_ifaces:
+                print(f"SKIP: rule for {r['iface']} already exists")
+                continue
+            rule = ET.SubElement(outbound, 'rule')
+            source = ET.SubElement(rule, 'source')
+            ET.SubElement(source, 'network').text = r['iface']
+            destination = ET.SubElement(rule, 'destination')
+            ET.SubElement(destination, 'any').text = '1'
+            ET.SubElement(rule, 'descr').text = f"VLAN {r['vlan']} ({r['iface']}) -> WAN CARP"
+            ET.SubElement(rule, 'interface').text = 'wan'
+            ET.SubElement(rule, 'ipprotocol').text = 'inet'
+            ET.SubElement(rule, 'target').text = '142.137.247.101'
+            ET.SubElement(rule, 'sourceport')
+            ET.SubElement(rule, 'poolopts')
+            ET.SubElement(rule, 'poolopts_sourcehashkey')
+            added += 1
+            print(f"ADDED: rule for {r['iface']} (VLAN {r['vlan']})")
+
+        tree.write('/conf/config.xml', encoding='unicode', xml_declaration=True)
+        print(f"Done - {added} rule(s) added")
+        PYEOF
+      register: _insert_result
+      changed_when: "'ADDED' in _insert_result.stdout"
+
+    - name: "Show insert result"
+      ansible.builtin.debug:
+        msg: "{{ _insert_result.stdout_lines }}"
+
+    - name: "Validate config.xml is still well-formed"
+      ansible.builtin.command:
+        cmd: xmllint --noout /conf/config.xml
+      changed_when: false
+
+    - name: "Reload filter (applies NAT rule changes)"
+      ansible.builtin.command:
+        cmd: configctl filter reload
+      changed_when: true
+      when: "'ADDED' in _insert_result.stdout"
