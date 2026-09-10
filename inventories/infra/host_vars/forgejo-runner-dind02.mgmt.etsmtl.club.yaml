@@ -33,4 +33,4 @@ vm_name: "Docker-Runner-2"
 # Proxmox API, 2026-09-10) — the group default formula doesn't
 # account for this host, and update-type API calls (tags, pool,
 # boot order) need the correct node to resolve the config path.
-vm_proxmox_node: "pve01"
+vm_proxmox_node: "pve03"
