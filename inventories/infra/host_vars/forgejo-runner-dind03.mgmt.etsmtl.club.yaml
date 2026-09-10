@@ -1,21 +1,24 @@
 ---
-# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
-# provisionnée tant que ces placeholders ne sont pas remplacés :
-#
-# 1. Mot de passe VM (localadmin), vaulté :
-#      ansible-vault encrypt_string '<password>' --name ansible_password
-#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
-ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32313932616162323561633735633936653061366633326131333434303930383534356266383930
+  3230666439316564356531343339656266663039373539620a333236353364373130363730333162
+  30656535663162666637313832633234393232356465323538643464346364613464323132383762
+  3130393338633161300a303235303637656634373331333833396630616262656630383161353331
+  36333432666639663964303462326666656561636164363161646332323835343232313765646633
+  3832613630613661383731633566333237373733303561656263
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
 
-# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
-#    ("New runner"), renseigner son uuid, puis vaulter son token :
-#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
-forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
-forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
-
-# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
-vm_proxmox_node: "pve08"
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "bc8de33d-6105-40c0-b86e-169637ab364f"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  64313130363362613239613230343136306564356337633462343361363965383734323966363334
+  3136663237316363396265343864623565623137653264650a333530356563653737616538383463
+  30623363643938393430393739636363613062616138626235613936653730333230333636303737
+  6134356261663963320a323962616239633432356131386365333937313662373264343233653339
+  64653732323463663230353439376466366363363935643034323937323232376336363931633431
+  6630353538376333666635353835616230633433323463326365

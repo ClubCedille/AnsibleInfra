@@ -1,21 +1,24 @@
 ---
-# TODO(utilisateur) avant tout déploiement — cette VM ne pourra pas être
-# provisionnée tant que ces placeholders ne sont pas remplacés :
-#
-# 1. Mot de passe VM (localadmin), vaulté :
-#      ansible-vault encrypt_string '<password>' --name ansible_password
-#    puis coller le bloc résultant ici à la place de la ligne ci-dessous.
-ansible_password: "REPLACE_WITH_VAULTED_PASSWORD"
+ansible_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32313932616162323561633735633936653061366633326131333434303930383534356266383930
+  3230666439316564356531343339656266663039373539620a333236353364373130363730333162
+  30656535663162666637313832633234393232356465323538643464346364613464323132383762
+  3130393338633161300a303235303637656634373331333833396630616262656630383161353331
+  36333432666639663964303462326666656561636164363161646332323835343232313765646633
+  3832613630613661383731633566333237373733303561656263
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
 
-# 2. Créer ce runner sur https://git.etsmtl.club/admin/actions/runners
-#    ("New runner"), renseigner son uuid, puis vaulter son token :
-#      ansible-vault encrypt_string '<token>' --name forgejo_runner_registration_token
-forgejo_runner_uuid: "REPLACE_WITH_RUNNER_UUID"
-forgejo_runner_registration_token: "REPLACE_WITH_VAULTED_REGISTRATION_TOKEN"
-
-# Répartition de charge Proxmox — voir group_vars/forgejo_runners.yaml pour la logique par défaut.
-vm_proxmox_node: "pve06"
+# From git.etsmtl.club /admin/actions/runners "New runner"
+forgejo_runner_uuid: "9ad757d7-7d62-4464-bef9-24e4d84909e1"
+forgejo_runner_registration_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  62616565363130663338366139613130643064653635353232333137303734356532316163353739
+  6537363031376539346466366432313034313566646638660a356436343362303336326462643965
+  63643330613361376637393562626462346631653861323136633437353138353961346665646265
+  3936363636366362330a636661626637313538393037333461633337616663363632326461623862
+  61363634363432346265353463613638643737313530633731373239326236353862363432653565
+  6535626665633565646334613631613565623332303537613264
