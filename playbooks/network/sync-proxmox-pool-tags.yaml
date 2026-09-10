@@ -1,0 +1,67 @@
+---
+# Standalone sync of Proxmox pool membership + tags for any host with
+# vm_pool/vm_tags defined in its vars — without touching the rest of the
+# VM lifecycle (creation, disk, resize, boot order). Safe to run against
+# already-existing, actively-used VMs (k8s nodes, etc.) since it never
+# calls proxmox_kvm with anything other than tags, and never creates or
+# deletes a VM.
+#
+# Same throttling/idempotency workarounds as cedille.proxmox.vm's
+# create_vm.yaml (see that file's comments for the full diagnosis):
+# proxmox_pool_member errors instead of no-op'ing on a redundant add, and
+# concurrent hosts targeting the same pool race on Proxmox's
+# read-modify-write pool-update endpoint.
+#
+# Usage: make network/sync-proxmox-pool-tags
+
+- name: Sync Proxmox pool membership and tags
+  hosts: all
+  gather_facts: false
+  connection: local
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: Ensure Proxmox pool exists
+      community.proxmox.proxmox_pool:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        poolid: "{{ vm_pool }}"
+        comment: "{{ vm_pool_comment | default(omit) }}"
+        state: present
+      when: vm_pool | default('') | length > 0
+      throttle: 1
+
+    - name: Ensure VM pool membership
+      community.proxmox.proxmox_pool_member:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        poolid: "{{ vm_pool }}"
+        members:
+          - vm: "{{ vm_id }}"
+        state: present
+      when: vm_pool | default('') | length > 0 and vm_id is defined
+      throttle: 1
+      register: _vm_pool_membership
+      failed_when: >-
+        _vm_pool_membership is failed and
+        'already a pool member' not in (_vm_pool_membership.msg | default(''))
+
+    - name: Ensure VM tags
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        tags: "{{ vm_tags }}"
+        state: present
+        update: true
+      when: >-
+        vm_tags | default([]) | length > 0 and
+        vm_id is defined and vm_proxmox_node is defined

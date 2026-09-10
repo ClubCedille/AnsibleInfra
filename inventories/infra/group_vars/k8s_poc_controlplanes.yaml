@@ -1,0 +1,9 @@
+---
+# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
+# already uniform across all 5 hosts. vm_pool shared with workers, see
+# group_vars/k8s_poc.yaml.
+vm_tags:
+  - "PRODUCTION"
+  - "POC"
+  - "CONTROLPLANE"
+  - "K8S-POC"
