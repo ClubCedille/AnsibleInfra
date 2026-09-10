@@ -20,5 +20,7 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/forgejo
     type: dir
+  - name: .cache/AnsibleRoles/github
+    type: dir
   - name: .cache/AnsibleRoles/omni
     type: dir
