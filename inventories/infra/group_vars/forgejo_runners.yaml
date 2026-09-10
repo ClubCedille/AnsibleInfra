@@ -59,3 +59,14 @@ vm_proxmox_api:
 # registration token (from /admin/actions/runners) is per-host — see
 # host_vars/forgejo-runner0{1,2}.mgmt.etsmtl.club.yaml.
 forgejo_runner_instance_url: "https://git.etsmtl.club"
+
+# Dedicated Proxmox pool for the runner fleet (2026-09-10) — previously
+# split inconsistently across RP-Management-Infra (01/02 only) and
+# untagged/unpooled (03 + all 6 new nodes). New pool created idempotently
+# by cedille.proxmox.vm on first apply.
+vm_pool: "RP-CICD-Runners"
+vm_pool_comment: "Flotte runners CI/CD Forgejo (generic/kvm/dind)"
+vm_tags:
+  - "PRODUCTION"
+  - "CEDILLE"
+  - "CI-RUNNER"
