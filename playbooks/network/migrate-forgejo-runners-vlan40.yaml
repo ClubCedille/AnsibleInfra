@@ -1,0 +1,78 @@
+---
+# One-time migration of the forgejo runner fleet from VLAN21
+# (10.0.21.236-244) to the dedicated CI/CD VLAN (tag 40, 10.0.40.0/24,
+# renumbered 10.0.40.10-18). Run once hosts.ini/group_vars already
+# declare the new IPs/VLAN (the desired end-state) — this playbook is
+# what actually makes it true on Proxmox + inside each guest.
+#
+# serial: 1 — at most one runner offline at a time, never a total outage
+# of the CI/CD fleet.
+#
+# Per host:
+#   1. cloud-init clean while still reachable on the OLD IP (VLAN21) —
+#      without this, a reboot alone won't make cloud-init re-render
+#      netplan from the new ipconfig0/net0 Proxmox hands it; NoCloud
+#      only fully re-inits when it doesn't recognize its cached state.
+#   2. Push new net0 (VLAN tag) + ipconfig0 (new IP/gateway) via the
+#      Proxmox API with update:true — state:present alone is a
+#      documented no-op on an existing VM (see resize_vm.yaml).
+#   3. Reboot via the API (SSH to the old IP won't survive the VLAN
+#      change anyway).
+#   4. Wait for SSH to come back on the NEW IP (ansible_host already
+#      points there from the inventory change).
+#
+# Usage: ansible-playbook -i inventories/infra/hosts.ini \
+#   playbooks/network/migrate-forgejo-runners-vlan40.yaml --ask-vault-pass
+
+- name: Migrate forgejo runners to VLAN 40 (CI/CD)
+  hosts: forgejo_runners
+  gather_facts: false
+  serial: 1
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: "Clean cloud-init state while still reachable on the old IP"
+      # hosts.ini's ansible_host already points at the NEW (VLAN 40) IP —
+      # that's the desired end-state, but the VM is still physically on
+      # VLAN21 until the next task runs. Old IP follows a fixed pattern
+      # (10.0.21.<vm_id mod 1000> — e.g. vm_id 21236 → 10.0.21.236,
+      # matching every runner's original VLAN21 address) so it doesn't
+      # need a second inventory field just for this one-time migration.
+      ansible.builtin.command:
+        cmd: cloud-init clean --logs
+      become: true
+      vars:
+        ansible_host: "10.0.21.{{ (vm_id | int) % 1000 }}"
+
+    - name: "Push new VLAN + static IP to Proxmox (net0/ipconfig0)"
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        node: "{{ vm_proxmox_node }}"
+        net:
+          net0: "{{ vm_net.device | default('virtio') }},bridge={{ vm_net.bridge }},tag={{ vm_net.vlan }}"
+        ipconfig:
+          ipconfig0: "ip={{ vm_net.ip }}/{{ vm_net.netmask }},gw={{ vm_net.gateway }}"
+        update: true
+        state: present
+      delegate_to: localhost
+
+    - name: "Reboot the VM to apply the new network config"
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ vm_proxmox_api.user }}"
+        api_password: "{{ vm_proxmox_api.password }}"
+        api_host: "{{ vm_proxmox_api.host }}"
+        vmid: "{{ vm_id }}"
+        state: restarted
+      delegate_to: localhost
+
+    - name: "Wait for SSH on the new IP (VLAN 40)"
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 180

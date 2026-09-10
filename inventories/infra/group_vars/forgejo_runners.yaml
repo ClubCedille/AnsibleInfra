@@ -34,13 +34,17 @@ install_docker_compose_content: |
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ 'pve02' if inventory_hostname.startswith('forgejo-runner02') else 'pve01' }}"
 
+# Migrated 2026-09-10 from VLAN21 (10.0.21.236-244) to the dedicated
+# CI/CD VLAN (tag 40, 10.0.40.0/24) — see AnsibleRoles opnsense role for
+# the interface/firewall-rule side. Renumbered .10-.18 rather than
+# keeping the old last octets, since it's a clean cutover.
 vm_net:
   bridge: "vmbr1"
-  vlan: "21"
+  vlan: "40"
   device: virtio
   ip: "{{ ansible_host }}"
   netmask: "24"
-  gateway: "10.0.21.1"
+  gateway: "10.0.40.1"
   nameservers: "1.1.1.1,8.8.8.8"
   search_domain: "mgmt.etsmtl.club"
 
