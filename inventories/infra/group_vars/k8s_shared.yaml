@@ -21,6 +21,14 @@ vm_proxmox_api:
 
 vm_disk_storage: RBD_Common
 vm_ostype: other
+
+# Codifies existing live state (verified via Proxmox API, 2026-09-10).
+# Confirmed 4/5 controlplanes and 6/8 workers already carry this pool +
+# their role-specific tag (group_vars/k8s_shared_controlplanes.yaml,
+# group_vars/k8s_shared_workers.yaml) — controlplane-4 and worker-6/7
+# were missing both despite being live and in active use (uptime ~24d
+# each) — this brings them in line with their siblings.
+vm_pool: "Management"
 # agent activé sous la forme exacte observée sur les 10 VMs existantes (vérifié via pvesh
 # le 2026-08-17), pas juste "agent: true" — inclut fstrim_cloned_disks et le type de canal.
 vm_agent: "enabled=1,fstrim_cloned_disks=0,type=virtio"

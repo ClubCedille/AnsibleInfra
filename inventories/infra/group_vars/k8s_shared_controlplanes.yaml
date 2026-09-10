@@ -6,3 +6,10 @@
 vm_disk_device: scsi0
 vm_disk_size: 40G
 vm_scsihw: virtio-scsi-pci
+
+vm_tags:
+  - "PRODUCTION"
+  - "SHARED"
+  - "CONTROLPLANE"
+  - "TF"
+  - "K8S-SHARED"

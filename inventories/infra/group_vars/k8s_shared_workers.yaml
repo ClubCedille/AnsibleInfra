@@ -5,3 +5,10 @@
 vm_disk_device: ide0
 vm_disk_size: 250G
 vm_net_public_vlan: 247
+
+vm_tags:
+  - "PRODUCTION"
+  - "SHARED"
+  - "WORKER"
+  - "TF"
+  - "K8S-SHARED"

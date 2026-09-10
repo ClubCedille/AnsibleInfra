@@ -18,6 +18,13 @@ vm_memory_mb: 8192
 vm_disk_storage: RBD_Common
 vm_cloud_init_storage: RBD_Common
 
+# Codifies existing live state (verified via Proxmox API, 2026-09-10).
+vm_pool: "RP-Management-Infra"
+vm_tags:
+  - "PRODUCTION"
+  - "COMMUN"
+  - "SSO"
+
 vm_disk_image_path: /var/lib/vz/template/iso/noble-server-cloudimg-amd64.img
 vm_disk_size: 50G
 vm_disk_format: raw
