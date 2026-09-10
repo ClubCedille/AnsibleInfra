@@ -22,3 +22,15 @@ forgejo_runner_registration_token: !vault |
   6363623730333438300a646565656433326238303664656434353862386664663733316533346334
   38653534613535396132376462646332323136306630313634393931663533613732363837343231
   3433643365623434303465613866346439346264346665383938
+
+# Proxmox display name pinned independently of inventory_hostname —
+# manually renamed in Proxmox to match the Forgejo runner label
+# (2026-09-10). Without this override, a future cedille.proxmox.vm
+# run would revert to the inventory hostname.
+vm_name: "KVM-Runner-2"
+
+# Pinned to match where the VM actually lives today (confirmed via
+# Proxmox API, 2026-09-10) — the group default formula doesn't
+# account for this host, and update-type API calls (tags, pool,
+# boot order) need the correct node to resolve the config path.
+vm_proxmox_node: "pve01"

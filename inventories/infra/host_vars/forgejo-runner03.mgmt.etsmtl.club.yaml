@@ -47,3 +47,15 @@ forgejo_runner_extra_packages:
   - qemu-system-x86
   - qemu-utils
   - ovmf
+
+# Proxmox display name pinned independently of inventory_hostname —
+# manually renamed in Proxmox to match the Forgejo runner label
+# (2026-09-10). Without this override, a future cedille.proxmox.vm
+# run would revert to the inventory hostname.
+vm_name: "KVM-Runner-1"
+
+# Pinned to match where the VM actually lives today (confirmed via
+# Proxmox API, 2026-09-10) — the group default formula doesn't
+# account for this host, and update-type API calls (tags, pool,
+# boot order) need the correct node to resolve the config path.
+vm_proxmox_node: "pve02"
