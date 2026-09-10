@@ -25,6 +25,10 @@ opnsense_api_secret: !vault |
 # Node identity
 vm_is_master: true
 
+# Real LAN IP of the peer node (not the CARP VIP) — see
+# AnsibleRoles opnsense/roles/config/templates/carp-wireguard-hook.sh.j2.
+opnsense_peer_lan_ip: "10.0.21.3"
+
 # Management IP — used as OPNsense API target (firewall: parameter)
 vm_net:
   ip: "10.0.21.2"
