@@ -7,7 +7,12 @@ vm_disk_size: "80G" # cache de layers Docker plus gourmand que le pool génériq
 
 forgejo_runner_container:
   privileged: true
-  docker_host: ""
+  # Docker-outside-of-Docker : act_runner override toujours l'entrypoint du
+  # conteneur de job (tail -f /dev/null), donc le dockerd embarqué de l'image
+  # catthehacker ne démarre jamais tout seul, même avec privileged:true.
+  # "automount" fait monter le socket docker de l'hôte dans le conteneur de
+  # job pour que `docker buildx`/`docker build` lui parlent directement.
+  docker_host: "automount"
   force_pull: true # jobs de build d'image — toujours repartir d'une base fraîche
 
 forgejo_runner_labels:
