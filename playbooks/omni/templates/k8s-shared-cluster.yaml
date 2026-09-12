@@ -1,0 +1,40 @@
+kind: Cluster
+name: k8s-shared
+labels:
+  COMMUN: ""
+kubernetes:
+  version: v1.36.3
+talos:
+  version: v1.13.7
+features:
+  enableWorkloadProxy: true
+patches:
+  - idOverride: 200-cluster-k8s-shared-ipvs
+    annotations:
+      name: ipvs
+    inline: |
+      cluster:
+          proxy:
+              extraArgs:
+                  ipvs-strict-arp: "true"
+              mode: ipvs
+  - idOverride: 200-cluster-k8s-shared-registry-hosts
+    annotations:
+      name: registry-hosts
+    inline: |
+      machine:
+          network:
+              extraHostEntries:
+                  - ip: 10.101.44.200
+                    aliases:
+                        - git.etsmtl.club
+---
+kind: ControlPlane
+machineClass:
+  name: k8s-shared-controlplane
+  size: Unlimited
+---
+kind: Workers
+machineClass:
+  name: k8s-shared-worker
+  size: Unlimited

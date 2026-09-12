@@ -46,6 +46,36 @@ sans serveur DNS configuré, donc `/etc/resolv.conf` vide → tout `apt-get upda
 échouait. DNS ajouté (`1.1.1.1`, search `prod.lanets.ca`, cohérent avec les
 autres hôtes infra) directement sur la machine.
 
+### pve08 iDRAC — reset factory, credentials realignées (2026-09-12)
+`ipmi_up` était à `0` sur tous les collecteurs pour `10.0.21.48` alors que
+`admin`/`monitoring_ipmi_password` (vault) fonctionne sur les 7 autres hôtes.
+`ipmitool` échouait dès l'établissement de session RMCP+ (`Unable to
+establish IPMI v2 / RMCP+ session`, testé sur plusieurs cipher suites) et
+Redfish renvoyait un `401 AccessDenied` propre — donc pas un problème réseau
+ni de cipher, juste un mauvais compte sur ce BMC précis. Confirmé via
+`root`/`calvin` (défaut usine Dell, **minuscule** — `Calvin` avec majuscule
+ne fonctionne pas) que l'iDRAC avait été réinitialisé à ses valeurs d'usine,
+probablement pendant le rebuild de l'hôte (même host que le rebuild
+node_exporter/Alloy documenté plus haut — pve08 est visiblement reconstruit
+sans que sa config iDRAC ne suive).
+
+Fix : `idracadm7` installé localement sur pve08 (jamais fait avant sur cet
+hôte, commandes d'installation identiques à celles ci-dessous), puis en local
+(in-band, pas besoin du mot de passe réseau) :
+```bash
+/opt/dell/srvadmin/bin/idracadm7 get iDRAC.Users.2.UserName   # confirme le slot root (2, comme pve05/06)
+/opt/dell/srvadmin/bin/idracadm7 set iDRAC.Users.2.UserName admin
+/opt/dell/srvadmin/bin/idracadm7 set iDRAC.Users.2.Password '<monitoring_ipmi_password, voir vault>'
+```
+Confirmé `ipmi_up{...} = 1` sur les 5 collecteurs après coup. Note : un
+compte `iDRAC.Users.3 = sidero` existe aussi sur ce BMC (provisioning Sidero
+Omni) — ne pas y toucher.
+
+**Sur tout futur hôte PVE reconstruit ou avec un BMC neuf/replacé** : vérifier
+`ipmi_up` côté Prometheus après coup, et si down, tester `root`/`calvin`
+(Dell) ou le défaut constructeur HP avant de creuser plus loin — c'est
+probablement juste un reset factory, pas un bug réseau/firmware.
+
 ### pve04 iLO — corrigé (2026-08-23)
 En vérifiant la config in-band (`ipmitool lan print` via `/dev/ipmi0`, accessible
 même quand le port réseau dédié ne répond pas), l'iLO de pve04 était en
