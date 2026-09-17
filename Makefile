@@ -111,6 +111,16 @@ galaxy-install-dev: venv
 list-playbooks:
 	@printf '%s\n' $(playbook_targets)
 
+# Génère une MAC aléatoire sous l'OUI Proxmox (BC:24:11), à coller dans le
+# host_vars d'une VM (vm_net.mac ou une entrée de vm_nets) -- requis par
+# cedille.proxmox.vm >=2.0.0. Le script vit dans le rôle (AnsibleRoles),
+# matérialisé ici par galaxy-install ; ce target existe pour que le message
+# d'erreur du rôle (`make -n gen-mac`) puisse le détecter et le suggérer
+# plutôt que le chemin absolu du script.
+.PHONY: gen-mac
+gen-mac: galaxy-install
+	@$(VENV_BIN)/python3 "$(LOCAL_ROLES_DIR)/cedille.proxmox.vm/scripts/gen_mac.py"
+
 .PHONY: lint-tools
 lint-tools: venv
 	$(PYTHON) -m pip install ansible-lint yamllint

@@ -1,0 +1,14 @@
+---
+# Pool "Docker-in-Docker" — pour les jobs de build/push d'images
+# volumineuses. Contrairement à Forgejo/act_runner, un runner GitHub
+# Actions self-hosted exécute les jobs directement sur l'hôte (pas dans un
+# conteneur imposé par l'agent) : aucun montage de socket ni mode
+# privilégié n'est nécessaire pour que `docker build`/`buildx` fonctionne
+# dans un `run:` — l'utilisateur github-runner est simplement dans le
+# groupe docker (comme les autres pools). Ce pool existe surtout pour
+# isoler les jobs lourds en I/O (plus de disque, label dédié), pas pour
+# contourner une limitation d'accès Docker.
+vm_disk_size: "80G"
+
+github_runner_labels:
+  - "docker-dind"

@@ -1,0 +1,29 @@
+---
+# Sous-tâches pour playbooks/netbox/fixups.yaml — inclus en boucle
+# (un `block:` ne peut pas être bouclé directement en Ansible).
+
+- name: Look up legacy VLAN
+  ansible.builtin.uri:
+    url: "{{ netbox_api_url }}/api/ipam/vlans/?vid={{ item.vid }}&name={{ item.name }}"
+    headers: "{{ netbox_headers }}"
+    return_content: true
+  register: legacy_vlan
+  no_log: true
+
+- name: Patch tags (add to_retire, keep existing tags)
+  ansible.builtin.uri:
+    url: "{{ netbox_api_url }}/api/ipam/vlans/{{ legacy_vlan.json.results[0].id }}/"
+    method: PATCH
+    headers: "{{ netbox_headers | combine({'Content-Type': 'application/json'}) }}"
+    body_format: json
+    body:
+      tags: "{{ legacy_vlan.json.results[0].tags + [{'name': 'to_retire'}] }}"
+    status_code: [200, 400]
+  register: patch_result
+  when: legacy_vlan.json.count | default(0) > 0
+  no_log: true
+
+- name: Show patch error if any (safe fields only, no token)
+  ansible.builtin.debug:
+    msg: "vid={{ item.vid }} status={{ patch_result.status }} body={{ patch_result.json }}"
+  when: patch_result.status | default(200) == 400

@@ -11,7 +11,7 @@ ansible_password: !vault |
 
 # VM provisioning — delegated to localhost via PVE API
 vm_id: 500101
-vm_name: monitoring01-infra
+vm_name: monitoring-internal.etsmtl.club
 vm_proxmox_node: pve01
 vm_cpu_cores: 4
 vm_memory_mb: 8192
@@ -24,6 +24,7 @@ vm_disk_size: 80G
 vm_disk_format: raw
 
 vm_net:
+  mac: "BC:24:11:7E:BB:A8"
   bridge: vmbr1
   vlan: 21
   device: virtio

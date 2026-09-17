@@ -31,3 +31,5 @@ forgejo_runner_extra_packages:
 # (2026-09-10). Without this override, a future cedille.proxmox.vm
 # run would revert to the inventory hostname.
 vm_name: "Generic-Runner-2"
+
+vm_mac: "BC:24:11:0F:C9:60"

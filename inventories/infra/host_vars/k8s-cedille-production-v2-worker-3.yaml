@@ -1,0 +1,19 @@
+---
+vm_id: 1010013
+vm_name: k8s-cedille-production-v2-worker-3
+vm_proxmox_node: pve04
+vm_cpu_cores: 8
+vm_memory_mb: 24576
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:74:F9:04"
+  - bridge: vmbr1
+    vlan: 1010
+    mac: "BC:24:11:99:F9:91"
+    ip: 10.5.10.44
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:B1:AB:7F"

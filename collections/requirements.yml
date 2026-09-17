@@ -4,6 +4,8 @@ collections:
     version: ">=2.0.0"
   - name: oxlorg.opnsense
     version: ">=25.7.8"
+  - name: netbox.netbox
+    version: ">=3.20.0"
   - name: .cache/AnsibleRoles/cisco-3850
     type: dir
   - name: .cache/AnsibleRoles/netservices
@@ -20,5 +22,10 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/forgejo
     type: dir
+  # .cache/AnsibleRoles/github retiré ici : dépend de la branche
+  # feat/github-actions-runner-role côté AnsibleRoles, pas encore mergée
+  # sur main. À réajouter une fois cette PR mergée, ou en attendant lancer
+  # `make galaxy-install-dev ANSIBLE_ROLES_DEV_REF=feat/github-actions-runner-role`
+  # ponctuellement pour tester playbooks/network/github-runners.yaml.
   - name: .cache/AnsibleRoles/omni
     type: dir

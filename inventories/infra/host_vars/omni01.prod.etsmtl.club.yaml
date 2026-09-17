@@ -34,6 +34,7 @@ vm_start_after_creation: true
 vm_onboot: true
 
 vm_net:
+  mac: "BC:24:11:19:3C:51"
   bridge: vmbr1
   vlan: 247
   device: virtio

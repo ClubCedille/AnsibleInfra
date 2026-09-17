@@ -5,3 +5,18 @@ vm_proxmox_node: pve02
 # pve02 = tier "big" (1.2TiB/88 cores) → cible 24 cores / 64GB (RAM déjà à la cible).
 vm_cpu_cores: 24
 vm_memory_mb: 65536
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:BB:47:86"
+    ip: 10.5.9.3
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:7A:9E:E9"
+    ip: 10.5.9.29
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:02:73:19"

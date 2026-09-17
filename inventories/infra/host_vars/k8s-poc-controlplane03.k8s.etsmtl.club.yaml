@@ -4,6 +4,7 @@ vm_name: k8s-poc-controlplane03
 vm_proxmox_node: pve03
 vm_disk_size: 50G
 vm_net:
+  mac: "BC:24:11:B8:C5:2B"
   bridge: vmbr1
   vlan: 1300
   device: virtio

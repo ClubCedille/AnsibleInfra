@@ -1,0 +1,16 @@
+---
+vm_id: 1003000
+vm_name: k8s-cedille-sandbox-controlplane-0
+vm_proxmox_node: pve03
+vm_cpu_cores: 4
+vm_memory_mb: 8192
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:62:B3:61"
+  - bridge: vmbr1
+    vlan: 1003
+    mac: "BC:24:11:C9:3E:C0"
+    ip: 10.10.1.186
+    netmask: 25

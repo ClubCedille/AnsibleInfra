@@ -1,0 +1,16 @@
+---
+vm_id: 1010001
+vm_name: k8s-cedille-production-v2-controlplane-1
+vm_proxmox_node: pve04
+vm_cpu_cores: 4
+vm_memory_mb: 8192
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:DE:27:A6"
+  - bridge: vmbr1
+    vlan: 1010
+    mac: "BC:24:11:91:20:C7"
+    ip: 10.5.10.46
+    netmask: 24

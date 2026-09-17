@@ -6,3 +6,13 @@ vm_cpu_cores: 4
 vm_memory_mb: 8192
 # Usage réel mesuré via talosctl (pas pvesh) le 2026-08-16 : 41.6% — sous le seuil de 65%,
 # ne pas augmenter (décision opérateur, cf. notes.md section 2).
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:57:AB:14"
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:3E:5D:71"
+    ip: 10.5.9.5
+    netmask: 24

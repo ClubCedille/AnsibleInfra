@@ -4,6 +4,7 @@ vm_name: k8s-poc-worker04
 vm_proxmox_node: pve04
 vm_disk_size: 100G
 vm_net:
+  mac: "BC:24:11:BC:D6:B7"
   bridge: vmbr1
   vlan: 1300
   device: virtio

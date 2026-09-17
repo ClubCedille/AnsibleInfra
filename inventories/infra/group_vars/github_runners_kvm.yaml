@@ -1,0 +1,16 @@
+---
+# Pool "KVM/Packer" — accès /dev/kvm pour les jobs de build d'image
+# (Packer/QEMU). Même pattern que forgejo_runners_kvm.
+vm_disk_size: "60G"
+
+github_runner_labels:
+  - "kvm-runner"
+
+github_runner_extra_groups:
+  - kvm
+
+github_runner_extra_packages:
+  - qemu-guest-agent
+  - qemu-system-x86
+  - qemu-utils
+  - ovmf

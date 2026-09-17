@@ -1,0 +1,76 @@
+---
+# Recensement en lecture seule de toutes les VMs/CT du cluster Proxmox
+# OneBigCluster, config incluse (pour lire les tags VLAN par NIC). Une seule
+# VM du cluster suffit comme point d'entrée API — l'appel est cluster-wide
+# (cluster().resources()), pas limité au nœud interrogé.
+#
+# Usage :
+#   make proxmox/census_vms VAULT_PASSWORD_FILE=~/Cedille/.vault
+#
+# Écrit le résultat brut dans /tmp/proxmox_census.json pour analyse.
+
+- name: Census all Proxmox VMs/CTs (cluster-wide, read-only)
+  hosts: pve01.mgmt.etsmtl.club
+  gather_facts: false
+  connection: local
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: Get all VMs/CTs cluster-wide with current config
+      community.proxmox.proxmox_vm_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        type: all
+        config: current
+      register: proxmox_census
+
+    - name: Write raw census to disk
+      ansible.builtin.copy:
+        content: "{{ proxmox_census.proxmox_vms | to_nice_json }}"
+        dest: /tmp/proxmox_census.json
+        mode: "0600"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: "{{ proxmox_census.proxmox_vms | length }} VMs/CT trouvées, écrites dans /tmp/proxmox_census.json"
+
+    # --- Infos réseau live via qemu-guest-agent, pour les VMs sans IP
+    #     statique en config (tous les nodes Talos : DHCP sur VLAN dédié) et
+    #     les hosts multi-NIC (jumpbox, k8s-*). Requête une VM à la fois --
+    #     le module échoue toute la tâche si UNE VM n'a pas d'agent actif,
+    #     donc pas moyen de faire ça en un seul appel cluster-wide.
+    - name: Get live network info via qemu-guest-agent, one VM at a time
+      community.proxmox.proxmox_vm_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        type: qemu
+        name: "{{ item }}"
+        network: true
+      register: proxmox_agent_query
+      failed_when: false
+      loop: "{{ (groups['k8s_shared'] | default([])) + (groups['k8s_poc'] | default([])) + (groups['k8s_cedille_sandbox'] | default([])) + (groups['k8s_cedille_production_v2'] | default([])) + (groups['jumpbox'] | default([])) }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Flatten successful agent query results
+      ansible.builtin.set_fact:
+        proxmox_network_flat: "{{ proxmox_agent_query.results | selectattr('proxmox_vms', 'defined') | map(attribute='proxmox_vms') | sum(start=[]) }}"
+
+    - name: Write network census to disk (only successful queries)
+      ansible.builtin.copy:
+        content: "{{ proxmox_network_flat | to_nice_json }}"
+        dest: /tmp/proxmox_census_network.json
+        mode: "0600"
+
+    - name: Summary (network)
+      ansible.builtin.debug:
+        msg: >-
+          {{ proxmox_network_flat | length }} VMs avec agent actif sur
+          {{ proxmox_agent_query.results | length }} interrogées --
+          écrites dans /tmp/proxmox_census_network.json

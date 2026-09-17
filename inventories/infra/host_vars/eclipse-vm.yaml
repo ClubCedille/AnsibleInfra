@@ -1,0 +1,6 @@
+---
+vm_id: 300200
+vm_name: eclipse-vm
+vm_proxmox_node: pve01
+vm_cpu_cores: 44
+vm_memory_mb: 262144

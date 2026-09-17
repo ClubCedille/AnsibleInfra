@@ -53,6 +53,7 @@ vm_tags:
   - "practice"
 
 vm_net:
+  mac: "{{ vm_mac }}"
   bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1
   vlan: "68"
   ip: "{{ ansible_host }}"

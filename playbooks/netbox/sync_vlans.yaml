@@ -1,0 +1,81 @@
+---
+# Synchronise dans NetBox l'état des VLANs/prefixes tel que déclaré par
+# Ansible. Source de vérité unique : pve_vlans_desired dans
+# inventories/infra/group_vars/pve.yaml — le même playbook (network/
+# update-vlans.yaml) crée réellement ces VLANs sur le trunk PVE, et ce
+# playbook-ci se contente de lire les mêmes données (+ les clés netbox_*
+# optionnelles, voir les commentaires de pve_vlans_desired) pour les
+# refléter dans NetBox. Pas de liste dupliquée à maintenir en parallèle.
+#
+# Usage :
+#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault DRY_RUN=1
+#
+# netbox_api_url / netbox_api_token viennent de
+# inventories/infra/group_vars/all.yaml (token vaulté). netbox_api_token
+# est un token NetBox v1 classique (40 caractères en clair) — pas le
+# format v2 "Bearer nbt_<key>.<secret>" : les modules netbox.netbox
+# (pynetbox) envoient "Authorization: Token <valeur>", incompatible avec
+# le schéma v2.
+
+- name: Sync NetBox VLANs/prefixes from pve_vlans_desired (Ansible source of truth)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    netbox_site_name: "ets-d"
+    # pve_vlans_desired est défini dans group_vars/pve.yaml (groupe [pve])
+    # -- Ansible charge tous les hostvars à l'initialisation, donc on peut
+    # le lire depuis n'importe quel host de ce groupe (même idiome que
+    # playbooks/network/update-vlans.yaml, Play 2).
+    _pve_vlans_desired: "{{ hostvars[groups['pve'][0]]['pve_vlans_desired'] }}"
+    # VLANs à synchroniser dans NetBox : celles avec netbox_ignore non défini/false.
+    netbox_vlans: "{{ _pve_vlans_desired | rejectattr('netbox_ignore', 'defined') | list + _pve_vlans_desired | selectattr('netbox_ignore', 'defined') | rejectattr('netbox_ignore') | list }}"
+
+  tasks:
+    - name: Ensure ansible-managed tags exist
+      netbox.netbox.netbox_tag:
+        netbox_url: "{{ netbox_api_url }}"
+        netbox_token: "{{ netbox_api_token }}"
+        data:
+          name: "{{ item }}"
+        state: present
+      loop:
+        - ansible-managed
+        - permanent
+        - event
+
+    - name: Sync VLANs
+      netbox.netbox.netbox_vlan:
+        netbox_url: "{{ netbox_api_url }}"
+        netbox_token: "{{ netbox_api_token }}"
+        data:
+          name: "{{ item.netbox_name | default(item.comment) }}"
+          vid: "{{ item.id }}"
+          site: "{{ netbox_site_name }}"
+          description: "{{ item.comment }}"
+          tags:
+            - ansible-managed
+            - "{{ item.netbox_tag | default('permanent') }}"
+        state: present
+      loop: "{{ netbox_vlans }}"
+      loop_control:
+        label: "VLAN {{ item.id }} ({{ item.netbox_name | default(item.comment) }})"
+
+    - name: Sync prefixes for VLANs with a known CIDR
+      netbox.netbox.netbox_prefix:
+        netbox_url: "{{ netbox_api_url }}"
+        netbox_token: "{{ netbox_api_token }}"
+        data:
+          prefix: "{{ item.netbox_prefix }}"
+          scope_type: "dcim.location"
+          scope: "D2021"
+          vlan: "{{ item.netbox_name | default(item.comment) }}"
+          description: "{{ item.comment }}"
+          tags:
+            - ansible-managed
+            - "{{ item.netbox_tag | default('permanent') }}"
+        state: present
+      loop: "{{ netbox_vlans | selectattr('netbox_prefix', 'defined') | list }}"
+      loop_control:
+        label: "Prefix {{ item.netbox_prefix }} (VLAN {{ item.id }})"

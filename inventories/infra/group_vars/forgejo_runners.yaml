@@ -39,6 +39,7 @@ vm_proxmox_node: "{{ 'pve02' if inventory_hostname.startswith('forgejo-runner02'
 # the interface/firewall-rule side. Renumbered .10-.18 rather than
 # keeping the old last octets, since it's a clean cutover.
 vm_net:
+  mac: "{{ vm_mac }}"
   bridge: "vmbr1"
   vlan: "40"
   device: virtio

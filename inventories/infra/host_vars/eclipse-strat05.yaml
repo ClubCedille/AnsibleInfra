@@ -1,0 +1,6 @@
+---
+vm_id: 210201
+vm_name: eclipse-strat05
+vm_proxmox_node: pve02
+vm_cpu_cores: 40
+vm_memory_mb: 32768

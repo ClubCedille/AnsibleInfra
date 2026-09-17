@@ -1,0 +1,19 @@
+---
+vm_id: 1003010
+vm_name: k8s-cedille-sandbox-worker-0
+vm_proxmox_node: pve03
+vm_cpu_cores: 8
+vm_memory_mb: 24576
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:E3:88:CD"
+  - bridge: vmbr1
+    vlan: 1003
+    mac: "BC:24:11:6E:69:40"
+    ip: 10.10.1.169
+    netmask: 25
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:FE:6B:4D"

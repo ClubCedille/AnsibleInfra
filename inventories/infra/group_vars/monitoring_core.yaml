@@ -350,7 +350,7 @@ prometheus_scrape_configs:
 # ─── Grafana ──────────────────────────────────────────────────────────────────
 grafana_server:
   http_port: 3000
-  root_url: "http://monitoring01.mgmt.etsmtl.club:3000"
+  root_url: "http://monitoring-internal.etsmtl.club:3000"
 
 grafana_datasources:
   - name: Prometheus
