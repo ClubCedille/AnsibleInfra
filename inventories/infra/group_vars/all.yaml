@@ -1,0 +1,17 @@
+---
+# Variables applicables à tout l'inventaire infra (permanent), y compris les
+# playbooks hosts: localhost comme playbooks/netbox/*.yaml.
+
+# NetBox — cible du sync Ansible -> NetBox (playbooks/netbox/*.yaml).
+# netbox_api_token est un token v1 classique (pas le nouveau format v2
+# "Bearer nbt_<key>.<secret>") : les modules netbox.netbox (pynetbox)
+# envoient "Authorization: Token <valeur>", incompatible avec le schéma v2.
+netbox_api_url: "https://netbox.etsmtl.club"
+netbox_api_token: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  31323134353630353063313236626363333934313064333361343933346331663633313361333035
+  3832646536333161393534653438373639313735363131360a336530663435643238633037346235
+  38346562326132616434636330323539663936313934663534303530303263313564356536373430
+  3232643363343462650a623938623965646566323636663433663762373635643965336530323236
+  35643562653137616238383962396338366462313765363161376333393662346235366532323636
+  3231323738653362333037356132323231363465613739326464

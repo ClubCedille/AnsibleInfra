@@ -1,0 +1,170 @@
+---
+# Remédiation ponctuelle décidée le 2026-09-17, suite à l'audit de
+# playbooks/netbox/report.yaml :
+#
+#   1. sync_vlans.yaml (1er run) a créé un Site "OneBigCluster" — erreur :
+#      OneBigCluster est le nom du Cluster Proxmox (déjà existant), pas un
+#      site physique. Ce playbook supprime ce site et tout ce qu'on y avait
+#      accroché (17 VLANs + 9 prefixes), pour que sync_vlans.yaml (corrigé,
+#      site réel "École de technologie supérieure - Pavillon D" /
+#      location "D2021") les recrée proprement au bon endroit.
+#
+#   2. Tag `to_retire` sur les VLANs legacy confirmées obsolètes ou
+#      superseded par le sync Ansible (cf. docs/VMInventoryAudit.md pour
+#      1001/1002/1004-1008, et le mapping 1:1 avec pve_vlans_desired pour
+#      21/247/1003/1009/1010 — vid 500 "Services" est déjà taggé to_retire,
+#      pas retouché ici).
+#
+#   3. Fix mapping IP pve06/pve07 : 10.0.21.56/24 était assignée par erreur
+#      sur l'interface de pve07 (qui a déjà .57) au lieu de pve06 (qui
+#      n'avait aucune IP). Réassigne .56 à pve06 et la met en primary IPv4.
+#
+# Playbook à usage unique — pas destiné à être relancé après application
+# (le nettoyage de l'étape 1 n'a d'effet que tant que le site fantôme existe).
+#
+# Usage :
+#   make netbox/fixups VAULT_PASSWORD_FILE=~/Cedille/.vault
+
+- name: One-time NetBox remediation (site scope mistake, legacy tagging, IP fix)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    netbox_headers:
+      Authorization: "Token {{ netbox_api_token }}"
+    legacy_vlans_to_retire:
+      # vid, name tel qu'ils existent déjà dans NetBox (pas touchés sinon)
+      - { vid: 1001, name: k8s01 }
+      - { vid: 1002, name: k8s02 }
+      - { vid: 1004, name: k8s04 }
+      - { vid: 1005, name: k8s05 }
+      - { vid: 1006, name: k8s06 }
+      - { vid: 1007, name: k8s07 }
+      - { vid: 1008, name: k8s08 }
+      - { vid: 21, name: Management }
+      - { vid: 247, name: DMZ }
+      - { vid: 1003, name: k8s03 }
+      - { vid: 1009, name: k8s09 }
+      - { vid: 1010, name: k8s10 }
+
+  tasks:
+    # --- 1. Nettoyage du site fantôme "OneBigCluster" ---
+
+    - name: Look up the erroneous OneBigCluster site
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/dcim/sites/?slug=onebigcluster"
+        headers: "{{ netbox_headers }}"
+        return_content: true
+      register: bogus_site
+      no_log: true
+
+    - name: Clean up the bogus site and everything scoped to it
+      when: bogus_site.json.count | default(0) > 0
+      block:
+        - name: List prefixes scoped to the bogus site
+          ansible.builtin.uri:
+            url: "{{ netbox_api_url }}/api/ipam/prefixes/?scope_type=dcim.site&scope_id={{ bogus_site.json.results[0].id }}&limit=200"
+            headers: "{{ netbox_headers }}"
+            return_content: true
+          register: bogus_prefixes
+          no_log: true
+
+        - name: Delete each prefix on the bogus site
+          ansible.builtin.uri:
+            url: "{{ netbox_api_url }}/api/ipam/prefixes/{{ item.id }}/"
+            method: DELETE
+            headers: "{{ netbox_headers }}"
+            status_code: [204]
+          loop: "{{ bogus_prefixes.json.results }}"
+          loop_control:
+            label: "Prefix {{ item.prefix }}"
+          no_log: true
+
+        - name: List VLANs on the bogus site
+          ansible.builtin.uri:
+            url: "{{ netbox_api_url }}/api/ipam/vlans/?site_id={{ bogus_site.json.results[0].id }}&limit=200"
+            headers: "{{ netbox_headers }}"
+            return_content: true
+          register: bogus_vlans
+          no_log: true
+
+        - name: Delete each VLAN on the bogus site
+          ansible.builtin.uri:
+            url: "{{ netbox_api_url }}/api/ipam/vlans/{{ item.id }}/"
+            method: DELETE
+            headers: "{{ netbox_headers }}"
+            status_code: [204]
+          loop: "{{ bogus_vlans.json.results }}"
+          loop_control:
+            label: "VLAN {{ item.vid }} ({{ item.name }})"
+          no_log: true
+
+        - name: Delete the bogus site itself
+          ansible.builtin.uri:
+            url: "{{ netbox_api_url }}/api/dcim/sites/{{ bogus_site.json.results[0].id }}/"
+            method: DELETE
+            headers: "{{ netbox_headers }}"
+            status_code: [204]
+
+    # --- 2. Tag les VLANs legacy obsolètes/superseded ---
+
+    - name: Find each legacy VLAN by vid+name and tag it to_retire
+      ansible.builtin.include_tasks: tasks/tag_legacy_vlan.yaml
+      loop: "{{ legacy_vlans_to_retire }}"
+      loop_control:
+        label: "VLAN {{ item.vid }} ({{ item.name }})"
+
+    # --- 3. Fix mapping IP pve06/pve07 ---
+
+    - name: Find the misassigned 10.0.21.56/24 IP
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/ipam/ip-addresses/?address=10.0.21.56/24"
+        headers: "{{ netbox_headers }}"
+        return_content: true
+      register: stray_ip
+      no_log: true
+
+    - name: Find pve06's Gig-E 1 interface
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/dcim/interfaces/?device=pve06.etsmtl.club&name=Gig-E%201"
+        headers: "{{ netbox_headers }}"
+        return_content: true
+      register: pve06_iface
+      no_log: true
+
+    - name: Reassign 10.0.21.56/24 to pve06's interface
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/ipam/ip-addresses/{{ stray_ip.json.results[0].id }}/"
+        method: PATCH
+        headers: "{{ netbox_headers | combine({'Content-Type': 'application/json'}) }}"
+        body_format: json
+        body:
+          assigned_object_type: dcim.interface
+          assigned_object_id: "{{ pve06_iface.json.results[0].id }}"
+        status_code: [200]
+      when:
+        - stray_ip.json.count | default(0) > 0
+        - pve06_iface.json.count | default(0) > 0
+      no_log: true
+
+    - name: Find pve06 device id
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/dcim/devices/?name=pve06.etsmtl.club"
+        headers: "{{ netbox_headers }}"
+        return_content: true
+      register: pve06_device
+      no_log: true
+
+    - name: Set pve06 primary IPv4
+      ansible.builtin.uri:
+        url: "{{ netbox_api_url }}/api/dcim/devices/{{ pve06_device.json.results[0].id }}/"
+        method: PATCH
+        headers: "{{ netbox_headers | combine({'Content-Type': 'application/json'}) }}"
+        body_format: json
+        body:
+          primary_ip4: "{{ stray_ip.json.results[0].id }}"
+        status_code: [200]
+      when:
+        - stray_ip.json.count | default(0) > 0
+        - pve06_device.json.count | default(0) > 0
+      no_log: true

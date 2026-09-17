@@ -6,12 +6,15 @@
 # commentaires de ce fichier pour le détail des VLANs exclus (30, 601, 2206).
 #
 # Usage :
-#   ansible-playbook playbooks/netbox/sync_vlans.yaml \
-#     -e netbox_api_url=https://netbox.etsmtl.club \
-#     -e netbox_api_token="Bearer nbt_xxx.yyy"
+#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault DRY_RUN=1  # --check --diff
 #
-# netbox_api_token attend le header Authorization complet (NetBox 4.2+, tokens
-# v2 au format "Bearer nbt_<key>.<secret>" — pas "Token <key>").
+# netbox_api_url / netbox_api_token viennent de
+# inventories/infra/group_vars/all.yaml (token vaulté). netbox_api_token est
+# un token NetBox v1 classique (40 caractères quand en clair) — pas le nouveau
+# format v2 "Bearer nbt_<key>.<secret>" : les modules netbox.netbox
+# (pynetbox) envoient "Authorization: Token <valeur>", incompatible avec le
+# schéma v2.
 #
 # Premier incrément du sync Ansible -> NetBox : VLANs + prefixes seulement.
 # Devices (pve/switches/routers) et Virtual Machines viendront dans des
@@ -24,18 +27,10 @@
   vars_files:
     - vars/vlans.yml
   vars:
-    netbox_site_name: "OneBigCluster"
+    netbox_site_name: "ets-d"
+    netbox_location_name: "D2021"
 
   tasks:
-    - name: Ensure NetBox site exists
-      netbox.netbox.netbox_site:
-        netbox_url: "{{ netbox_api_url }}"
-        netbox_token: "{{ netbox_api_token }}"
-        data:
-          name: "{{ netbox_site_name }}"
-          status: active
-        state: present
-
     - name: Ensure ansible-managed tags exist
       netbox.netbox.netbox_tag:
         netbox_url: "{{ netbox_api_url }}"
@@ -71,7 +66,8 @@
         netbox_token: "{{ netbox_api_token }}"
         data:
           prefix: "{{ item.prefix }}"
-          site: "{{ netbox_site_name }}"
+          scope_type: "dcim.location"
+          scope: "{{ netbox_location_name }}"
           vlan: "{{ item.name }}"
           description: "{{ item.comment }}"
           tags:
