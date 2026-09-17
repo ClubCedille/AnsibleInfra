@@ -143,6 +143,19 @@ jobs:
           umask 077
           printf '%s' "$VAULT_PASSWORD" > "$RUNNER_TEMP/ansible_vault_pass"
 
+      - name: Write SSH deploy key
+        if: steps.resolve.outputs.targets != '' && env.HAS_SSH_KEY == 'true'
+        shell: bash
+        env:
+          HAS_SSH_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY != '' }}
+          SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ansible_ssh_key"
+          chmod 600 "$RUNNER_TEMP/ansible_ssh_key"
+          echo "ANSIBLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/ansible_ssh_key" >> "$GITHUB_ENV"
+
       - name: Dry-run targets (--check --diff)
         if: steps.resolve.outputs.targets != ''
         shell: bash
@@ -177,3 +190,8 @@ jobs:
         if: always()
         shell: bash
         run: rm -f "$RUNNER_TEMP/ansible_vault_pass"
+
+      - name: Clean up SSH deploy key
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ansible_ssh_key"

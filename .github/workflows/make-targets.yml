@@ -80,11 +80,50 @@ jobs:
           set -euo pipefail
           make galaxy-install
 
+      - name: Write SSH deploy key
+        if: env.HAS_SSH_KEY == 'true'
+        shell: bash
+        env:
+          HAS_SSH_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY != '' }}
+          SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ansible_ssh_key"
+          chmod 600 "$RUNNER_TEMP/ansible_ssh_key"
+          echo "ANSIBLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/ansible_ssh_key" >> "$GITHUB_ENV"
+
+      - name: Write vault password file
+        if: env.HAS_VAULT_SECRET == 'true'
+        shell: bash
+        env:
+          HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$VAULT_PASSWORD" > "$RUNNER_TEMP/ansible_vault_pass"
+
       - name: Run target
         shell: bash
         env:
           TARGET: ${{ inputs.target }}
           INVENTORY_NAME: ${{ inputs.inventory }}
+          HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
         run: |
           set -euo pipefail
-          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN"
+          vault_args=()
+          if [ "$HAS_VAULT_SECRET" = "true" ]; then
+            vault_args=(VAULT_PASSWORD_FILE="$RUNNER_TEMP/ansible_vault_pass")
+          fi
+          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN" "${vault_args[@]}"
+
+      - name: Clean up SSH deploy key
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ansible_ssh_key"
+
+      - name: Clean up vault password file
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ansible_vault_pass"
