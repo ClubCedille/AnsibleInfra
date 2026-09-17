@@ -21,13 +21,14 @@ on:
         description: "Cible make à dry-run (ex: network/github-runners)"
         required: true
       inventory:
-        description: "Inventory (infra ou event)"
+        description: "Inventory (infra, lanets ou summercamp)"
         required: true
         default: "infra"
         type: choice
         options:
           - infra
-          - event
+          - lanets
+          - summercamp
 
 concurrency:
   group: ansible-dry-run-${{ github.event.pull_request.number || github.run_id }}
@@ -58,13 +59,22 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --depth=1 origin "${{ github.event.pull_request.base.ref }}"
-          # Même convention que playbook_files dans le Makefile
-          # (playbooks/*/*.yaml, un seul niveau) — pour que chaque fichier
-          # changé corresponde bien à une cible `make` réelle.
+          # Même convention que playbook_files dans le Makefile (find, pas le
+          # wildcard Make qui ne traverse pas les répertoires) : les playbooks
+          # peuvent être imbriqués sur 2 niveaux (ex. playbooks/events/lanets/*).
+          # :(glob) est nécessaire pour que ** traverse les "/" ; sans lui, un
+          # `*` de pathspec git ne matche qu'un seul segment. On exclut les
+          # fragments include_tasks/templates/vars/fichiers statiques pour ne
+          # garder que les fichiers qui correspondent à une cible `make` réelle.
           mapfile -t files < <(
             git diff --name-only --diff-filter=ACMR \
               "origin/${{ github.event.pull_request.base.ref }}...HEAD" \
-              -- 'playbooks/*/*.yaml' || true
+              -- ':(glob)playbooks/**/*.yaml' \
+                 ':(exclude,glob)playbooks/**/tasks/**' \
+                 ':(exclude,glob)playbooks/**/templates/**' \
+                 ':(exclude,glob)playbooks/**/template/**' \
+                 ':(exclude,glob)playbooks/**/files/**' \
+                 ':(exclude,glob)playbooks/**/vars/**' || true
           )
 
           mapfile -t targets < <(
