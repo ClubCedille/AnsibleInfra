@@ -66,12 +66,20 @@ github_runner_org: "ClubCedille"
 
 # Jeton admin utilisé UNIQUEMENT pour appeler
 # POST /orgs/{org}/actions/runners/registration-token à chaque exécution du
-# playbook (jamais utilisé directement par un runner). PAT classic avec le
-# scope admin:org, à vaulter ici une fois généré — voir la discussion du
-# 2026-09-10 : l'App GitHub existante (kv-system/github/clubcedille) n'a
-# pas la permission organization_self_hosted_runners, donc pas utilisable
-# telle quelle pour ça tant que cette permission n'est pas accordée.
-github_runner_admin_token: "REPLACE_WITH_VAULTED_ADMIN_TOKEN"
+# playbook (jamais utilisé directement par un runner). PAT classic avec
+# uniquement le sous-scope admin:org > manage_runners:org (pas besoin
+# d'admin:org complet) — voir la discussion du 2026-09-10 : l'App GitHub
+# existante (kv-system/github/clubcedille) n'a pas la permission
+# organization_self_hosted_runners, donc pas utilisable telle quelle pour
+# ça tant que cette permission n'est pas accordée.
+github_runner_admin_token: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          35613230653037666530623039396339393731333566346462376437646665393731363437663033
+          3261653565386535393365623433383534656235383739300a646439333665626530643766363930
+          31353738396139656330326339306534316365303164363838323761353062333966656161656230
+          3334353839346361660a366563346135356536636532663532643463323462626561336466623333
+          66643230393137333466323336623536323865376663333266626139643030633463643135333838
+          3263353038623733393530623138323030333930396630333863
 
 # Dedicated Proxmox pool for the fleet, distinct from RP-CICD-Runners
 # (Forgejo) pour garder les deux fournisseurs CI/CD séparés en un coup
