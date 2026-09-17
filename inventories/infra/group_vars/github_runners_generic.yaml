@@ -5,3 +5,5 @@
 # workflow fonctionne directement, sans montage de socket ni mode privilégié.
 github_runner_labels:
   - "generic"
+
+github_runner_group: "generic"

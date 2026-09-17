@@ -48,6 +48,47 @@
         path: "{{ _github_runner_data_dir }}/.runner"
       register: _runner_registered
 
+- name: Ensure GitHub org runner groups exist
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # group_vars/github_runners.yaml only applies to hosts in that group, not
+    # to localhost — fetch these through hostvars of a group member instead.
+    _github_runner_org: "{{ hostvars[groups['github_runners'][0]].github_runner_org }}"
+    _github_runner_admin_token: "{{ hostvars[groups['github_runners'][0]].github_runner_admin_token }}"
+    _github_runner_groups_desired: "{{ hostvars[groups['github_runners'][0]].github_runner_groups_desired }}"
+  tasks:
+    - name: List existing org runner groups
+      ansible.builtin.uri:
+        url: "https://api.github.com/orgs/{{ _github_runner_org }}/actions/runner-groups?per_page=100"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ _github_runner_admin_token }}"
+          Accept: "application/vnd.github+json"
+        status_code: 200
+      register: _gh_existing_groups
+      no_log: true
+
+    - name: Create missing org runner groups
+      ansible.builtin.uri:
+        url: "https://api.github.com/orgs/{{ _github_runner_org }}/actions/runner-groups"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ _github_runner_admin_token }}"
+          Accept: "application/vnd.github+json"
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          visibility: "{{ item.visibility }}"
+          allows_public_repositories: "{{ item.allows_public_repositories }}"
+        status_code: 201
+      loop: "{{ _github_runner_groups_desired }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: item.name not in (_gh_existing_groups.json.runner_groups | map(attribute='name') | list)
+      no_log: true
+
 - name: Fetch a fresh GitHub org runner registration token
   hosts: localhost
   connection: local
