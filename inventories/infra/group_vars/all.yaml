@@ -2,16 +2,28 @@
 # Variables applicables à tout l'inventaire infra (permanent), y compris les
 # playbooks hosts: localhost comme playbooks/netbox/*.yaml.
 
+# Clés SSH cloud-init (vm_sshkeys, cedille.proxmox.vm) — factorisées ici pour
+# éviter de répéter la même valeur littérale dans chaque host_vars/group_vars.
+# admin_ssh_public_key : clé personnelle de l'opérateur, valeur par défaut de
+#   vm_sshkeys pour toute VM créée dans cet inventaire.
+# ci_ssh_public_key : clé du runner CI (files/ssh/ansibleinfra_ci.pub,
+#   privée dans le secret GitHub Actions ANSIBLE_SSH_PRIVATE_KEY). Ajoutée
+#   par défaut à vm_sshkeys pour qu'elle persiste à travers un rebuild
+#   cloud-init — pas seulement poussée à chaud via
+#   playbooks/infra/deploy-ci-ssh-key.yaml.
+# jumpbox_ssh_public_key : clé du jumpbox event (LANETS), utilisée par les
+#   groupes qui ne sont accessibles que via ce saut (ex. dci_vms) — override
+#   vm_sshkeys localement, voir group_vars/dci_vms.yaml.
+admin_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
+ci_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE6IrDbpQqIZhXbNlVTjl1KPpr1YkOd3iHQ2xad/FX6N ansibleinfra-ci-2026-09-17"
+jumpbox_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca"
+
+vm_sshkeys: "{{ admin_ssh_public_key }}\n{{ ci_ssh_public_key }}"
+
 # NetBox — cible du sync Ansible -> NetBox (playbooks/netbox/*.yaml).
 # netbox_api_token est un token v1 classique (pas le nouveau format v2
 # "Bearer nbt_<key>.<secret>") : les modules netbox.netbox (pynetbox)
 # envoient "Authorization: Token <valeur>", incompatible avec le schéma v2.
-# Clé publique CI (files/ssh/ansibleinfra_ci.pub, privée dans le secret
-# GitHub Actions ANSIBLE_SSH_PRIVATE_KEY). Ajoutée à vm_sshkeys là où c'est
-# pertinent pour qu'elle persiste à travers un rebuild cloud-init — pas
-# seulement poussée à chaud via playbooks/infra/deploy-ci-ssh-key.yaml.
-ci_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE6IrDbpQqIZhXbNlVTjl1KPpr1YkOd3iHQ2xad/FX6N ansibleinfra-ci-2026-09-17"
-
 netbox_api_url: "https://netbox.etsmtl.club"
 netbox_api_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256

@@ -46,7 +46,6 @@ vm_net:
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
-vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos\n{{ ci_ssh_public_key }}"
 vm_proxmox_api:
   user: "root@pam"
   password: !vault |

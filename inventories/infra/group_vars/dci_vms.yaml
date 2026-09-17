@@ -26,7 +26,9 @@ vm_proxmox_api:
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
-vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsmOTHd/jDJ9pn7J3XrhbiVTM5GFBc5LcQ8XPLBDS6 jumpbox.event.lanets.ca\n{{ ci_ssh_public_key }}"
+# Override du défaut all.yaml : ces VMs ne sont accessibles que via le
+# jumpbox event, pas la clé admin personnelle.
+vm_sshkeys: "{{ jumpbox_ssh_public_key }}\n{{ ci_ssh_public_key }}"
 vm_onboot: true
 
 vm_disk_image_path: "/var/lib/vz/template/iso/ubuntu-24.04-server-cloudimg-amd64.img"

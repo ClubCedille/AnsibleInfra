@@ -10,7 +10,6 @@ ansible_password: !vault |
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
-vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos\n{{ ci_ssh_public_key }}"
 # Heavier build box: KVM-accelerated Packer/QEMU builds (opnsense-cloudinit
 # image-build CI job) need more headroom than the plain Docker runners.
 vm_disk_size: "60G"
