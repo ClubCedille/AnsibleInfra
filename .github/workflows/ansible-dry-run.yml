@@ -1,0 +1,115 @@
+name: Ansible Dry Run
+
+# Ne tourne que pour les PRs internes (même repo, pas les forks) — les
+# runners self-hosted "generic" ont un accès réseau au VLAN de management
+# (Proxmox, OPNsense, etc.), donc on ne les expose pas à du code arbitraire
+# venant d'une PR externe sur ce repo public. Toute PR externe reste
+# couverte par le job "Lint" (lint.yml), qui tourne sur ubuntu-latest.
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ansible-dry-run-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dry-run:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, generic]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Determine changed playbook targets
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "${{ github.event.pull_request.base.ref }}"
+          # Même convention que playbook_files dans le Makefile
+          # (playbooks/*/*.yaml, un seul niveau) — pour que chaque fichier
+          # changé corresponde bien à une cible `make` réelle.
+          mapfile -t files < <(
+            git diff --name-only --diff-filter=ACMR \
+              "origin/${{ github.event.pull_request.base.ref }}...HEAD" \
+              -- 'playbooks/*/*.yaml' || true
+          )
+
+          mapfile -t targets < <(
+            for f in "${files[@]}"; do
+              t="${f#playbooks/}"
+              echo "${t%.yaml}"
+            done | sort -u
+          )
+
+          if [ "${#targets[@]}" -eq 0 ]; then
+            echo "targets=" >> "$GITHUB_OUTPUT"
+          else
+            printf -v joined '%s,' "${targets[@]}"
+            echo "targets=${joined%,}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup venv
+        if: steps.changed.outputs.targets != ''
+        shell: bash
+        run: make venv
+
+      - name: Install galaxy roles
+        if: steps.changed.outputs.targets != ''
+        shell: bash
+        run: make galaxy-install
+
+      - name: Write vault password file
+        if: steps.changed.outputs.targets != '' && env.HAS_VAULT_SECRET == 'true'
+        shell: bash
+        env:
+          HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$VAULT_PASSWORD" > "$RUNNER_TEMP/ansible_vault_pass"
+
+      - name: Dry-run changed playbooks (--check --diff)
+        if: steps.changed.outputs.targets != ''
+        shell: bash
+        env:
+          TARGETS: ${{ steps.changed.outputs.targets }}
+          HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
+        run: |
+          set -euo pipefail
+          vault_args=()
+          if [ "$HAS_VAULT_SECRET" = "true" ]; then
+            vault_args=(VAULT_PASSWORD_FILE="$RUNNER_TEMP/ansible_vault_pass")
+          fi
+
+          IFS=',' read -ra targets <<< "$TARGETS"
+          status=0
+          for t in "${targets[@]}"; do
+            echo "::group::make $t DRY_RUN=1"
+            if ! make "$t" DRY_RUN=1 "${vault_args[@]}"; then
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"
+
+      - name: No playbook changed
+        if: steps.changed.outputs.targets == ''
+        shell: bash
+        run: echo "Aucun playbook modifié par cette PR — rien à dry-run."
+
+      - name: Clean up vault password file
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ansible_vault_pass"
