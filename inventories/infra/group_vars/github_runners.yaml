@@ -65,11 +65,29 @@ vm_proxmox_api:
 # Organisation GitHub cible pour l'enregistrement des runners.
 github_runner_org: "ClubCedille"
 
+# Runner groups à créer côté org avant tout enregistrement (un par pool —
+# voir github_runner_group dans group_vars/github_runners_{generic,kvm,dind}.yaml).
+# Même visibilité que le groupe "Default" existant : tous les repos privés/
+# internes, pas les repos publics.
+github_runner_groups_desired:
+  - name: "generic"
+    visibility: "all"
+    allows_public_repositories: false
+  - name: "kvm"
+    visibility: "all"
+    allows_public_repositories: false
+  - name: "dind"
+    visibility: "all"
+    allows_public_repositories: false
+
 # Jeton admin utilisé UNIQUEMENT pour appeler
-# POST /orgs/{org}/actions/runners/registration-token à chaque exécution du
-# playbook (jamais utilisé directement par un runner). PAT classic avec
-# uniquement le sous-scope admin:org > manage_runners:org (pas besoin
-# d'admin:org complet) — voir la discussion du 2026-09-10 : l'App GitHub
+# POST /orgs/{org}/actions/runners/registration-token et
+# GET/POST /orgs/{org}/actions/runner-groups à chaque exécution du playbook
+# (jamais utilisé directement par un runner). PAT classic avec le scope
+# admin:org complet — testé le 2026-09-17 : le sous-scope manage_runners:org
+# seul ne suffit pas pour ces endpoints ("You must be an org admin or have
+# the runners and runner groups fine-grained permission", x-accepted-oauth-
+# scopes: admin:org). Voir aussi la discussion du 2026-09-10 : l'App GitHub
 # existante (kv-system/github/clubcedille) n'a pas la permission
 # organization_self_hosted_runners, donc pas utilisable telle quelle pour
 # ça tant que cette permission n'est pas accordée.

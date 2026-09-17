@@ -12,3 +12,5 @@ vm_disk_size: "80G"
 
 github_runner_labels:
   - "docker-dind"
+
+github_runner_group: "dind"
