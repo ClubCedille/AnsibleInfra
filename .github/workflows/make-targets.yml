@@ -80,6 +80,19 @@ jobs:
           set -euo pipefail
           make galaxy-install
 
+      - name: Write SSH deploy key
+        if: env.HAS_SSH_KEY == 'true'
+        shell: bash
+        env:
+          HAS_SSH_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY != '' }}
+          SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ansible_ssh_key"
+          chmod 600 "$RUNNER_TEMP/ansible_ssh_key"
+          echo "ANSIBLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/ansible_ssh_key" >> "$GITHUB_ENV"
+
       - name: Run target
         shell: bash
         env:
@@ -88,3 +101,8 @@ jobs:
         run: |
           set -euo pipefail
           make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN"
+
+      - name: Clean up SSH deploy key
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ansible_ssh_key"
