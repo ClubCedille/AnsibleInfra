@@ -7,3 +7,16 @@ vm_proxmox_node: pve05
 # pve05 = tier "small" (93GiB/56 cores) → cible 16 cores / 24GB.
 vm_cpu_cores: 16
 vm_memory_mb: 24576
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:9E:9A:28"
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:3D:59:A9"
+    ip: 10.5.9.31
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:0D:1F:1A"

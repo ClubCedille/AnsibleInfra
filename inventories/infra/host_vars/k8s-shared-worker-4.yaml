@@ -6,3 +6,18 @@ vm_proxmox_node: pve06
 # conforme depuis le début — cf. notes.md).
 vm_cpu_cores: 16
 vm_memory_mb: 24576
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:C4:50:96"
+    ip: 10.5.9.14
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:80:C5:2D"
+    ip: 10.5.9.32
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:75:35:D4"

@@ -34,3 +34,5 @@ vm_name: "Docker-Runner-2"
 # account for this host, and update-type API calls (tags, pool,
 # boot order) need the correct node to resolve the config path.
 vm_proxmox_node: "pve03"
+
+vm_mac: "BC:24:11:F8:AC:5C"

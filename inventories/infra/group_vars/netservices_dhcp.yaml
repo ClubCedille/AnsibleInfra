@@ -27,6 +27,7 @@ vm_tags:
   - "DHCP"
 
 vm_net:
+  mac: "{{ vm_mac }}"
   bridge: "vmbr1"
   vlan: "21"
   device: virtio

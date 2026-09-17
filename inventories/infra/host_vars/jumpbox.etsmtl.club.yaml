@@ -1,0 +1,10 @@
+---
+vm_nets:
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:84:57:AF"
+    ip: 142.137.247.108
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 21
+    mac: "BC:24:11:05:72:17"

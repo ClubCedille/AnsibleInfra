@@ -41,6 +41,7 @@ vm_proxmox_node: "{{ ['pve01', 'pve02', 'pve03'][(vm_id | int) % 3] }}"
 # migration nécessaire, contrairement à la flotte Forgejo qui existait
 # déjà sur VLAN21 avant la segmentation.
 vm_net:
+  mac: "{{ vm_mac }}"
   bridge: "vmbr1"
   vlan: "40"
   device: virtio

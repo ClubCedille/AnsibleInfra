@@ -3,80 +3,29 @@
 # virtual_machines, avec leur VLAN (mode Access, untagged_vlan) et leur IP
 # quand elle est connue.
 #
-# Source de données : vars/vm_interfaces.yml, généré le 2026-09-17 depuis
-# playbooks/proxmox/census_vms.yaml (config Proxmox pour le VLAN/MAC par
-# NIC, qemu-guest-agent pour l'IP live des hosts sans ipconfig0 statique --
-# tous les nodes Talos : k8s-shared, k8s-poc, k8s-cedille-*). Documente
-# aussi explicitement les hosts multi-NIC (jumpbox : WAN + LAN mgmt ;
-# k8s-* : services + cluster + WAN direct pour les workers).
+# Source de données : l'inventaire Ansible lui-même (vm_nets pour les VMs
+# multi-NIC, vm_net pour le single-NIC historique -- lu directement depuis
+# hostvars, aucun fichier vars/ séparé à maintenir en parallèle). Ça inclut
+# vm_net défini au niveau group_vars (ex. netservices_dhcp, forgejo_runners)
+# avec juste mac: "{{ vm_mac }}" surchargé par host.
 #
 # Pré-requis : playbooks/netbox/sync_vms.yaml doit avoir tourné avant (les
 # VMs doivent exister dans NetBox).
 #
 # Usage :
 #   make netbox/sync_vm_interfaces VAULT_PASSWORD_FILE=~/Cedille/.vault
-#
-# Pour régénérer vars/vm_interfaces.yml après un changement de topologie
-# réseau (nouveau node, NIC ajoutée/retirée), relancer
-# playbooks/proxmox/census_vms.yaml puis le script de génération (voir
-# l'historique de commit de vars/vm_interfaces.yml pour le script utilisé).
 
-- name: Sync NetBox VM interfaces/IPs from Proxmox config + guest-agent data
+- name: Sync NetBox VM interfaces/IPs from vm_net/vm_nets (Ansible inventory)
   hosts: localhost
   connection: local
   gather_facts: false
-  vars_files:
-    - vars/vm_interfaces.yml
   vars:
     netbox_site_name: "ets-d"
-    # (vm_name, interface) pour chaque NIC de chaque VM
-    netbox_vm_nics: "{{ netbox_vm_interfaces | dict2items | subelements('value') }}"
-    # Idem, mais seulement les NICs avec une IP connue
-    netbox_vm_nics_with_ip: "{{ netbox_vm_nics | selectattr('1.ip', 'defined') | list }}"
 
   tasks:
-    - name: Sync one interface per VM/NIC (VLAN en mode Access si connu)
-      netbox.netbox.netbox_vm_interface:
-        netbox_url: "{{ netbox_api_url }}"
-        netbox_token: "{{ netbox_api_token }}"
-        data:
-          virtual_machine: "{{ item.0.key }}"
-          name: "{{ item.1.name }}"
-          mac_address: "{{ item.1.mac_address | default(omit) }}"
-          mode: "{{ 'Access' if item.1.vlan is defined else omit }}"
-          untagged_vlan: >-
-            {{ {'name': item.1.vlan, 'site': netbox_site_name}
-               if item.1.vlan is defined else omit }}
-        state: present
-      loop: "{{ netbox_vm_nics }}"
+    - name: Sync interfaces for each VM in the virtual_machines group
+      ansible.builtin.include_tasks: tasks/sync_vm_nics.yaml
+      loop: "{{ groups['virtual_machines'] }}"
       loop_control:
-        label: "{{ item.0.key }} / {{ item.1.name }}"
-
-    - name: Sync IP addresses for interfaces with a known IP
-      netbox.netbox.netbox_ip_address:
-        netbox_url: "{{ netbox_api_url }}"
-        netbox_token: "{{ netbox_api_token }}"
-        data:
-          address: "{{ item.1.ip }}"
-          assigned_object:
-            name: "{{ item.1.name }}"
-            virtual_machine: "{{ item.0.key }}"
-          tags:
-            - ansible-managed
-        state: present
-      loop: "{{ netbox_vm_nics_with_ip }}"
-      loop_control:
-        label: "{{ item.0.key }} / {{ item.1.name }} -> {{ item.1.ip }}"
-
-    - name: Set primary IPv4 on each VM (première interface avec IP connue, net0 en priorité)
-      netbox.netbox.netbox_virtual_machine:
-        netbox_url: "{{ netbox_api_url }}"
-        netbox_token: "{{ netbox_api_token }}"
-        data:
-          name: "{{ item.key }}"
-          primary_ip4: "{{ (item.value | selectattr('ip', 'defined') | list | first).ip }}"
-        state: present
-      loop: "{{ netbox_vm_interfaces | dict2items }}"
-      loop_control:
-        label: "{{ item.key }}"
-      when: (item.value | selectattr('ip', 'defined') | list | length) > 0
+        loop_var: vm_name
+        label: "{{ vm_name }}"

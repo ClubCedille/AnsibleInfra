@@ -7,3 +7,18 @@ vm_proxmox_node: pve03
 # autres workers big-tier). Voir runbook de resize.
 vm_cpu_cores: 24
 vm_memory_mb: 65536
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:54:CA:3D"
+    ip: 10.5.9.11
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:86:BC:25"
+    ip: 10.5.9.26
+    netmask: 24
+  - bridge: vmbr1
+    vlan: 247
+    mac: "BC:24:11:42:53:D4"

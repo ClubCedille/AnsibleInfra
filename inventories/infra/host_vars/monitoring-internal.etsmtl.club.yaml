@@ -24,6 +24,7 @@ vm_disk_size: 80G
 vm_disk_format: raw
 
 vm_net:
+  mac: "BC:24:11:7E:BB:A8"
   bridge: vmbr1
   vlan: 21
   device: virtio

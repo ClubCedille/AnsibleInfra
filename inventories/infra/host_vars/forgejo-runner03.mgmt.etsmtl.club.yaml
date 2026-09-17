@@ -59,3 +59,5 @@ vm_name: "KVM-Runner-1"
 # account for this host, and update-type API calls (tags, pool,
 # boot order) need the correct node to resolve the config path.
 vm_proxmox_node: "pve02"
+
+vm_mac: "BC:24:11:88:41:83"

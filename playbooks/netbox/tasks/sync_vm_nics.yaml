@@ -1,0 +1,59 @@
+---
+# Sous-tâches pour playbooks/netbox/sync_vm_interfaces.yaml — inclus en
+# boucle sur vm_name (un `block:` ne peut pas être bouclé directement en
+# Ansible). Lit vm_nets (multi-NIC) ou vm_net (single-NIC, historique)
+# directement depuis les hostvars -- aucune donnée dupliquée dans playbooks/
+# netbox/vars/.
+
+- name: Determine NIC list for this VM
+  ansible.builtin.set_fact:
+    _nics: >-
+      {{ hostvars[vm_name].vm_nets
+         if (hostvars[vm_name].vm_nets | default([]) | length > 0)
+         else ([hostvars[vm_name].vm_net] if hostvars[vm_name].vm_net is defined else []) }}
+
+- name: Sync one interface per NIC
+  netbox.netbox.netbox_vm_interface:
+    netbox_url: "{{ netbox_api_url }}"
+    netbox_token: "{{ netbox_api_token }}"
+    data:
+      virtual_machine: "{{ vm_name }}"
+      name: "net{{ nic_idx }}"
+      mac_address: "{{ item.mac }}"
+      mode: "{{ 'Access' if item.vlan is defined else omit }}"
+      untagged_vlan: "{{ {'vid': item.vlan, 'site': netbox_site_name} if item.vlan is defined else omit }}"
+    state: present
+  loop: "{{ _nics }}"
+  loop_control:
+    index_var: nic_idx
+    label: "{{ vm_name }} / net{{ nic_idx }}"
+
+- name: Sync IP address for NICs that have one
+  netbox.netbox.netbox_ip_address:
+    netbox_url: "{{ netbox_api_url }}"
+    netbox_token: "{{ netbox_api_token }}"
+    data:
+      address: "{{ item.ip }}/{{ item.netmask | default(24) }}"
+      assigned_object:
+        name: "net{{ nic_idx }}"
+        virtual_machine: "{{ vm_name }}"
+      tags:
+        - ansible-managed
+    state: present
+  loop: "{{ _nics }}"
+  loop_control:
+    index_var: nic_idx
+    label: "{{ vm_name }} / net{{ nic_idx }} -> {{ item.ip | default('sans IP') }}"
+  when: item.ip is defined and (item.ip | length > 0)
+
+- name: Set primary IPv4 (première interface avec IP connue, net0 en priorité)
+  netbox.netbox.netbox_virtual_machine:
+    netbox_url: "{{ netbox_api_url }}"
+    netbox_token: "{{ netbox_api_token }}"
+    data:
+      name: "{{ vm_name }}"
+      primary_ip4: >-
+        {{ (_nics | selectattr('ip', 'defined') | selectattr('ip') | list | first).ip }}/{{
+           (_nics | selectattr('ip', 'defined') | selectattr('ip') | list | first).netmask | default(24) }}
+    state: present
+  when: (_nics | selectattr('ip', 'defined') | selectattr('ip') | list | length) > 0

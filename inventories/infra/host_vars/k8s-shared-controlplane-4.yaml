@@ -8,3 +8,13 @@ vm_name: k8s-shared-controlplane-4
 vm_proxmox_node: pve01
 vm_cpu_cores: 4
 vm_memory_mb: 8192
+
+vm_nets:
+  - bridge: vmbr1
+    vlan: 500
+    mac: "BC:24:11:99:39:E7"
+  - bridge: vmbr1
+    vlan: 1009
+    mac: "BC:24:11:00:46:03"
+    ip: 10.5.9.17
+    netmask: 24
