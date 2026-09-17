@@ -4,6 +4,8 @@ collections:
     version: ">=2.0.0"
   - name: oxlorg.opnsense
     version: ">=25.7.8"
+  - name: netbox.netbox
+    version: ">=3.20.0"
   - name: .cache/AnsibleRoles/cisco-3850
     type: dir
   - name: .cache/AnsibleRoles/netservices
