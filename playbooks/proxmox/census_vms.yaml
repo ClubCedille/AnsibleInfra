@@ -1,0 +1,40 @@
+---
+# Recensement en lecture seule de toutes les VMs/CT du cluster Proxmox
+# OneBigCluster, config incluse (pour lire les tags VLAN par NIC). Une seule
+# VM du cluster suffit comme point d'entrée API — l'appel est cluster-wide
+# (cluster().resources()), pas limité au nœud interrogé.
+#
+# Usage :
+#   make proxmox/census_vms VAULT_PASSWORD_FILE=~/Cedille/.vault
+#
+# Écrit le résultat brut dans /tmp/proxmox_census.json pour analyse.
+
+- name: Census all Proxmox VMs/CTs (cluster-wide, read-only)
+  hosts: pve01.mgmt.etsmtl.club
+  gather_facts: false
+  connection: local
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  tasks:
+    - name: Get all VMs/CTs cluster-wide with current config
+      community.proxmox.proxmox_vm_info:
+        api_host: "{{ ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_password: "{{ pve_api_password }}"
+        type: all
+        config: current
+      register: proxmox_census
+
+    - name: Write raw census to disk
+      ansible.builtin.copy:
+        content: "{{ proxmox_census.proxmox_vms | to_nice_json }}"
+        dest: /tmp/proxmox_census.json
+        mode: "0600"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: "{{ proxmox_census.proxmox_vms | length }} VMs/CT trouvées, écrites dans /tmp/proxmox_census.json"

@@ -1,0 +1,97 @@
+---
+# Nettoyage ponctuel décidé le 2026-09-17 suite au recensement complet des
+# VMs Proxmox (playbooks/proxmox/census_vms.yaml) :
+#
+#   1. Suppression de VMs confirmées obsolètes/hors scope :
+#      - arena01-16.arena.etsmtl.club (16 VMs, stoppées) : code d'un projet,
+#        pas de l'infra club — à supprimer.
+#      - clonezilla.event.etsmtl.ca, jumpbox.dci.etsmtl.club,
+#        opnsense-template, opnsense.template.etsmtl.club,
+#        uploadbox.dciets.com : confirmés obsolètes/doublons.
+#      trackmania.event.lanets.ca est explicitement CONSERVÉE (utile pour
+#      le prochain Lan_ETS) — ne pas y toucher.
+#
+#   2. Renommage (metadata Proxmox seulement, pas le hostname invité) pour
+#      aligner sur la convention FQDN existante :
+#      - omni01-prod -> omni01.prod.etsmtl.club
+#      - monitoring01-infra -> monitoring-internal.etsmtl.club
+#
+# Playbook à usage unique — ids/nœuds figés au moment du recensement
+# (2026-09-17), à ne pas relancer tel quel après application.
+#
+# Usage :
+#   make proxmox/vm_cleanup_2026-09-17 VAULT_PASSWORD_FILE=~/Cedille/.vault
+
+- name: One-time Proxmox VM cleanup (delete obsolete VMs, rename two)
+  hosts: pve01.mgmt.etsmtl.club
+  gather_facts: false
+  connection: local
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    vms_to_delete:
+      - { name: "arena01.arena.etsmtl.club", vmid: 3500100, node: pve01 }
+      - { name: "arena02.arena.etsmtl.club", vmid: 3500200, node: pve01 }
+      - { name: "arena03.arena.etsmtl.club", vmid: 3500300, node: pve02 }
+      - { name: "arena04.arena.etsmtl.club", vmid: 3500400, node: pve02 }
+      - { name: "arena05.arena.etsmtl.club", vmid: 3500500, node: pve03 }
+      - { name: "arena06.arena.etsmtl.club", vmid: 3500600, node: pve03 }
+      - { name: "arena07.arena.etsmtl.club", vmid: 3500700, node: pve04 }
+      - { name: "arena08.arena.etsmtl.club", vmid: 3500800, node: pve04 }
+      - { name: "arena09.arena.etsmtl.club", vmid: 3500900, node: pve05 }
+      - { name: "arena10.arena.etsmtl.club", vmid: 3501000, node: pve05 }
+      - { name: "arena11.arena.etsmtl.club", vmid: 3501100, node: pve06 }
+      - { name: "arena12.arena.etsmtl.club", vmid: 3501200, node: pve06 }
+      - { name: "arena13.arena.etsmtl.club", vmid: 3501300, node: pve07 }
+      - { name: "arena14.arena.etsmtl.club", vmid: 3501400, node: pve07 }
+      - { name: "arena15.arena.etsmtl.club", vmid: 3501500, node: pve08 }
+      - { name: "arena16.arena.etsmtl.club", vmid: 3501600, node: pve08 }
+      - { name: "clonezilla.event.etsmtl.ca", vmid: 805100, node: pve02 }
+      - { name: "jumpbox.dci.etsmtl.club", vmid: 200003, node: pve01 }
+      - { name: "opnsense-template", vmid: 9000, node: pve01 }
+      - { name: "opnsense.template.etsmtl.club", vmid: 200001, node: pve07 }
+      - { name: "uploadbox.dciets.com", vmid: 701101, node: pve04, running: true }
+
+    vms_to_rename:
+      - { vmid: 500199, node: pve01, new_name: "omni01.prod.etsmtl.club" }
+      - { vmid: 500101, node: pve01, new_name: "monitoring-internal.etsmtl.club" }
+
+  module_defaults:
+    group/community.proxmox.proxmox:
+      api_host: "{{ ansible_host }}"
+      api_user: "{{ pve_api_user }}"
+      api_password: "{{ pve_api_password }}"
+      validate_certs: false
+
+  tasks:
+    # --- 1. Arrêt des VMs running avant suppression (Proxmox refuse de
+    #        supprimer une VM démarrée) ---
+    - name: Stop running VMs before deletion
+      community.proxmox.proxmox_kvm:
+        vmid: "{{ item.vmid }}"
+        node: "{{ item.node }}"
+        state: stopped
+      loop: "{{ vms_to_delete | selectattr('running', 'defined') | selectattr('running') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    # --- 2. Suppression ---
+    - name: Delete obsolete VMs
+      community.proxmox.proxmox_kvm:
+        vmid: "{{ item.vmid }}"
+        node: "{{ item.node }}"
+        state: absent
+      loop: "{{ vms_to_delete }}"
+      loop_control:
+        label: "{{ item.name }} (vmid {{ item.vmid }})"
+
+    # --- 3. Renommage (metadata Proxmox uniquement) ---
+    - name: Rename VMs to match FQDN convention
+      community.proxmox.proxmox_kvm:
+        vmid: "{{ item.vmid }}"
+        node: "{{ item.node }}"
+        name: "{{ item.new_name }}"
+        update: true
+      loop: "{{ vms_to_rename }}"
+      loop_control:
+        label: "vmid {{ item.vmid }} -> {{ item.new_name }}"
