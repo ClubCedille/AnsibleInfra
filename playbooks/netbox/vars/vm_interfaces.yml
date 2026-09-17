@@ -1,0 +1,540 @@
+---
+# Généré le 2026-09-17 depuis playbooks/proxmox/census_vms.yaml
+# (config Proxmox pour le VLAN/MAC par NIC, qemu-guest-agent pour l'IP live
+# des hosts sans ipconfig0 statique -- tous les nodes Talos). À régénérer
+# après tout changement de topologie réseau des VMs (nouveau node, NIC
+# ajoutée/retirée) plutôt que d'éditer ce fichier à la main.
+#
+# eclipse-vm : aucune IP trouvée (agent inactif, pas d'ipconfig statique) --
+# à documenter manuellement si besoin.
+netbox_vm_interfaces:
+  dhcp01.lanets.etsmtl.club:
+  - name: net0
+    vlan: event-client
+    mac_address: BC:24:11:BD:7A:DE
+    ip: 10.66.0.31/16
+  dhcp01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:26:7C:79
+    ip: 10.0.21.17/24
+  dhcp02.lanets.etsmtl.club:
+  - name: net0
+    vlan: event-client
+    mac_address: BC:24:11:EA:E0:B9
+    ip: 10.66.0.32/16
+  dhcp02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:D8:AE:F3
+    ip: 10.0.21.18/24
+  eclipse-docker-vm:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:60:AE:08
+    ip: 10.0.21.97/24
+  eclipse-strat01:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:4F:1B:3C
+    ip: 10.0.21.131/24
+  eclipse-strat02:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:B6:8C:44
+    ip: 10.0.21.132/24
+  eclipse-strat03:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:BD:B5:EB
+    ip: 10.0.21.133/24
+  eclipse-strat04:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:2A:7A:02
+    ip: 10.0.21.134/24
+  eclipse-strat05:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:66:77:6F
+    ip: 10.0.21.135/24
+  eclipse-strat06:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:CD:EC:ED
+    ip: 10.0.21.136/24
+  eclipse-strat07:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:67:8B:1F
+    ip: 10.0.21.137/24
+  eclipse-strat08:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:EF:C0:DC
+    ip: 10.0.21.138/24
+  eclipse-vm:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:E4:4C:D1
+  forgejo-runner-dind01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:D2:3A:47
+    ip: 10.0.40.16/24
+  forgejo-runner-dind02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:F8:AC:5C
+    ip: 10.0.40.17/24
+  forgejo-runner-dind03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:55:F0:C8
+    ip: 10.0.40.18/24
+  forgejo-runner-generic03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:70:3B:A0
+    ip: 10.0.40.12/24
+  forgejo-runner-kvm02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:68:E2:35
+    ip: 10.0.40.14/24
+  forgejo-runner-kvm03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:17:8E:0C
+    ip: 10.0.40.15/24
+  forgejo-runner01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:63:47:02
+    ip: 10.0.40.10/24
+  forgejo-runner02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:0F:C9:60
+    ip: 10.0.40.11/24
+  forgejo-runner03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:88:41:83
+    ip: 10.0.40.13/24
+  github-runner-dind01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:56:5E:6A
+    ip: 10.0.40.25/24
+  github-runner-dind02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:C3:2C:D4
+    ip: 10.0.40.26/24
+  github-runner-dind03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:98:96:79
+    ip: 10.0.40.27/24
+  github-runner-generic01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:5D:10:FC
+    ip: 10.0.40.19/24
+  github-runner-generic02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:EA:CA:7A
+    ip: 10.0.40.20/24
+  github-runner-generic03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:A2:30:D6
+    ip: 10.0.40.21/24
+  github-runner-kvm01.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:27:71:4F
+    ip: 10.0.40.22/24
+  github-runner-kvm02.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:72:9C:07
+    ip: 10.0.40.23/24
+  github-runner-kvm03.mgmt.etsmtl.club:
+  - name: net0
+    vlan: cicd-forgejo-runners
+    mac_address: BC:24:11:C5:CD:05
+    ip: 10.0.40.24/24
+  jumpbox.etsmtl.club:
+  - name: net0
+    vlan: wan
+    mac_address: BC:24:11:84:57:AF
+    ip: 142.137.247.108/24
+  - name: net1
+    vlan: lan-management
+    mac_address: BC:24:11:05:72:17
+  k8s-cedille-production-v2-controlplane-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:D9:07:EF
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:2F:E1:7C
+    ip: 10.5.10.48/24
+  k8s-cedille-production-v2-controlplane-1:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:DE:27:A6
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:91:20:C7
+    ip: 10.5.10.46/24
+  k8s-cedille-production-v2-controlplane-3:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:5F:BB:92
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:03:AA:94
+    ip: 10.5.10.45/24
+  k8s-cedille-production-v2-controlplane-4:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:9D:79:04
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:55:C2:B5
+    ip: 10.5.10.43/24
+  k8s-cedille-production-v2-worker-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:94:B5:BA
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:25:ED:7D
+    ip: 10.5.10.31/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:05:99:3B
+  k8s-cedille-production-v2-worker-1:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:82:01:2E
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:85:82:54
+    ip: 10.5.10.30/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:CC:E6:17
+  k8s-cedille-production-v2-worker-2:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:DF:BA:AC
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:B6:8D:9D
+    ip: 10.5.10.47/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:54:14:85
+  k8s-cedille-production-v2-worker-3:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:74:F9:04
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:99:F9:91
+    ip: 10.5.10.44/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:B1:AB:7F
+  k8s-cedille-production-v2-worker-4:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:0D:0C:C5
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:FE:40:35
+    ip: 10.5.10.49/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:46:F6:4A
+  k8s-cedille-production-v2-worker-5:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:5D:A5:19
+  - name: net1
+    vlan: k8s-cedille-production-v2
+    mac_address: BC:24:11:23:01:52
+    ip: 10.5.10.50/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:86:FC:77
+  k8s-cedille-sandbox-controlplane-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:62:B3:61
+  - name: net1
+    vlan: k8s-cedille-sandbox
+    mac_address: BC:24:11:C9:3E:C0
+    ip: 10.10.1.186/25
+  k8s-cedille-sandbox-worker-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:E3:88:CD
+  - name: net1
+    vlan: k8s-cedille-sandbox
+    mac_address: BC:24:11:6E:69:40
+    ip: 10.10.1.169/25
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:FE:6B:4D
+  k8s-cedille-sandbox-worker-1:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:6F:CE:9D
+  - name: net1
+    vlan: k8s-cedille-sandbox
+    mac_address: BC:24:11:CA:01:2A
+    ip: 10.10.1.172/25
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:63:1E:1E
+  k8s-cedille-sandbox-worker-2:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:D0:0D:EA
+  - name: net1
+    vlan: k8s-cedille-sandbox
+    mac_address: BC:24:11:94:72:02
+    ip: 10.10.1.167/25
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:02:06:A1
+  k8s-poc-controlplane01.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:48:C1:70
+    ip: 10.0.130.11/24
+  k8s-poc-controlplane02.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:50:59:34
+    ip: 10.0.130.12/24
+  k8s-poc-controlplane03.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:B8:C5:2B
+    ip: 10.0.130.13/24
+  k8s-poc-controlplane04.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:B3:0B:5A
+    ip: 10.0.130.14/24
+  k8s-poc-controlplane05.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:5B:77:18
+    ip: 10.0.130.15/24
+  k8s-poc-worker01.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:46:8F:C2
+    ip: 10.0.130.21/24
+  k8s-poc-worker02.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:59:A7:01
+    ip: 10.0.130.22/24
+  k8s-poc-worker03.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:05:21:57
+    ip: 10.0.130.23/24
+  k8s-poc-worker04.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:BC:D6:B7
+    ip: 10.0.130.24/24
+  k8s-poc-worker05.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:FC:2C:39
+    ip: 10.0.130.25/24
+  k8s-poc-worker06.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:39:EA:8A
+    ip: 10.0.130.26/24
+  k8s-poc-worker07.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:4A:CC:14
+    ip: 10.0.130.27/24
+  k8s-poc-worker08.k8s.etsmtl.club:
+  - name: net0
+    vlan: k8s-poc
+    mac_address: BC:24:11:C7:CB:69
+    ip: 10.0.130.28/24
+  k8s-shared-controlplane-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:2F:88:0B
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:80:50:42
+    ip: 10.5.9.6/24
+  k8s-shared-controlplane-1:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:F4:89:48
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:E8:16:6A
+    ip: 10.5.9.7/24
+  k8s-shared-controlplane-2:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:86:21:9F
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:75:93:90
+    ip: 10.5.9.10/24
+  k8s-shared-controlplane-3:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:57:AB:14
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:3E:5D:71
+    ip: 10.5.9.5/24
+  k8s-shared-controlplane-4:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:99:39:E7
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:00:46:03
+    ip: 10.5.9.17/24
+  k8s-shared-worker-0:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:F2:BC:3B
+    ip: 10.5.9.13/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:AC:B4:03
+    ip: 10.5.9.25/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:0F:A9:D1
+  k8s-shared-worker-1:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:BB:47:86
+    ip: 10.5.9.3/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:7A:9E:E9
+    ip: 10.5.9.29/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:02:73:19
+  k8s-shared-worker-2:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:54:CA:3D
+    ip: 10.5.9.11/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:86:BC:25
+    ip: 10.5.9.26/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:42:53:D4
+  k8s-shared-worker-3:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:B3:65:52
+    ip: 10.5.9.12/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:75:60:10
+    ip: 10.5.9.28/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:E2:87:80
+  k8s-shared-worker-4:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:C4:50:96
+    ip: 10.5.9.14/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:80:C5:2D
+    ip: 10.5.9.32/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:75:35:D4
+  k8s-shared-worker-5:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:7D:2F:C6
+    ip: 10.5.9.4/24
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:CF:4F:FD
+    ip: 10.5.9.30/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:8B:42:4D
+  k8s-shared-worker-6:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:9E:9A:28
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:3D:59:A9
+    ip: 10.5.9.31/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:0D:1F:1A
+  k8s-shared-worker-7:
+  - name: net0
+    vlan: k8s-services
+    mac_address: BC:24:11:B6:41:8B
+  - name: net1
+    vlan: k8s-shared
+    mac_address: BC:24:11:6D:F6:D5
+    ip: 10.5.9.19/24
+  - name: net2
+    vlan: wan
+    mac_address: BC:24:11:A5:2D:A3
+  monitoring-internal.etsmtl.club:
+  - name: net0
+    vlan: lan-management
+    mac_address: BC:24:11:7E:BB:A8
+    ip: 10.0.21.95/24
+  omni01.prod.etsmtl.club:
+  - name: net0
+    vlan: wan
+    mac_address: BC:24:11:19:3C:51
+    ip: 142.137.247.99/24
+  pratique01.dci.etsmtl.club:
+  - name: net0
+    vlan: event-dns-ctf
+    mac_address: BC:24:11:BC:D9:FD
+    ip: 10.68.1.101/16
+  pratique02.dci.etsmtl.club:
+  - name: net0
+    vlan: event-dns-ctf
+    mac_address: BC:24:11:79:3B:8F
+    ip: 10.68.1.102/16
+  pratique03.dci.etsmtl.club:
+  - name: net0
+    vlan: event-dns-ctf
+    mac_address: BC:24:11:12:E3:B8
+    ip: 10.68.1.103/16
