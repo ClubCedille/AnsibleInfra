@@ -18,7 +18,12 @@ on:
 
 jobs:
   run-target:
-    runs-on: ubuntu-latest
+    # ubuntu-latest n'a pas de route vers le réseau de management
+    # (10.0.21.0/24) où vivent les cibles réelles — sans ça, tout target qui
+    # touche l'infra pour de vrai échouait déjà à la connexion, dry-run ou
+    # pas. Les runners self-hosted "generic" sont sur le VLAN CI/CD avec
+    # accès à ce réseau.
+    runs-on: [self-hosted, generic]
 
     steps:
       - name: Checkout
