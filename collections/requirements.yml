@@ -22,7 +22,10 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/forgejo
     type: dir
-  - name: .cache/AnsibleRoles/github
-    type: dir
+  # .cache/AnsibleRoles/github retiré ici : dépend de la branche
+  # feat/github-actions-runner-role côté AnsibleRoles, pas encore mergée
+  # sur main. À réajouter une fois cette PR mergée, ou en attendant lancer
+  # `make galaxy-install-dev ANSIBLE_ROLES_DEV_REF=feat/github-actions-runner-role`
+  # ponctuellement pour tester playbooks/network/github-runners.yaml.
   - name: .cache/AnsibleRoles/omni
     type: dir
