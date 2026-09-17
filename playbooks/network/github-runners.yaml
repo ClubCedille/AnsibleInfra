@@ -37,10 +37,15 @@
 - name: Check which GitHub Actions runners still need registering
   hosts: github_runners
   gather_facts: false
+  vars:
+    # cedille.github.runner defaults (github_runner_paths.data_dir) aren't in
+    # scope here — this play doesn't run the role — so this must stay in
+    # sync with that role's default data_dir.
+    _github_runner_data_dir: /var/lib/github-runner
   tasks:
     - name: Check for an existing .runner registration file
       ansible.builtin.stat:
-        path: "{{ github_runner_paths.data_dir }}/.runner"
+        path: "{{ _github_runner_data_dir }}/.runner"
       register: _runner_registered
 
 - name: Fetch a fresh GitHub org runner registration token
