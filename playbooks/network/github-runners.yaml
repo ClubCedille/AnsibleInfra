@@ -37,6 +37,7 @@
 - name: Check which GitHub Actions runners still need registering
   hosts: github_runners
   gather_facts: false
+  become: true
   vars:
     # cedille.github.runner defaults (github_runner_paths.data_dir) aren't in
     # scope here — this play doesn't run the role — so this must stay in
