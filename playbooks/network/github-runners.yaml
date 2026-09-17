@@ -1,0 +1,90 @@
+---
+# Provisionne la flotte de VMs GitHub Actions self-hosted (générique/KVM/
+# docker-dind, même topologie que la flotte Forgejo) et enregistre chaque
+# runner sur l'organisation GitHub cible.
+#
+# Prérequis :
+#   - github_runner_org renseigné dans
+#     inventories/infra/group_vars/github_runners.yaml
+#   - github_runner_admin_token vaulté dans le même fichier — un PAT
+#     classic avec le scope admin:org (ou un jeton d'installation GitHub
+#     App avec la permission organization_self_hosted_runners:write, une
+#     fois cette permission accordée à l'App existante). Sert uniquement à
+#     obtenir un jeton d'enregistrement de courte durée (1h) à chaque
+#     exécution — jamais utilisé directement par les runners.
+#
+# Hôtes : github_runners
+# Usage : make network/github-runners
+
+- name: Provision GitHub Actions runner VMs on Proxmox
+  hosts: github_runners
+  gather_facts: false
+  become: false
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.vm
+
+- name: Wait for SSH on GitHub Actions runner VMs
+  hosts: github_runners
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+- name: Check which GitHub Actions runners still need registering
+  hosts: github_runners
+  gather_facts: false
+  tasks:
+    - name: Check for an existing .runner registration file
+      ansible.builtin.stat:
+        path: "{{ github_runner_paths.data_dir }}/.runner"
+      register: _runner_registered
+
+- name: Fetch a fresh GitHub org runner registration token
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    _any_unregistered: "{{ groups['github_runners'] | map('extract', hostvars, ['_runner_registered', 'stat', 'exists']) | select('equalto', false) | list | length > 0 }}"
+  tasks:
+    - name: Ensure the admin token is configured
+      ansible.builtin.assert:
+        that:
+          - github_runner_admin_token != "REPLACE_WITH_VAULTED_ADMIN_TOKEN"
+        fail_msg: >-
+          github_runner_admin_token still has its placeholder value — set it
+          in inventories/infra/group_vars/github_runners.yaml (vaulted PAT
+          with admin:org scope, or a Vault-minted GitHub App installation
+          token once organization_self_hosted_runners is granted).
+      when: _any_unregistered
+
+    - name: Request a registration token for the org
+      ansible.builtin.uri:
+        url: "https://api.github.com/orgs/{{ github_runner_org }}/actions/runners/registration-token"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ github_runner_admin_token }}"
+          Accept: "application/vnd.github+json"
+        status_code: 201
+      register: _gh_reg_token
+      no_log: true
+      when: _any_unregistered
+
+    - name: Expose the token as a fact for the deploy play
+      ansible.builtin.set_fact:
+        github_runner_registration_token: "{{ _gh_reg_token.json.token }}"
+      no_log: true
+      when: _any_unregistered
+
+- name: Deploy GitHub Actions runners
+  hosts: github_runners
+  gather_facts: true
+  become: true
+  vars:
+    github_runner_registration_token: "{{ hostvars['localhost'].github_runner_registration_token | default('REPLACE_WITH_RUNTIME_REGISTRATION_TOKEN') }}"
+  roles:
+    - cedille.docker.install
+    - cedille.github.runner

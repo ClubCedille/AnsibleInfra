@@ -1,0 +1,85 @@
+---
+ansible_user: localadmin
+
+vm_cpu_cores: 8
+vm_memory_mb: 16384
+vm_disk_size: "40G"
+
+vm_disk_image_path: "/var/lib/vz/images/lanets/ubuntu_2404.img"
+vm_disk_storage: "RBD_Common"
+vm_disk_format: "raw"
+vm_disk_device: "virtio0"
+vm_cloud_init_storage: "RBD_Common"
+
+vm_delete_if_exists: false
+vm_start_after_creation: true
+vm_onboot: true
+
+# No pull-through registry mirror on the mgmt network — runners pull directly
+# from upstream registries.
+docker_registry_mirror_enabled: false
+
+# cedille.docker.install always runs "docker compose up" against
+# install_docker_compose_target_dir at the end of the role, even with no
+# compose stack to manage. An empty "services: {}" project makes that fail
+# with "no service selected", so give it one trivial idle service instead.
+install_docker_compose_source_type: inline
+install_docker_compose_content: |
+  services:
+    noop:
+      image: alpine:3
+      command: ["tail", "-f", "/dev/null"]
+      restart: unless-stopped
+
+vm_name: "{{ inventory_hostname }}"
+# Placement de départ, réparti sur 3 nœuds — pas de contrainte particulière
+# ici (contrairement à la flotte Forgejo qui suit un historique de VM
+# existantes), à ajuster si un nœud finit déséquilibré.
+vm_proxmox_node: "{{ ['pve01', 'pve02', 'pve03'][(vm_id | int) % 3] }}"
+
+# Créés directement sur le VLAN CI/CD (tag 40, 10.0.40.0/24) — pas de
+# migration nécessaire, contrairement à la flotte Forgejo qui existait
+# déjà sur VLAN21 avant la segmentation.
+vm_net:
+  bridge: "vmbr1"
+  vlan: "40"
+  device: virtio
+  ip: "{{ ansible_host }}"
+  netmask: "24"
+  gateway: "10.0.40.1"
+  nameservers: "1.1.1.1,8.8.8.8"
+  search_domain: "mgmt.etsmtl.club"
+
+vm_proxmox_api:
+  user: "root@pam"
+  password: !vault |
+    $ANSIBLE_VAULT;1.1;AES256
+    38616663323566326538653235663137303731356666336338303339616164366637373438663366
+    3664396432356165363735646236376238633331373332300a356532353031656264333035303939
+    61653665626562323564346563336463393633663231653063616566353961353434363338353531
+    6333623135383336610a343532623531353331643164353261666333663637643437383861373161
+    3564
+  host: "10.0.21.51"
+
+# Organisation GitHub cible pour l'enregistrement des runners.
+github_runner_org: "ClubCedille"
+
+# Jeton admin utilisé UNIQUEMENT pour appeler
+# POST /orgs/{org}/actions/runners/registration-token à chaque exécution du
+# playbook (jamais utilisé directement par un runner). PAT classic avec le
+# scope admin:org, à vaulter ici une fois généré — voir la discussion du
+# 2026-09-10 : l'App GitHub existante (kv-system/github/clubcedille) n'a
+# pas la permission organization_self_hosted_runners, donc pas utilisable
+# telle quelle pour ça tant que cette permission n'est pas accordée.
+github_runner_admin_token: "REPLACE_WITH_VAULTED_ADMIN_TOKEN"
+
+# Dedicated Proxmox pool for the fleet, distinct from RP-CICD-Runners
+# (Forgejo) pour garder les deux fournisseurs CI/CD séparés en un coup
+# d'oeil dans l'UI Proxmox.
+vm_pool: "RP-CICD-Runners-GH"
+vm_pool_comment: "Flotte runners CI/CD GitHub Actions (generic/kvm/dind)"
+vm_tags:
+  - "PRODUCTION"
+  - "CEDILLE"
+  - "CI-RUNNER"
+  - "GITHUB"
