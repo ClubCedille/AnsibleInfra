@@ -8,7 +8,7 @@
 #   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
 #
 # Usage :
-#   ansible-playbook playbooks/omni/vlan66-dhcp.yaml -i inventories/infra/
+#   ansible-playbook playbooks/events/vlan66-dhcp.yaml -i inventories/infra/
 
 - name: Provision DHCP VMs for VLAN 66
   hosts: vlan66_dhcp

@@ -10,8 +10,15 @@
 #   - VLAN 67 existant sur les hôtes Proxmox (network/update-vlans.yaml)
 #   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
 #
+# INCOMPLET : group_vars/vlan67_dhcp.yaml et les host_vars dhcp01-67/dhcp02-67
+# existent, mais le groupe [vlan67_dhcp] n'a jamais été déclaré dans
+# inventories/infra/hosts.ini (jamais fait même au commit d'origine
+# 105b0a1) — ce playbook n'a donc actuellement aucun hôte à cibler tant que
+# ce groupe (ansible_host + vm_id des VMs dhcp01-67/dhcp02-67) n'y est pas
+# ajouté, sur le modèle de [vlan66_dhcp].
+#
 # Usage :
-#   ansible-playbook playbooks/network/vlan67-dhcp.yaml -i inventories/infra/
+#   ansible-playbook playbooks/events/vlan67-dhcp.yaml -i inventories/infra/
 
 - name: Provision DHCP VMs for VLAN 67
   hosts: vlan67_dhcp

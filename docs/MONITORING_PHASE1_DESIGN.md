@@ -63,10 +63,10 @@ Data flow:
 
 Planned file targets:
 
-- inventories/event/hosts.ini
-- inventories/event/group_vars/all.yaml
-- inventories/event/group_vars/monitoring_core.yaml
-- inventories/event/host_vars/monitoring01.event.lanets.ca.yaml
+- inventories/lanets/hosts.ini
+- inventories/lanets/group_vars/all.yaml
+- inventories/lanets/group_vars/monitoring_core.yaml
+- inventories/lanets/host_vars/monitoring01.event.lanets.ca.yaml
 - playbooks/monitoring/core.yaml
 
 ## Proposed variable contract
@@ -80,7 +80,7 @@ Use role-native prefixes from cedille.monitoring:
 
 Keep variables grouped in a dedicated file:
 
-- inventories/event/group_vars/monitoring_core.yaml
+- inventories/lanets/group_vars/monitoring_core.yaml
 
 Minimum structure:
 
@@ -106,7 +106,7 @@ Expected secrets in Phase 1:
 
 Secret placement:
 
-- Keep secret values in inventories/event/group_vars/monitoring_core.yaml as !vault values.
+- Keep secret values in inventories/lanets/group_vars/monitoring_core.yaml as !vault values.
 - Never commit plaintext webhook URLs.
 
 ## Deployment order

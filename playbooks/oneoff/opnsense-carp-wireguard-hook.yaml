@@ -26,7 +26,7 @@
 #
 # Usage:
 #   .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
-#     playbooks/infra/opnsense-carp-wireguard-hook.yaml --ask-vault-pass
+#     playbooks/oneoff/opnsense-carp-wireguard-hook.yaml --ask-vault-pass
 
 - name: Fix WireGuard CARP transition hook on both routers
   hosts: routers
@@ -47,7 +47,7 @@
         mode: "0755"
         content: |
           #!/bin/sh
-          # Managed by Ansible — see playbooks/infra/opnsense-carp-wireguard-hook.yaml
+          # Managed by Ansible — see playbooks/oneoff/opnsense-carp-wireguard-hook.yaml
           # and AnsibleRoles opnsense/roles/config/templates/carp-wireguard-hook.sh.j2
           # for the full diagnosis. Args: $1 = subsystem ("vhid@interface"),
           # $2 = event type (MASTER/BACKUP/INIT).

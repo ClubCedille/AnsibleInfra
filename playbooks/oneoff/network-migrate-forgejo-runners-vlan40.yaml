@@ -26,7 +26,7 @@
 #      points there from the inventory change).
 #
 # Usage: ansible-playbook -i inventories/infra/hosts.ini \
-#   playbooks/network/migrate-forgejo-runners-vlan40.yaml --ask-vault-pass
+#   playbooks/oneoff/network-migrate-forgejo-runners-vlan40.yaml --ask-vault-pass
 
 - name: Migrate forgejo runners to VLAN 40 (CI/CD)
   hosts: forgejo_runners
