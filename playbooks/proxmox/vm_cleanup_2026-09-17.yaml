@@ -66,7 +66,7 @@
   tasks:
     # --- 1. Arrêt des VMs running avant suppression (Proxmox refuse de
     #        supprimer une VM démarrée) ---
-    - name: Stop running VMs before deletion
+    - name: Stop running VMs before deletion  # noqa: args[module]
       community.proxmox.proxmox_kvm:
         vmid: "{{ item.vmid }}"
         node: "{{ item.node }}"
@@ -76,7 +76,7 @@
         label: "{{ item.name }}"
 
     # --- 2. Suppression ---
-    - name: Delete obsolete VMs
+    - name: Delete obsolete VMs  # noqa: args[module]
       community.proxmox.proxmox_kvm:
         vmid: "{{ item.vmid }}"
         node: "{{ item.node }}"
@@ -86,7 +86,7 @@
         label: "{{ item.name }} (vmid {{ item.vmid }})"
 
     # --- 3. Renommage (metadata Proxmox uniquement) ---
-    - name: Rename VMs to match FQDN convention
+    - name: Rename VMs to match FQDN convention  # noqa: args[module]
       community.proxmox.proxmox_kvm:
         vmid: "{{ item.vmid }}"
         node: "{{ item.node }}"

@@ -101,7 +101,7 @@
 
     - name: "Show current CARP state for context (informational only)"
       ansible.builtin.shell:
-        cmd: ifconfig | grep -B2 carp | grep -E "^[a-z]|carp:"
+        cmd: set -o pipefail && ifconfig | grep -B2 carp | grep -E "^[a-z]|carp:"
       register: _carp_state
       changed_when: false
 
