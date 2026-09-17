@@ -49,7 +49,7 @@
 
     - name: "Show current <interfaces> section"
       ansible.builtin.command:
-        cmd: >-
+        cmd: |-
           python3 -c "
           import xml.etree.ElementTree as ET
           tree = ET.parse('/conf/config.xml')
@@ -74,7 +74,7 @@
 
     - name: "Show current <vlans> section"
       ansible.builtin.command:
-        cmd: >-
+        cmd: |-
           python3 -c "
           import xml.etree.ElementTree as ET
           tree = ET.parse('/conf/config.xml')
@@ -100,7 +100,7 @@
     # -----------------------------------------------------------------------
     - name: "Patch interface IP addresses in config.xml"
       ansible.builtin.command:
-        cmd: >-
+        cmd: |-
           python3 -c "
           import xml.etree.ElementTree as ET
           import sys
