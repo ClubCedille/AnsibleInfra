@@ -1,0 +1,6 @@
+---
+vm_id: 210801
+vm_name: eclipse-strat08
+vm_proxmox_node: pve08
+vm_cpu_cores: 40
+vm_memory_mb: 32768

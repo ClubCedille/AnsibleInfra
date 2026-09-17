@@ -1,0 +1,6 @@
+---
+vm_id: 1003011
+vm_name: k8s-cedille-sandbox-worker-1
+vm_proxmox_node: pve04
+vm_cpu_cores: 8
+vm_memory_mb: 24576

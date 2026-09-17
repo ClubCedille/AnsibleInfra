@@ -1,0 +1,6 @@
+---
+vm_id: 1010012
+vm_name: k8s-cedille-production-v2-worker-2
+vm_proxmox_node: pve03
+vm_cpu_cores: 8
+vm_memory_mb: 24576

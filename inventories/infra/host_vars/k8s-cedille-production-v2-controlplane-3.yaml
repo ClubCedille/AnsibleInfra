@@ -1,0 +1,6 @@
+---
+vm_id: 1010003
+vm_name: k8s-cedille-production-v2-controlplane-3
+vm_proxmox_node: pve07
+vm_cpu_cores: 4
+vm_memory_mb: 8192
