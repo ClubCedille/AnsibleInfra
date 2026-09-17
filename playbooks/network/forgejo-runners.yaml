@@ -1,5 +1,5 @@
 ---
-# Provisionne une paire de VMs et y déploie des runners Forgejo Actions
+# Provisionne des VMs et y déploie des runners Forgejo Actions
 # (Docker + binaire forgejo-runner, exécuteur Docker) — infra permanente,
 # VLAN CI/CD dédié (tag 40).
 #
