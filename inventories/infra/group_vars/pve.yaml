@@ -54,6 +54,7 @@ pve_vlans_desired:
     comment: "CEPH - MTU 9216"
     mtu: 9216
     netbox_name: "ceph-storage"
+    netbox_prefix: "10.0.15.0/24"
   - id: 21
     comment: "LAN management"
     netbox_name: "lan-management"
@@ -64,41 +65,47 @@ pve_vlans_desired:
   - id: 40
     comment: "CI/CD - runners Forgejo (chantier segmentation VLAN21)"
     netbox_name: "cicd-forgejo-runners"
+    netbox_prefix: "10.0.40.0/24"
   - id: 45
     comment: "Monitoring (chantier segmentation VLAN21)"
     netbox_name: "monitoring"
+    netbox_prefix: "10.0.45.0/24"
   - id: 48
     comment: "Utilitaires/Sandbox (chantier segmentation VLAN21)"
     netbox_name: "utilitaires-sandbox"
+    netbox_prefix: "10.0.48.0/24"
   - id: 65
     comment: "Eclipse link (conservé explicitement - ne pas supprimer)"
     netbox_name: "eclipse-link"
+    netbox_prefix: "10.255.255.252/30"
   - id: 66
     comment: "CLIENT event"
     netbox_name: "event-client"
     netbox_tag: "event"
-    netbox_prefix: "10.110.0.0/16"
+    netbox_prefix: "10.66.0.0/16" # corrigé 2026-09-17 (était 10.110.0.0/16, obsolète)
   - id: 67
     comment: "AP-MGMT event"
     netbox_name: "event-ap-mgmt"
     netbox_tag: "event"
-    netbox_prefix: "10.120.0.0/16"
+    netbox_prefix: "10.67.0.0/16" # corrigé 2026-09-17 (était 10.120.0.0/16, obsolète)
   - id: 68
     comment: "DNS/CTF event"
     netbox_name: "event-dns-ctf"
     netbox_tag: "event"
-    netbox_prefix: "10.130.0.0/16"
+    netbox_prefix: "10.68.0.0/16" # corrigé 2026-09-17 (était 10.130.0.0/16, obsolète)
   - id: 69
     comment: "Event additionnel"
     netbox_name: "event-additionnel"
     netbox_tag: "event"
-    netbox_prefix: "10.140.0.0/16"
+    netbox_prefix: "10.69.0.0/16" # corrigé 2026-09-17 (était 10.140.0.0/16, obsolète)
   - id: 247
     comment: "WAN"
     netbox_name: "wan"
+    netbox_prefix: "142.137.247.0/24"
   - id: 255
     comment: "PFSYNC OPNsense - sync état firewall entre instances"
     netbox_name: "pfsync"
+    netbox_prefix: "10.255.254.252/30"
   - id: 500
     comment: "k8s services inter-nœuds"
     netbox_name: "k8s-services"
@@ -118,6 +125,7 @@ pve_vlans_desired:
   - id: 1300
     comment: "k8s poc"
     netbox_name: "k8s-poc"
+    netbox_prefix: "10.0.130.0/24"
   - id: 2206
     comment: "Lien infrastructure ETS"
     netbox_ignore: true # géré côté ÉTS, hors périmètre club
