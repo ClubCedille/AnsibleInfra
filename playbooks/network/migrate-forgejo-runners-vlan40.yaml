@@ -50,6 +50,7 @@
       ansible.builtin.command:
         cmd: cloud-init clean --logs
       become: true
+      changed_when: true
       vars:
         ansible_host: "10.0.21.{{ (vm_id | int) % 1000 }}"
 
