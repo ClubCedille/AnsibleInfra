@@ -1,10 +1,20 @@
 infra_inventory = inventories/infra/hosts.ini
-event_inventory = inventories/event/hosts.ini
+lanets_inventory = inventories/lanets/hosts.ini
 sc_inventory = inventories/summercamp/hosts.ini
-inventory_name ?= infra
 
-ifeq ($(inventory_name),event)
-inventory ?= $(event_inventory)
+# inventory_name=<infra|lanets|sc|summercamp> force explicitement l'inventaire
+# (prioritaire sur la déduction automatique par cible ci-dessous).
+ifeq ($(origin inventory_name),command line)
+inventory_explicit := 1
+else ifeq ($(origin inventory_name),environment)
+inventory_explicit := 1
+else
+inventory_name ?= infra
+inventory_explicit :=
+endif
+
+ifeq ($(inventory_name),lanets)
+inventory ?= $(lanets_inventory)
 else ifeq ($(inventory_name),sc)
 inventory ?= $(sc_inventory)
 else ifeq ($(inventory_name),summercamp)
@@ -15,8 +25,30 @@ endif
 
 playbook = playbooks
 
-playbook_files = $(wildcard $(playbook)/*/*.yaml)
+# find plutôt que $(wildcard .../*/*.yaml) : les playbooks peuvent être imbriqués
+# sur 2 niveaux (ex. playbooks/events/lanets/*.yaml) alors que le glob de Make
+# ne traverse pas les répertoires. On exclut les sous-répertoires qui ne
+# contiennent pas de playbooks autonomes (fragments include_tasks, templates,
+# vars, fichiers statiques).
+playbook_files = $(shell find $(playbook) -mindepth 2 -type f -name '*.yaml' \
+	! -path '*/tasks/*' ! -path '*/templates/*' ! -path '*/template/*' \
+	! -path '*/files/*' ! -path '*/vars/*' | sort)
 playbook_targets = $(patsubst $(playbook)/%.yaml,%,$(playbook_files))
+
+# Devine l'inventaire par défaut d'une cible d'après son chemin, pour que
+# `make sc/dhcp` ou `make events/lanets/cs2-server` n'exigent plus
+# inventory_name=... à chaque appel. inventory_name=... explicite reste
+# prioritaire (cf. inventory_explicit ci-dessus).
+#
+# events/lanets/* (ex. cs2) cible des hôtes déclarés dans inventories/lanets
+# (groupe cs2, hosts.ini). events/*.yaml directement sous events/ (vlan66-dhcp,
+# vlan67-dhcp) cible en revanche des VMs déclarées dans inventories/infra
+# (groupes vlan66_dhcp/vlan67_dhcp) : ces VMs restent dans l'inventaire infra
+# car elles sont aussi membres de ubuntu_vms:children/virtual_machines:children
+# (apt mirror + sync NetBox) — les en sortir casserait ces agrégats transverses,
+# même si leur usage (tags LANETS, config Kea) est spécifique à un événement.
+default_inventory_for = $(if $(or $(filter sc/%,$(1)),$(filter oneoff/sc-%,$(1))),$(sc_inventory),$(if $(filter events/lanets/%,$(1)),$(lanets_inventory),$(infra_inventory)))
+resolve_inventory = $(if $(inventory_explicit),$(inventory),$(1))
 
 PYTHON = .venv/bin/python3
 
@@ -133,7 +165,7 @@ lint: galaxy-install lint-tools
 define PLAYBOOK_TARGET_TEMPLATE
 .PHONY: $(1)
 $(1): galaxy-install $(playbook)/$(1).yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/$(1).yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(LIMIT_FLAG) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(call default_inventory_for,$(1))) $(playbook)/$(1).yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(LIMIT_FLAG) $(EXTRA_VARS_FLAG)
 endef
 
 $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(target))))
@@ -142,59 +174,61 @@ $(foreach target,$(playbook_targets),$(eval $(call PLAYBOOK_TARGET_TEMPLATE,$(ta
 # Summercamp — déploiement d'un challenge spécifique (évite de surcharger
 # l'infra en lançant les ~300 VMs de tous les challenges d'un coup).
 #
-# Usage : make sc/chall/<NomDuChallenge> inventory_name=sc
-#   ex.  make sc/chall/MITM inventory_name=sc
-#   ex.  make sc/chall/NanoControl_Credentials_1,Acces_Interdit inventory_name=sc
+# Usage : make sc/chall/<NomDuChallenge>
+#   ex.  make sc/chall/MITM
+#   ex.  make sc/chall/NanoControl_Credentials_1,Acces_Interdit
 # <NomDuChallenge> doit correspondre à un nom de groupe de l'inventaire
 # (voir [chall:children] dans inventories/summercamp/hosts.ini), et accepte
 # tout ce que comprend --limit d'Ansible (liste séparée par virgules, motifs).
+# L'inventaire summercamp est utilisé par défaut (cibles sc/*) ; inventory_name=
+# reste disponible pour forcer autre chose explicitement.
 # ---------------------------------------------------------------------------
 
 .PHONY: sc/chall/%
 sc/chall/%: galaxy-install $(playbook)/sc/chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/reset_chall.yaml (docker compose down/up sur
-# des hosts précis) : make sc/reset_chall/<hosts ou groupe> inventory_name=sc
+# des hosts précis) : make sc/reset_chall/<hosts ou groupe>
 .PHONY: sc/reset_chall/%
 sc/reset_chall/%: galaxy-install $(playbook)/sc/reset_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reset_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/reset_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/update_chall.yaml (docker compose pull puis
 # down/up, pour forcer la mise à jour d'une image plus récente) :
-# make sc/update_chall/<hosts ou groupe> inventory_name=sc
+# make sc/update_chall/<hosts ou groupe>
 .PHONY: sc/update_chall/%
 sc/update_chall/%: galaxy-install $(playbook)/sc/update_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/update_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Met à jour les challenges single-instance (playbooks/sc/update_single_chall.yaml) :
 # resynchronise install_docker_compose_content depuis CHALLENGE_DIR (sync-compose),
 # pousse le docker-compose.yml résultant sur les VMs, puis pull + reconcile
 # (pas de down/up ni de suppression de volumes : ce sont des VMs partagées
 # par tout l'événement, contrairement au groupe `chall` par équipe).
-# Usage : make sc/update_single_chall/<hosts ou groupe> inventory_name=sc
+# Usage : make sc/update_single_chall/<hosts ou groupe>
 .PHONY: sc/update_single_chall/%
 sc/update_single_chall/%: galaxy-install $(playbook)/sc/update_single_chall.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/update_single_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/update_single_chall.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Même principe pour playbooks/sc/reboot.yaml (hard-stop + start via l'API
 # Proxmox, ex. apt/dpkg lock coincé après un boot cloud-init) :
-# make sc/reboot/<hosts ou groupe> inventory_name=sc
+# make sc/reboot/<hosts ou groupe>
 .PHONY: sc/reboot/%
 sc/reboot/%: galaxy-install $(playbook)/sc/reboot.yaml
-	$(VENV_BIN)/ansible-playbook -i $(inventory) $(playbook)/sc/reboot.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/reboot.yaml $(VAULT_FLAG) --limit "$*" $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Déploie le fichier flag dans /home/sc sur toutes les VMs shellctf :
 # make deploy-shellctf-flag
 .PHONY: deploy-shellctf-flag
 deploy-shellctf-flag: galaxy-install $(playbook)/sc/deploy_shellctf_flag.yaml
-	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/deploy_shellctf_flag.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/deploy_shellctf_flag.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # Provisionne et déploie le host secret.ctf (nginx + page narrative) :
 # make deploy-secret-portal
 .PHONY: deploy-secret-portal
 deploy-secret-portal: galaxy-install $(playbook)/sc/secret_portal.yaml
-	$(VENV_BIN)/ansible-playbook -i $(sc_inventory) $(playbook)/sc/secret_portal.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
+	$(VENV_BIN)/ansible-playbook -i $(call resolve_inventory,$(sc_inventory)) $(playbook)/sc/secret_portal.yaml $(VAULT_FLAG) $(ANSIBLE_MODE_FLAGS) $(EXTRA_VARS_FLAG)
 
 # ---------------------------------------------------------------------------
 # Summercamp — génération des credentials et de l'inventaire

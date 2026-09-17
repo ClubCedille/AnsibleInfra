@@ -39,11 +39,11 @@ Inventory:
 Files:
 
 - phase 2 playbook: playbooks/monitoring/node-exporters.yaml
-- node exporter group vars: inventories/event/group_vars/netservices_node_exporter.yaml
+- node exporter group vars: inventories/lanets/group_vars/netservices_node_exporter.yaml
 - phase 3 playbook: playbooks/monitoring/alloy.yaml
-- alloy group vars: inventories/event/group_vars/netservices_alloy.yaml
+- alloy group vars: inventories/lanets/group_vars/netservices_alloy.yaml
 - phase 4 playbook: playbooks/monitoring/exporters.yaml
-- exporters group vars: inventories/event/group_vars/monitoring_exporters.yaml
+- exporters group vars: inventories/lanets/group_vars/monitoring_exporters.yaml
 
 ## Variable conventions
 

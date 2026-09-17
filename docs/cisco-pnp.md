@@ -13,7 +13,7 @@
 Les playbooks PnP se trouvent dans `playbooks/cisco-pnp/`. Pour les exécuter avec l'inventaire approprié :
 
 ```bash
-make cisco-pnp/deployment inventory_name=event
+make cisco-pnp/deployment inventory_name=lanets
 make cisco-pnp/deployment inventory_name=sc
 make cisco-pnp/deployment inventory_name=summercamp
 ```

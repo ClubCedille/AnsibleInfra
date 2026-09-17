@@ -55,7 +55,7 @@ Gérées automatiquement par OPNSense. **Ne pas toucher.**
 ### Catégorie B — Règles admin sans description — ~~17 règles~~ **supprimées le 2026-06-30**
 
 Créées via la GUI, sans description. Doublons en nouveau format des règles classiques.
-**Supprimées via `playbooks/infra/opnsense-cleanup-legacy-rules.yaml`.**
+**Supprimées via `playbooks/oneoff/opnsense-cleanup-legacy-rules.yaml`.**
 
 | Interface | Action | Dir | Proto | Source | Destination | Port | Identité fonctionnelle |
 |-----------|--------|-----|-------|--------|-------------|------|------------------------|
@@ -175,7 +175,7 @@ Le rôle utilise `match_fields: ["description"]`. Les règles sans description n
 - ✅ Ancienne règle HA (`HASync + diag depuis subnet sync`) — supprimée via API
 - ✅ 18 règles classiques `config.xml <filter>` — supprimées via SSH + Python
 
-**Playbook :** `playbooks/infra/opnsense-cleanup-legacy-rules.yaml`  
+**Playbook :** `playbooks/oneoff/opnsense-cleanup-legacy-rules.yaml`  
 **État final :** 48 règles Automation/Filter (30 système + 18 Ansible), 0 règles classiques
 
 ### Questions ouvertes (futures)

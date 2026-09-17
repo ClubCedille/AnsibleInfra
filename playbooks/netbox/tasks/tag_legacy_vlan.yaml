@@ -1,5 +1,5 @@
 ---
-# Sous-tâches pour playbooks/netbox/fixups.yaml — inclus en boucle
+# Sous-tâches pour playbooks/oneoff/netbox-fixups-2026-09-17.yaml — inclus en boucle
 # (un `block:` ne peut pas être bouclé directement en Ansible).
 
 - name: Look up legacy VLAN
