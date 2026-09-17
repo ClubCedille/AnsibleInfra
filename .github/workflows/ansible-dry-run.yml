@@ -1,22 +1,43 @@
 name: Ansible Dry Run
 
-# Ne tourne que pour les PRs internes (même repo, pas les forks) — les
-# runners self-hosted "generic" ont un accès réseau au VLAN de management
-# (Proxmox, OPNsense, etc.), donc on ne les expose pas à du code arbitraire
-# venant d'une PR externe sur ce repo public. Toute PR externe reste
-# couverte par le job "Lint" (lint.yml), qui tourne sur ubuntu-latest.
+# Deux façons de se déclencher :
+#   - pull_request : uniquement pour les PRs internes (même repo, pas les
+#     forks) — les runners self-hosted "generic" ont un accès réseau au
+#     VLAN de management (Proxmox, OPNsense, etc.), donc on ne les expose
+#     pas à du code arbitraire venant d'une PR externe sur ce repo public.
+#     Toute PR externe reste couverte par le job "Lint" (lint.yml), qui
+#     tourne sur ubuntu-latest. Dry-run automatique des playbooks modifiés
+#     par la PR.
+#   - workflow_dispatch : déclenchement manuel, restreint à la branche
+#     main uniquement (voir le guard sur le job) — dry-run à la demande
+#     d'une cible `make` choisie, sur l'état actuel de main.
 on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Cible make à dry-run (ex: network/github-runners)"
+        required: true
+      inventory:
+        description: "Inventory (infra ou event)"
+        required: true
+        default: "infra"
+        type: choice
+        options:
+          - infra
+          - event
 
 concurrency:
-  group: ansible-dry-run-${{ github.event.pull_request.number }}
+  group: ansible-dry-run-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   dry-run:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: |
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: [self-hosted, generic]
 
     steps:
@@ -30,7 +51,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Determine changed playbook targets
+      - name: Determine changed playbook targets (pull_request)
+        if: github.event_name == 'pull_request'
         id: changed
         shell: bash
         run: |
@@ -59,18 +81,49 @@ jobs:
             echo "targets=${joined%,}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate manual target (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        id: manual
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          {
+            echo "venv"
+            echo "galaxy-install"
+            echo "list-playbooks"
+            echo "lint"
+            make -s list-playbooks
+          } | sort -u > /tmp/allowed-targets.txt
+
+          if ! grep -Fxq "$TARGET" /tmp/allowed-targets.txt; then
+            echo "Target invalide: $TARGET"
+            echo "Targets autorisees:"
+            cat /tmp/allowed-targets.txt
+            exit 1
+          fi
+          echo "targets=$TARGET" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve targets to run
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "targets=${{ steps.changed.outputs.targets || steps.manual.outputs.targets }}" >> "$GITHUB_OUTPUT"
+
       - name: Setup venv
-        if: steps.changed.outputs.targets != ''
+        if: steps.resolve.outputs.targets != ''
         shell: bash
         run: make venv
 
       - name: Install galaxy roles
-        if: steps.changed.outputs.targets != ''
+        if: steps.resolve.outputs.targets != ''
         shell: bash
         run: make galaxy-install
 
       - name: Write vault password file
-        if: steps.changed.outputs.targets != '' && env.HAS_VAULT_SECRET == 'true'
+        if: steps.resolve.outputs.targets != '' && env.HAS_VAULT_SECRET == 'true'
         shell: bash
         env:
           HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
@@ -80,12 +133,13 @@ jobs:
           umask 077
           printf '%s' "$VAULT_PASSWORD" > "$RUNNER_TEMP/ansible_vault_pass"
 
-      - name: Dry-run changed playbooks (--check --diff)
-        if: steps.changed.outputs.targets != ''
+      - name: Dry-run targets (--check --diff)
+        if: steps.resolve.outputs.targets != ''
         shell: bash
         env:
-          TARGETS: ${{ steps.changed.outputs.targets }}
+          TARGETS: ${{ steps.resolve.outputs.targets }}
           HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
+          INVENTORY_NAME: ${{ inputs.inventory || 'infra' }}
         run: |
           set -euo pipefail
           vault_args=()
@@ -97,15 +151,15 @@ jobs:
           status=0
           for t in "${targets[@]}"; do
             echo "::group::make $t DRY_RUN=1"
-            if ! make "$t" DRY_RUN=1 "${vault_args[@]}"; then
+            if ! make "$t" DRY_RUN=1 inventory_name="$INVENTORY_NAME" "${vault_args[@]}"; then
               status=1
             fi
             echo "::endgroup::"
           done
           exit "$status"
 
-      - name: No playbook changed
-        if: steps.changed.outputs.targets == ''
+      - name: No target to run
+        if: steps.resolve.outputs.targets == ''
         shell: bash
         run: echo "Aucun playbook modifié par cette PR — rien à dry-run."
 
