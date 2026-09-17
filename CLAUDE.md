@@ -12,14 +12,16 @@ The infrastructure is deployed on a **dedicated event network** (no pre-existing
 
 | Element              | Value                                                           |
 | -------------------- | --------------------------------------------------------------- |
-| Network              | `10.110.0.0/16`                                                 |
-| Gateway              | `10.110.0.1`                                                    |
-| DNS server           | `10.130.0.21-22` (BIND9, redundant, sur VLAN 68)               |
-| DHCP/Kea server      | `10.110.0.31-32` (dhcp01.camp / dhcp02.camp, hot-standby)      |
-| TFTP server          | **co-localisé sur les VMs DHCP** (`10.110.0.31-32`)            |
-| HTTP portal          | `10.110.0.51` (nginx)                                           |
-| DHCP pool            | `10.110.1.10 – 10.110.5.255`                                    |
+| Network              | `10.66.0.0/16`                                                  |
+| Gateway              | `10.66.0.1`                                                     |
+| DNS server           | `10.68.0.21-22` (BIND9, redundant, sur VLAN 68)                |
+| DHCP/Kea server      | `10.66.0.31-32` (dhcp01.camp / dhcp02.camp, hot-standby)       |
+| TFTP server          | **co-localisé sur les VMs DHCP** (`10.66.0.31-32`)             |
+| HTTP portal          | `10.66.0.51` (nginx)                                            |
+| DHCP pool            | `10.66.1.10 – 10.66.5.255`                                      |
 | Event domain         | `.ctf and .camp` (.camp for the infra, .ctf for the challenges) |
+
+> **Adressage corrigé le 2026-09-17** : le schéma `10.66-69.0.0/16` (10.\<VLAN\>.0.0/16 pour les VLANs 66-69) remplace l'ancien `10.110/120/130/140.0.0/16`, qui était obsolète côté NetBox/AnsibleInfra. L'infra événementielle est actuellement détruite (teardown SummerCamp 2026-06-23) — cette table décrit l'adressage à utiliser à la **prochaine** saison d'événement, pas un déploiement actif. Vérifier que `playbooks/sc/vars/flags.yml` et les group_vars de l'inventaire event/summercamp sont alignés sur ce nouveau schéma avant de redéployer.
 
 > **TFTP co-localisé** : le rôle `tftp` est déployé sur les VMs DHCP via `playbooks/sc/dhcp.yaml` (rôles `cedille.netservices.dhcp` + `tftp`). Les options 66/67 et `next-server` pointent vers `{{ ansible_host }}` (IP du serveur DHCP lui-même). Le groupe `netservices_tftp` (`.41-42`) existe encore dans l'inventaire SC mais n'est pas utilisé pour le challenge DHCP.
 
