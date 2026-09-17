@@ -8,8 +8,10 @@
 # Périmètre volontairement explicite (whitelist), pas `hosts: all` moins des
 # exclusions — plusieurs groupes de l'inventaire ne sont pas de simples
 # hôtes SSH :
-#   - k8s_poc*/k8s_shared*/k8s_cedille_*  : Talos Linux, pas de sshd (API
-#     Talos sur 50000/50001) — hors scope, ce mécanisme ne s'applique pas.
+#   - k8s_poc_controlplanes/k8s_poc_workers, k8s_shared*, k8s_cedille_* :
+#     Talos Linux, pas de sshd (API Talos sur 50000/50001) — hors scope.
+#     (k8s_poc_dhcp est différent : ce sont des VMs Ubuntu classiques qui
+#     servent le DHCP/PXE du cluster Talos — incluses ci-dessous.)
 #   - ipmi (ilo/idrac)                    : BMC, plan d'auth différent
 #     (Redfish/comptes locaux) — hors scope.
 #   - switches (nxos/ios)                 : pas de ~/.ssh/authorized_keys
@@ -27,7 +29,7 @@
 # (bootstrap via l'agent SSH de l'opérateur).
 
 - name: Déployer la clé publique SSH CI sur les hôtes standards
-  hosts: "pve:nas:routers:pnp-server:netservices_dhcp:omni:jumpbox:monitoring_core:forgejo_runners:github_runners:eclipse:dci_vms"
+  hosts: "pve:nas:routers:pnp-server:netservices_dhcp:k8s_poc_dhcp:omni:jumpbox:monitoring_core:forgejo_runners:github_runners:eclipse:dci_vms"
   gather_facts: false
 
   tasks:

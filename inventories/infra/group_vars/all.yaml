@@ -6,6 +6,12 @@
 # netbox_api_token est un token v1 classique (pas le nouveau format v2
 # "Bearer nbt_<key>.<secret>") : les modules netbox.netbox (pynetbox)
 # envoient "Authorization: Token <valeur>", incompatible avec le schéma v2.
+# Clé publique CI (files/ssh/ansibleinfra_ci.pub, privée dans le secret
+# GitHub Actions ANSIBLE_SSH_PRIVATE_KEY). Ajoutée à vm_sshkeys là où c'est
+# pertinent pour qu'elle persiste à travers un rebuild cloud-init — pas
+# seulement poussée à chaud via playbooks/infra/deploy-ci-ssh-key.yaml.
+ci_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE6IrDbpQqIZhXbNlVTjl1KPpr1YkOd3iHQ2xad/FX6N ansibleinfra-ci-2026-09-17"
+
 netbox_api_url: "https://netbox.etsmtl.club"
 netbox_api_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256

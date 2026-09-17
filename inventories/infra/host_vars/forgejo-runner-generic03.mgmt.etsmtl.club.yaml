@@ -10,8 +10,7 @@ ansible_password: !vault |
 
 vm_user: "{{ ansible_user }}"
 vm_password: "{{ ansible_password }}"
-vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"
-
+vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos\n{{ ci_ssh_public_key }}"
 # From git.etsmtl.club /admin/actions/runners "New runner"
 forgejo_runner_uuid: "081ac10a-b859-48b2-bbf0-5c1e0c63a810"
 forgejo_runner_registration_token: !vault |
