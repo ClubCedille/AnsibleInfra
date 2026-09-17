@@ -1,9 +1,16 @@
 ---
-# Déploie la clé publique CI (ansibleinfra-ci, files/ssh/ansibleinfra_ci.pub)
-# sur les hôtes SSH standards de l'inventaire infra, en mode additif
-# (authorized_key state=present, jamais exclusive=yes — ne touche pas aux
-# clés déjà présentes). Cette clé est ensuite utilisée par les runners
-# self-hosted via le secret ANSIBLE_SSH_PRIVATE_KEY (.github/workflows/).
+# One-shot : bootstrap de la clé publique CI (ansibleinfra-ci,
+# files/ssh/ansibleinfra_ci.pub) sur les VMs déjà provisionnées au moment
+# où la clé a été introduite (2026-09-17), en mode additif (authorized_key
+# state=present, jamais exclusive=yes — ne touche pas aux clés déjà
+# présentes). Cette clé est ensuite utilisée par les runners self-hosted
+# via le secret ANSIBLE_SSH_PRIVATE_KEY (.github/workflows/).
+#
+# Pour toute VM future (recréée ou nouvelle), la clé est portée par
+# vm_sshkeys (group_vars/all.yaml: ci_ssh_public_key) via le cloud-init de
+# cedille.proxmox.vm — ce playbook n'a plus besoin d'être rejoué pour elles.
+# Il ne reste utile que pour rattraper une VM existante qui, pour une
+# raison ou une autre, n'aurait pas reçu la clé lors du rollout initial.
 #
 # Périmètre volontairement explicite (whitelist), pas `hosts: all` moins des
 # exclusions — plusieurs groupes de l'inventaire ne sont pas de simples
@@ -21,9 +28,9 @@
 #     exclue explicitement (hors scope de ce rollout).
 #
 # Usage :
-#   make infra/deploy-ci-ssh-key DRY_RUN=1                    # --check --diff
-#   make infra/deploy-ci-ssh-key LIMIT=pve                    # sous-ensemble
-#   make infra/deploy-ci-ssh-key                               # run réel
+#   make oneoff/deploy-ci-ssh-key DRY_RUN=1                    # --check --diff
+#   make oneoff/deploy-ci-ssh-key LIMIT=pve                    # sous-ensemble
+#   make oneoff/deploy-ci-ssh-key                               # run réel
 #
 # Prérequis : être authentifié avec une clé déjà trustée sur les cibles
 # (bootstrap via l'agent SSH de l'opérateur).
