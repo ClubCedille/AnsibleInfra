@@ -61,7 +61,11 @@ vm_net:
   ip: "10.0.21.3"
   vip: "142.137.247.101"
   netmask: 24
-  custom_name: "wan"
+  # WAN is GUI-assigned per node like the other opt interfaces (not synced
+  # between HA members) — confirmed via /api/firewall/filter/get on each
+  # node 2026-09-17: opnsense01 WAN key is "wan", opnsense02 WAN key is
+  # "opt1" (its "opt2" is CICD, see vm_net_trunk_extra_vlans above).
+  custom_name: "opt1"
   gateway: "142.137.247.1"
 
 # HA sync interface addressing (opt15 / vtnet2, 10.255.254.252/30)
