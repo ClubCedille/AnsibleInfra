@@ -39,14 +39,10 @@ vm_proxmox_api:
     3633
   host: "10.0.21.51"
 
-# Réplique la config DHCP du WLC (VLAN 67, "AP-MGMT" pool):
-#   network 10.67.0.0 255.255.0.0 / dns-server 1.1.1.1 8.8.8.8
-#   option 43 hex f104.0a43.0032 (AP-manager suboption -> WLC 10.67.0.50)
-#   default-router 10.67.0.50 / lease 0 4 (4h)
-# Kea n'a pas de mot-clé "exclude" : l'exclusion se fait en scindant le pool
-# en plusieurs plages qui contournent les adresses réservées :
-#   - 10.67.0.1 - 10.67.2.1 hors pool (infra statique : gateway, DHCP01/02, WLC .50)
-#   - 10.67.5.100 hors pool (IP statique AP-24)
+# Réplique la config DHCP du WLC (VLAN 67, "AP-MGMT" pool) : option 43 hex
+# f104.0a43.0032 (AP-manager -> WLC 10.67.0.50), lease 4h. Kea n'a pas de mot-clé
+# "exclude" : le pool est scindé en 2 plages pour contourner .1-.2.1 (infra statique)
+# et .5.100 (AP-24 statique).
 netservices_dhcp:
   enabled: true
   supported_distribution: Ubuntu

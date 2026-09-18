@@ -25,13 +25,12 @@ opnsense_api_secret: !vault |
 # Node identity
 vm_is_master: true
 
-# Real LAN IP of the peer node (not the CARP VIP) — see
+# Real LAN IP of the peer node (not the CARP VIP), see
 # AnsibleRoles opnsense/roles/config/templates/carp-wireguard-hook.sh.j2.
 opnsense_peer_lan_ip: "10.0.21.3"
 
-# Interfaces assigned via OPNsense GUI for the VLAN21 segmentation chantier
-# (2026-09-09) — opt numbering confirmed different on opnsense02, so these
-# live per-host rather than in the shared group_vars/routers.yaml list.
+# Interfaces assignées via GUI (segmentation VLAN21, 2026-09-09) : opt numbering
+# diffère sur opnsense02, donc défini par host plutôt que dans routers.yaml.
 vm_net_trunk_extra_vlans:
   - id: 40
     interface_name: opt1
@@ -52,7 +51,7 @@ vm_net_trunk_extra_vlans:
     network: "10.0.48.0"
     parent_nic: vtnet0
 
-# Management IP — used as OPNsense API target (firewall: parameter)
+# Management IP, used as OPNsense API target (firewall: parameter)
 vm_net:
   ip: "10.0.21.2"
   vip: "142.137.247.101"
@@ -64,15 +63,10 @@ vm_net:
 opnsense_ha_device_ip: "10.255.254.253"
 opnsense_ha_peer_ip: "10.255.254.254"
 
-# Dedicated Alloy syslog listener port on monitoring01 (see
-# AnsibleRoles monitoring/roles/opnsense_syslog README — one port per node,
-# config.alloy.j2 only supports static labels per listener).
+# Port dédié sur monitoring01 (labels statiques par listener dans config.alloy.j2,
+# voir README du rôle opnsense_syslog).
 opnsense_syslog_alloy_port: 5140
 
-# os-telegraf is installed (confirmed 2026-09-04). The oxlorg.opnsense.package
-# module fires an async "install" job without waiting for it (see
-# AnsibleRoles monitoring/roles/opnsense_telegraf), so re-running the install
-# task on an already-installed plugin just wastes a call and can hit "system
-# needs to be upgraded beforehand" if a firmware check is pending. Once
-# installed, skip it here rather than teaching the role to poll.
+# os-telegraf installed (2026-09-04) ; le module fire-and-forget un job async,
+# re-run inutile et risque "system needs to be upgraded beforehand". Skip.
 opnsense_telegraf_manage_plugin: false

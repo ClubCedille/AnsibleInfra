@@ -98,8 +98,8 @@ devpi_password: !vault |
           30323365333734333762303463323532643033346332393136343034353366323833336137353664
           3864636163373664636432393636323936653166376162623263
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
-# Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
+# Cache de paquets interne (mirror direct, BasicAuth). Mirrors Ubuntu par
+# défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:
     username: fleet

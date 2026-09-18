@@ -18,8 +18,7 @@ vm_onboot: true
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ 'pve01' if inventory_hostname.startswith('dhcp01') else 'pve02' }}"
 
-# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
-# already uniform across both hosts.
+# Codifies existing live state (Proxmox API, 2026-09-10), uniforme sur les deux hosts.
 vm_pool: "RP-Management-Infra"
 vm_tags:
   - "PRODUCTION"

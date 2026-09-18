@@ -2,8 +2,8 @@
 vm_id: 1009014
 vm_name: k8s-shared-worker-4
 vm_proxmox_node: pve06
-# pve06 = tier "small" (125GiB/56 cores) → cible 16 cores / 24GB (RAM déjà à la cible,
-# conforme depuis le début — cf. notes.md).
+# pve06, tier "small" (125GiB/56 cores), cible 16 cores / 24GB (RAM déjà conforme
+# depuis le début, voir notes.md).
 vm_cpu_cores: 16
 vm_memory_mb: 24576
 

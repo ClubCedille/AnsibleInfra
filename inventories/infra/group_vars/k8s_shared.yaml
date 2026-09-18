@@ -1,19 +1,11 @@
 ---
-# Shared configuration for all k8s-shared nodes (controlplanes + workers).
-# Adopte dans l'inventaire Ansible des VMs qui existaient déjà avant ce repo
-# (aucune trace de k8s-shared dans AnsibleInfra avant l'issue AnsibleInfra#30).
-# Overrides par rôle (disque, réseau) dans group_vars/k8s_shared_controlplanes.yaml et
-# group_vars/k8s_shared_workers.yaml. Overrides par node (vm_id, vm_name, vm_proxmox_node,
-# vm_cpu_cores, vm_memory_mb) dans host_vars.
-#
-# NOTE API password : réutilise le mot de passe vaulté de group_vars/pve.yaml plutôt que d'en
-# re-vaulter une copie locale comme le fait k8s_poc.yaml — évite de dupliquer un secret sans
-# avoir accès au vault-password dans cette session. À aligner sur le pattern k8s_poc si
-# l'opérateur préfère une entrée vault dédiée.
-# Référencé via hostvars d'un host du groupe [pve] (pas directement "ansible_password") : les
-# hosts k8s_shared ne sont pas membres du groupe pve, donc group_vars/pve.yaml ne s'applique
-# pas à eux — "ansible_password" seul y est undefined (piège rencontré en exécution réelle le
-# 2026-08-17). pve01.mgmt.etsmtl.club est le host dont l'IP sert déjà d'endpoint API ci-dessous.
+# Shared configuration for all k8s-shared nodes (controlplanes + workers), adopted
+# into Ansible for VMs that already existed before this repo (AnsibleInfra#30).
+# Overrides par rôle dans k8s_shared_controlplanes/workers.yaml ; overrides par
+# node (vm_id, vm_name, vm_proxmox_node, cores/memory) dans host_vars.
+
+# Réutilise le password vaulté de group_vars/pve.yaml (pas de copie locale) via
+# hostvars d'un host [pve] : les hosts k8s_shared ne sont pas membres de ce groupe.
 vm_proxmox_api:
   user: "root@pam"
   password: "{{ hostvars['pve01.mgmt.etsmtl.club'].pve_api_password }}"
@@ -22,48 +14,29 @@ vm_proxmox_api:
 vm_disk_storage: RBD_Common
 vm_ostype: other
 
-# Codifies existing live state (verified via Proxmox API, 2026-09-10).
-# Confirmed 4/5 controlplanes and 6/8 workers already carry this pool +
-# their role-specific tag (group_vars/k8s_shared_controlplanes.yaml,
-# group_vars/k8s_shared_workers.yaml) — controlplane-4 and worker-6/7
-# were missing both despite being live and in active use (uptime ~24d
-# each) — this brings them in line with their siblings.
+# Codifies existing live state (Proxmox API, 2026-09-10) ; controlplane-4 et
+# worker-6/7 étaient les seuls à ne pas encore avoir ce pool/tag.
 vm_pool: "Management"
-# agent activé sous la forme exacte observée sur les 10 VMs existantes (vérifié via pvesh
-# le 2026-08-17), pas juste "agent: true" — inclut fstrim_cloned_disks et le type de canal.
+# Forme exacte observée sur les 10 VMs existantes (vérifié via pvesh), pas juste
+# "agent: true" : inclut fstrim_cloned_disks et le type de canal.
 vm_agent: "enabled=1,fstrim_cloned_disks=0,type=virtio"
 
-# Talos version + schematic confirmés en direct via `omnictl get machinestatuses -o yaml`
-# sur les 10 VMs k8s-shared existantes le 2026-08-17 (champ spec.schematic.fullid, identique
-# sur les 10 machines) — pas une valeur copiée de k8s-poc. Extensions : intel-ucode +
-# qemu-guest-agent (pas de lldpd, contrairement à k8s-poc).
-# Une VM control-plane existante rapporte encore un CD-ROM dans son inventaire matériel Talos
-# (device fantôme resté dans l'état interne d'Omni depuis l'installation initiale, taille
-# cohérente avec un ISO ~114MB) — c'est ce qui indique un boot ISO self-install classique
-# (pattern k8s-poc), et non un import d'image disque brute comme documenté dans une version
-# précédente de ce fichier. vm_talos_iso_filename doit rester synchronisé avec dest_filename
-# dans playbooks/proxmox/upload-talos-iso-k8s-shared.yaml.
+# Schematic/version confirmés en direct via omnictl le 2026-08-17 (pas copié de
+# k8s-poc) ; boot ISO self-install (CD-ROM fantôme observé dans Omni), pas d'import disque.
 vm_talos_version: "1.13.7"
 vm_talos_schematic_id: "1c8dd53e05ebedfc2cb12090b31b5dc2c16bdba3c42d8e18e717ef5cecc0dfc2"
 vm_talos_iso_filename: "talos-1.13.7-k8s-shared-nocloud-amd64.iso"
 
-# Réseau : adressage DHCP dynamique (10.5.9.0/24 observé sur le VLAN 1009, vérifié via
-# l'interface OPNsense vtnet0_vlan1009) — pas de cloud-init/ipconfig statique sur les VMs
-# existantes. Chaque VM k8s-shared a 2 ou 3 NICs (cf. group_vars par rôle) :
-#   net0 → VLAN 500  (10.5.0.0/24, usage exact non déterminé — présent sur tous les nodes)
-#   net1 → VLAN 1009 (10.5.9.0/24, réseau réel des nodes Talos/Kubernetes)
-#   net2 → VLAN 247  (IP publique, workers uniquement — cf. AnsibleRoles/proxmox create_vm.yaml)
-# Le mécanisme de réservation/attribution DHCP pour ces VLANs n'a été trouvé dans aucun repo
-# cloné (contrairement à k8s_poc_dhcp, géré par ce repo) — hors scope de cette issue.
+# DHCP dynamique sur VLAN 1009 (10.5.9.0/24), pas de cloud-init statique. net0=VLAN500,
+# net1=VLAN1009 (réseau Talos réel), net2=VLAN247 (IP publique, workers only).
 vm_net_bridge: vmbr1
 vm_net_device: virtio
 vm_net_mtu: 1500
 vm_net_mgmt_vlan: 500
 vm_net_pod_vlan: 1009
 
-# Talos ne lit pas cloud-init — champs requis par le rôle cedille.proxmox.vm mais non utilisés
-# par les playbooks de ce groupe (aucune tâche cloud-init dans k8s-shared-vms.yaml, les VMs
-# existantes n'ont pas de disque cloud-init).
+# Talos ne lit pas cloud-init ; champs requis par le rôle cedille.proxmox.vm mais
+# inutilisés ici (pas de disque cloud-init sur ces VMs).
 vm_user: "unused"
 vm_password: "unused"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"

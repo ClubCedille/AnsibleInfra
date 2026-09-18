@@ -1,5 +1,5 @@
 ---
-# SNMP community for OPNSense — vault this once SNMP is configured on OPNSense
+# SNMP community for OPNSense ; vault this once SNMP is configured on OPNSense:
 # ansible-vault encrypt_string 'public' --name 'monitoring_snmp_community'
 monitoring_snmp_community: public
 
@@ -27,7 +27,7 @@ prometheus_rule_files: []
 prometheus_alerting:
   alertmanagers: []
 
-# Static scrape jobs — dynamic jobs are built in playbooks/sc/monitoring.yaml pre_tasks
+# Static scrape jobs ; dynamic jobs are built in playbooks/sc/monitoring.yaml pre_tasks
 monitoring_base_scrape_configs:
   - job_name: prometheus
     targets:

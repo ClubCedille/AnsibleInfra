@@ -15,14 +15,12 @@ vm_delete_if_exists: false
 vm_start_after_creation: true
 vm_onboot: true
 
-# No pull-through registry mirror on the mgmt network — runners pull directly
+# No pull-through registry mirror on the mgmt network, runners pull directly
 # from upstream registries.
 docker_registry_mirror_enabled: false
 
-# cedille.docker.install always runs "docker compose up" against
-# install_docker_compose_target_dir at the end of the role, even with no
-# compose stack to manage. An empty "services: {}" project makes that fail
-# with "no service selected", so give it one trivial idle service instead.
+# cedille.docker.install always runs "docker compose up", which fails on an
+# empty "services: {}" project ("no service selected"); give it a noop idle service.
 install_docker_compose_source_type: inline
 install_docker_compose_content: |
   services:
@@ -32,14 +30,12 @@ install_docker_compose_content: |
       restart: unless-stopped
 
 vm_name: "{{ inventory_hostname }}"
-# Placement de départ, réparti sur 3 nœuds — pas de contrainte particulière
-# ici (contrairement à la flotte Forgejo qui suit un historique de VM
-# existantes), à ajuster si un nœud finit déséquilibré.
+# Placement de départ réparti sur 3 nœuds (pas d'historique existant à respecter,
+# contrairement à Forgejo) ; à ajuster si un nœud finit déséquilibré.
 vm_proxmox_node: "{{ ['pve01', 'pve02', 'pve03'][(vm_id | int) % 3] }}"
 
-# Créés directement sur le VLAN CI/CD (tag 40, 10.0.40.0/24) — pas de
-# migration nécessaire, contrairement à la flotte Forgejo qui existait
-# déjà sur VLAN21 avant la segmentation.
+# Créés directement sur le VLAN CI/CD (tag 40), contrairement à Forgejo qui
+# existait déjà sur VLAN21 avant la segmentation et a dû être migrée.
 vm_net:
   mac: "{{ vm_mac }}"
   bridge: "vmbr1"
@@ -65,10 +61,8 @@ vm_proxmox_api:
 # Organisation GitHub cible pour l'enregistrement des runners.
 github_runner_org: "ClubCedille"
 
-# Runner groups à créer côté org avant tout enregistrement (un par pool —
-# voir github_runner_group dans group_vars/github_runners_{generic,kvm,dind}.yaml).
-# Même visibilité que le groupe "Default" existant : tous les repos privés/
-# internes, pas les repos publics.
+# Un groupe par pool (voir github_runner_group dans les group_vars par pool),
+# même visibilité que "Default" : repos privés/internes, pas publics.
 github_runner_groups_desired:
   - name: "generic"
     visibility: "all"
@@ -80,17 +74,8 @@ github_runner_groups_desired:
     visibility: "all"
     allows_public_repositories: false
 
-# Jeton admin utilisé UNIQUEMENT pour appeler
-# POST /orgs/{org}/actions/runners/registration-token et
-# GET/POST /orgs/{org}/actions/runner-groups à chaque exécution du playbook
-# (jamais utilisé directement par un runner). PAT classic avec le scope
-# admin:org complet — testé le 2026-09-17 : le sous-scope manage_runners:org
-# seul ne suffit pas pour ces endpoints ("You must be an org admin or have
-# the runners and runner groups fine-grained permission", x-accepted-oauth-
-# scopes: admin:org). Voir aussi la discussion du 2026-09-10 : l'App GitHub
-# existante (kv-system/github/clubcedille) n'a pas la permission
-# organization_self_hosted_runners, donc pas utilisable telle quelle pour
-# ça tant que cette permission n'est pas accordée.
+# Jeton admin (registration-token + runner-groups API), jamais utilisé par un
+# runner. Scope admin:org requis : manage_runners:org seul ne suffit pas (testé 2026-09-17).
 github_runner_admin_token: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           35613230653037666530623039396339393731333566346462376437646665393731363437663033
@@ -100,9 +85,8 @@ github_runner_admin_token: !vault |
           66643230393137333466323336623536323865376663333266626139643030633463643135333838
           3263353038623733393530623138323030333930396630333863
 
-# Dedicated Proxmox pool for the fleet, distinct from RP-CICD-Runners
-# (Forgejo) pour garder les deux fournisseurs CI/CD séparés en un coup
-# d'oeil dans l'UI Proxmox.
+# Pool dédié, distinct de RP-CICD-Runners (Forgejo) pour séparer les deux
+# fournisseurs CI/CD dans l'UI Proxmox.
 vm_pool: "RP-CICD-Runners-GH"
 vm_pool_comment: "Flotte runners CI/CD GitHub Actions (generic/kvm/dind)"
 vm_tags:

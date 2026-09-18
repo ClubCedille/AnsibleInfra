@@ -1,8 +1,7 @@
 ---
-# Pool "générique" — exécution native sur l'hôte (pas de conteneur
-# intermédiaire comme act_runner/Forgejo). L'utilisateur github-runner est
-# dans le groupe docker, donc un `docker build`/`buildx` dans un `run:` de
-# workflow fonctionne directement, sans montage de socket ni mode privilégié.
+# Pool "générique" : exécution native sur l'hôte, pas de conteneur intermédiaire.
+# L'utilisateur github-runner est dans le groupe docker, donc `docker build`/`buildx`
+# fonctionne directement dans un `run:` de workflow.
 github_runner_labels:
   - "generic"
 

@@ -19,10 +19,8 @@ vm_onboot: true
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ 'pve01' if inventory_hostname.startswith('dhcp01') else 'pve02' }}"
 
-# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
-# already uniform across both hosts. Not a child of [k8s_poc] in
-# hosts.ini, so vm_pool is repeated here rather than inherited from
-# group_vars/k8s_poc.yaml.
+# Codifies existing live state (Proxmox API, 2026-09-10) ; pas un enfant de
+# [k8s_poc] dans hosts.ini, donc vm_pool est répété plutôt qu'hérité.
 vm_pool: "RP-K8s-POC"
 vm_tags:
   - "PRODUCTION"

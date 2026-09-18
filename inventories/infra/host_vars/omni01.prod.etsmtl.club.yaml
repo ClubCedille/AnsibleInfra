@@ -58,15 +58,12 @@ vm_proxmox_api:
   host: "10.0.21.51"
 
 # --- Omni ---
-# In Authentik: create a SAML provider with:
-#   ACS URL  : https://omni.etsmtl.club/saml/acs
-#   Audience : https://omni.etsmtl.club/saml/metadata  (Omni SP Entity ID, NOT the ACS URL)
-#   Send the "groups" attribute mapped to the user's Authentik groups.
+# Authentik SAML provider : ACS https://omni.etsmtl.club/saml/acs, Audience
+# https://omni.etsmtl.club/saml/metadata (Entity ID, pas l'ACS URL), attribut "groups".
 omni_saml_url: "https://auth.etsmtl.club/application/saml/omni-saml/metadata/"
 
-# SAMLLabelRules — applied via omnictl on first user login.
-# Label key format: saml.omni.sidero.dev/<saml-attribute-name>
-# Authentik must be configured to send a "groups" attribute.
+# Appliquées via omnictl au premier login. Label key format :
+# saml.omni.sidero.dev/<saml-attribute-name>.
 omni_saml_attribute_mappings:
   groups: groups
 
@@ -84,7 +81,7 @@ omni_saml_label_rules:
       - "saml.omni.sidero.dev/groups/omni-viewer"
     role: Reader
 
-# Breaking-glass admin — email must match an Authentik user
+# Breaking-glass admin ; email must match an Authentik user
 omni_initial_users:
   - "admin@etsmtl.club"
 
@@ -164,13 +161,12 @@ omni_service_account_key: !vault |
           61313661383139643161643162366230343566646264343834623138336633323962346432643036
           33373730356666626364
 
-# BSL EULA — https://github.com/siderolabs/omni/blob/main/LICENSE
+# BSL EULA, https://github.com/siderolabs/omni/blob/main/LICENSE
 omni_eula_name: "Club Cedille"
 omni_eula_email: "infra@etsmtl.club"
 
-# omni.asc — GPG key RSA4096 (no passphrase) for etcd encryption
-# Generate (see AnsibleRoles omni/roles/deploy/defaults/main.yaml for full instructions), then:
-#   gpg --export-secret-key --armor omni@internal.local | ansible-vault encrypt_string --stdin-name omni_wireguard_private_key
+# omni.asc, GPG key RSA4096 (no passphrase) for etcd encryption. Generate (see
+# AnsibleRoles omni/roles/deploy/defaults/main.yaml), then ansible-vault encrypt_string.
 omni_wireguard_private_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   64666232323566383237656331326134386638316634313532663461346134313334653738393361

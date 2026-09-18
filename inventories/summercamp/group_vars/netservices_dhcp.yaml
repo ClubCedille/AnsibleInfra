@@ -152,7 +152,7 @@ netservices_dhcp:
           socket-type: unix
           socket-name: /run/kea/kea4-ctrl-socket
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:

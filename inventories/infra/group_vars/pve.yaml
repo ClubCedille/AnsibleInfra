@@ -10,8 +10,8 @@ ansible_password: !vault |
 pve_api_user: "root@pam"
 pve_api_password: "{{ ansible_password }}"
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
-# Mirrors Debian (pve est Debian, pas Ubuntu) — pas les défauts du rôle.
+# Cache de paquets interne (mirror direct, BasicAuth). Mirrors Debian (pve est
+# Debian, pas Ubuntu), pas les défauts du rôle.
 pkgcache_apt:
   credentials:
     username: fleet
@@ -38,17 +38,10 @@ pkgcache_apt:
 
 pve_trunk_bridge: vmbr1
 
-# VLANs à maintenir actifs (sub-interfaces PVE host).
-#
-# netbox_name / netbox_tag / netbox_prefix / netbox_ignore sont consommés
-# uniquement par playbooks/netbox/sync_vlans.yaml (source de vérité unique
-# pour le trunk PVE ET pour NetBox — pas de liste dupliquée).
-#   - netbox_ignore: true   -> VLAN exclu du sync NetBox (day-0 bootstrap,
-#     lien direct ÉTS hors périmètre club, etc. — décision 2026-09-17).
-#   - netbox_tag: "event"   -> track événementiel/CTF, recréé/détruit à
-#     chaque édition (défaut "permanent" si omis).
-#   - netbox_prefix         -> CIDR routé sur ce VLAN, si applicable (VLANs
-#     sans prefix classique -- liens L2, segments partagés -- l'omettent).
+# VLANs à maintenir actifs (sub-interfaces PVE). netbox_* consommés uniquement par
+# sync_vlans.yaml (source de vérité unique trunk+NetBox) : netbox_ignore exclut du
+# sync (day-0/hors périmètre club), netbox_tag="event" pour le track événementiel
+# (sinon "permanent"), netbox_prefix pour le CIDR routé si applicable.
 pve_vlans_desired:
   - id: 15
     comment: "CEPH - MTU 9216"

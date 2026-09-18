@@ -42,8 +42,8 @@ vm_start_after_creation: true
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ {0: 'pve01', 1: 'pve02', 2: 'pve03', 3: 'pve04', 4: 'pve07'}[(vm_id | int) % 5] }}"
 
-# Même /16, même VLAN que les challenges par-équipe (inventories/summercamp/group_vars/chall.yaml) —
-# les single-instance vivent juste sur un autre sous-ensemble d'adresses (10.130.0.{100+idx}).
+# Même /16, même VLAN que chall.yaml ; sous-ensemble d'adresses différent
+# (10.130.0.{100+idx}).
 vm_net:
   bridge: "vmbr1" # Management bridge is vmbr0; trunk bridge is vmbr1
   vlan: "68"
@@ -55,9 +55,8 @@ vm_net:
 
 docker_registry_mirror_enabled: true
 
-# node_exporter (textfile collector for ctf_docker_state_exporter) — mêmes overrides
-# que group_vars/chall.yaml et group_vars/monitoring_hosts.yaml : éviter le template
-# récursif archive_url du rôle et le mode=0755 par défaut qui retire le sticky bit de /tmp.
+# Mêmes overrides que chall.yaml/monitoring_hosts.yaml : évite le archive_url
+# récursif du rôle et le mode=0755 par défaut sur /tmp.
 node_exporter_paths:
   install_dir: /opt/node_exporter
   archive_download_dir: /opt/monitoring-downloads
@@ -79,7 +78,7 @@ docker_state_exporter_extra_env:
   LABEL_CHALLENGE: "{{ (group_names | difference(['chall', 'single_instance_challenges'])) | first }}"
   LABEL_TEAM: "shared"
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:

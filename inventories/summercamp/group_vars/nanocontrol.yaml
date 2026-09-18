@@ -56,7 +56,7 @@ install_docker_compose_source_type: template
 install_docker_compose_template_src: template/nanocontrol.yml.j2
 install_docker_compose_filename: docker-compose.yml
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:

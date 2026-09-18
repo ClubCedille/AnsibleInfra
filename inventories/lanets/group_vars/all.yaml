@@ -32,10 +32,8 @@ vm_onboot: true
 vm_start_after_creation: true
 vm_delete_if_exists: false
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
-# Mirrors Ubuntu par défaut du rôle (image de base de cet inventaire ci-dessus).
-# S'applique sans effet aux groupes non-apt (opnsense, switches_event) tant
-# qu'aucun playbook n'y inclut le rôle.
+# Cache de paquets interne (mirror direct, BasicAuth), mirrors Ubuntu par défaut.
+# Sans effet sur les groupes non-apt (opnsense, switches_event).
 pkgcache_apt:
   credentials:
     username: fleet
