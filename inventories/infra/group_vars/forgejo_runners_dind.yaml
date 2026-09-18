@@ -1,8 +1,8 @@
 ---
-# Pool "Docker-in-Docker" pour builds/push d'images. Isolation réelle depuis
-# 2026-09-18 (AnsibleRoles feat/dind-real-isolation) : sidecar docker:dind
-# privilégié séparé du job via container.docker_host, plus d'accès au dockerd
-# hôte. Avant cette date : DooD (socket hôte monté), voir memory ci_dind_pools_audit.
+
+# Pool "Docker-in-Docker" — pour les jobs de build/push d'images.
+# Sidecar docker:dind réel depuis AnsibleRoles#98 (remplace le DooD
+# précédent) — voir forgejo_runner_dind_sidecar_enabled dans AnsibleRoles.
 vm_disk_size: "80G" # cache de layers Docker plus gourmand que le pool générique
 
 forgejo_runner_dind_sidecar_enabled: true
