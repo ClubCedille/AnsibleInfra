@@ -15,6 +15,10 @@ on:
         options:
           - infra
           - event
+      limit:
+        description: "Limiter aux hotes correspondants (optionnel, vide = tout le groupe)"
+        required: false
+        default: ""
 
 jobs:
   run-target:
@@ -109,6 +113,7 @@ jobs:
         env:
           TARGET: ${{ inputs.target }}
           INVENTORY_NAME: ${{ inputs.inventory }}
+          LIMIT: ${{ inputs.limit }}
           HAS_VAULT_SECRET: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
         run: |
           set -euo pipefail
@@ -116,7 +121,7 @@ jobs:
           if [ "$HAS_VAULT_SECRET" = "true" ]; then
             vault_args=(VAULT_PASSWORD_FILE="$RUNNER_TEMP/ansible_vault_pass")
           fi
-          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN" "${vault_args[@]}"
+          make "$TARGET" inventory="inventories/${INVENTORY_NAME}/hosts.ini" DRY_RUN="$DRY_RUN" LIMIT="$LIMIT" "${vault_args[@]}"
 
       - name: Clean up SSH deploy key
         if: always()
