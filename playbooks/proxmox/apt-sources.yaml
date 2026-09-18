@@ -1,0 +1,14 @@
+---
+# Gère les sources APT (Proxmox/Ceph/Debian) en deb822 sur les hôtes PVE.
+# Défauts du rôle (cedille.proxmox.apt_sources >= 2.1.0) déjà alignés sur
+# l'état réel du parc (trixie, ceph-tentacle, deb.debian.org) : voir
+# AnsibleRoles#131. Aucun override nécessaire.
+# Hôtes : pve
+# Usage : make proxmox/apt-sources (DRY_RUN=1 recommandé avant un premier run)
+
+- name: Manage APT sources on Proxmox hosts
+  hosts: pve
+  gather_facts: true
+  become: true
+  roles:
+    - cedille.proxmox.apt_sources
