@@ -1,28 +1,12 @@
 ---
-# Synchronise dans NetBox les VMs déclarées dans l'inventaire Ansible
-# (groupe virtual_machines, inventories/infra/hosts.ini), plutôt que de
-# coder une liste en dur : l'inventaire Ansible EST la source de vérité
-# (cf. playbooks/proxmox/census_vms.yaml pour l'audit qui a servi à le
-# compléter le 2026-09-17).
-#
-# Périmètre de ce premier incrément : uniquement les Virtual Machines
-# (Cluster "OneBigCluster", déjà existant, créé à la main). Les Devices
-# physiques (pve/switches/routers) sont déjà mappés manuellement dans
-# NetBox et ne sont pas touchés ici. L'assignation IP/interface est
-# volontairement laissée à un incrément suivant (nécessite de croiser
-# chaque ansible_host avec le bon prefix/masque, cf. vars/vlans.yml).
-#
-# Tourne en boucle sur localhost (comme sync_vlans.yaml) plutôt que de
-# cibler chaque host directement : cibler les hosts ouvre jusqu'à `forks`
-# (10 par défaut, ansible.cfg) connexions parallèles vers l'API NetBox,
-# ce qui provoque des 503/échecs de connexion sur cette instance.
+# Synchronise dans NetBox les VMs du groupe virtual_machines (hosts.ini) : l'inventaire
+# Ansible est la source de vérité, pas de liste dupliquée. Devices physiques déjà
+# mappés à la main, hors scope ici. Tourne sur localhost (pas par host) pour éviter
+# les 503 API dus aux connexions parallèles (voir `forks` dans ansible.cfg).
 #
 # Usage :
 #   make netbox/sync_vms
 #   make netbox/sync_vms DRY_RUN=1
-#
-# Ajouter un groupe à synchroniser : l'ajouter à [virtual_machines:children]
-# dans inventories/infra/hosts.ini.
 
 - name: Sync NetBox Virtual Machines from Ansible inventory (infra)
   hosts: localhost

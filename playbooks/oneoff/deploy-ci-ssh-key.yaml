@@ -1,31 +1,8 @@
 ---
-# One-shot : bootstrap de la clé publique CI (ansibleinfra-ci,
-# files/ssh/ansibleinfra_ci.pub) sur les VMs déjà provisionnées au moment
-# où la clé a été introduite (2026-09-17), en mode additif (authorized_key
-# state=present, jamais exclusive=yes, ne touche pas aux clés déjà
-# présentes). Cette clé est ensuite utilisée par les runners self-hosted
-# via le secret ANSIBLE_SSH_PRIVATE_KEY (.github/workflows/).
-#
-# Pour toute VM future (recréée ou nouvelle), la clé est portée par
-# vm_sshkeys (group_vars/all.yaml: ci_ssh_public_key) via le cloud-init de
-# cedille.proxmox.vm : ce playbook n'a plus besoin d'être rejoué pour elles.
-# Il ne reste utile que pour rattraper une VM existante qui, pour une
-# raison ou une autre, n'aurait pas reçu la clé lors du rollout initial.
-#
-# Périmètre volontairement explicite (whitelist), pas `hosts: all` moins des
-# exclusions : plusieurs groupes de l'inventaire ne sont pas de simples
-# hôtes SSH :
-#   - k8s_poc_controlplanes/k8s_poc_workers, k8s_shared*, k8s_cedille_* :
-#     Talos Linux, pas de sshd (API Talos sur 50000/50001), hors scope.
-#     (k8s_poc_dhcp est différent : ce sont des VMs Ubuntu classiques qui
-#     servent le DHCP/PXE du cluster Talos, incluses ci-dessous.)
-#   - ipmi (ilo/idrac)                    : BMC, plan d'auth différent
-#     (Redfish/comptes locaux), hors scope.
-#   - switches (nxos/ios)                 : pas de ~/.ssh/authorized_keys
-#     standard, mécanisme par plateforme (ex. cisco.nxos.nxos_user avec
-#     sshkey), hors scope de ce playbook, à traiter séparément si besoin.
-#   - vlan66_dhcp/vlan67_dhcp             : infra d'événement LANETS,
-#     exclue explicitement (hors scope de ce rollout).
+# One-shot : ajoute la clé publique CI (additif, jamais exclusive) sur les VMs déjà
+# provisionnées avant son introduction (2026-09-17). Pour les VMs futures, portée par
+# vm_sshkeys/cloud-init (group_vars/all.yaml) : ce playbook ne sert qu'au rattrapage.
+# Whitelist explicite de hosts SSH classiques (exclut Talos/IPMI/switches/event LANETS).
 #
 # Usage :
 #   make oneoff/deploy-ci-ssh-key DRY_RUN=1                    # --check --diff

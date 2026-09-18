@@ -39,9 +39,8 @@
   gather_facts: false
   become: true
   vars:
-    # cedille.github.runner defaults (github_runner_paths.data_dir) aren't in
-    # scope here (this play doesn't run the role), so this must stay in
-    # sync with that role's default data_dir.
+    # cedille.github.runner defaults aren't in scope here (role not run), so this
+    # must stay in sync with the role's default data_dir.
     _github_runner_data_dir: /var/lib/github-runner
   tasks:
     - name: Check for an existing .runner registration file

@@ -1,13 +1,8 @@
 ---
-# Déploie Grafana Alloy (log shipping) sur les hôtes PVE et NAS (infra permanente).
-# Pousse les logs système/PVE/Ceph/NAS vers Loki centralisé dans k8s-shared
-# (voir k8s-shared#429/#430) -- BasicAuth requise, identifiants générés par
-# terraform/monitoring/push-auth-vault (Vault kv/data/monitoring/default/
-# loki-push-htpasswd, déjà appliqué), username "alloy" fixé côté Terraform.
-# PVE et NAS sont journald-only (rsyslog désactivé) : les daemons applicatifs
-# sont donc collectés via loki.source.journal, pas des fichiers /var/log/*.log
-# qui n'existent plus. HA (pve-ha-crm/lrm, watchdog-mux), ZFS (zfs-zed) et le
-# firewall PVE sont volontairement exclus (non utilisés en prod).
+# Déploie Grafana Alloy (log shipping) sur PVE et NAS (infra permanente), pousse
+# vers Loki centralisé dans k8s-shared (BasicAuth, voir k8s-shared#429/#430).
+# PVE/NAS sont journald-only (rsyslog désactivé) : collecte via loki.source.journal.
+# HA (pve-ha-crm/lrm), ZFS (zfs-zed) et firewall PVE volontairement exclus.
 # Hôtes : monitoring_alloy
 # Usage : make monitoring/infra-alloy
 
@@ -134,11 +129,8 @@
           unit: kernel
           env: infra
           instance: "{{ ansible_hostname }}"
-        # pve03/pve04 (HPE Gen9, PCIe root port 00:02.2 hosting the 82599ES
-        # 10G NIC) are stuck in a PCIe PME spurious-interrupt storm: a known
-        # ixgbe/82599 kernel bug, not fixable without a reboot
-        # (pcie_pme=nomsi) or a live PCI rescan. Drop it here so it doesn't
-        # flood Loki in the meantime, see Plateforme-Cedille#657.
+        # pve03/pve04 (HPE Gen9): known ixgbe/82599 PCIe PME spurious-interrupt storm,
+        # not fixable without a reboot/PCI rescan. See Plateforme-Cedille#657.
         drop_regex: "PME: Spurious native interrupt"
   roles:
     - cedille.monitoring.alloy

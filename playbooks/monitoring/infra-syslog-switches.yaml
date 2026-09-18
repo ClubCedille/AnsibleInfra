@@ -1,18 +1,8 @@
 ---
-# Déploie Grafana Alloy sur monitoring01 en mode récepteur syslog. Un seul
-# Alloy tourne sur monitoring01 (un seul config.alloy possible), donc TOUTES
-# les sources syslog du site sont déclarées ici, pas seulement les switches
-# malgré le nom du fichier -- inclut maintenant le cluster CARP OPNsense
-# (opnsense01/02), voir infra-opnsense.yaml pour la configuration côté
-# OPNsense (destination syslog distante, rôle cedille.monitoring.opnsense_syslog).
-# Filtre en allowlist pour les switches : ne garde que les événements
-# interfaces/port-channel/STP (voir la conf "logging server" sur le switch
-# lui-même, appliquée manuellement). Pas de filtre pour OPNsense (system +
-# firewall + CARP/HA -- portée volontairement large, voir README du rôle
-# opnsense_syslog).
-# Pousse vers Loki centralisé dans k8s-shared (voir k8s-shared#429/#430) --
-# mêmes identifiants BasicAuth que infra-alloy.yaml (Vault kv/data/
-# monitoring/default/loki-push-htpasswd, username "alloy").
+# Déploie Grafana Alloy sur monitoring01 en mode récepteur syslog (seule instance,
+# donc TOUTES les sources syslog du site sont ici : switches + cluster CARP OPNsense,
+# voir infra-opnsense.yaml). Allowlist pour les switches, portée large pour OPNsense.
+# Pousse vers Loki centralisé dans k8s-shared (mêmes identifiants qu'infra-alloy.yaml).
 # Hôtes : monitoring_core
 # Usage : make monitoring/infra-syslog-switches
 
@@ -21,13 +11,8 @@
   gather_facts: true
   become: true
   vars:
-    # NX-OS (7.0.3.I6(2) sur data01) émet un syslog non conforme RFC3164
-    # ("<189>: 2026 Sep 2 18:24:04 UTC: %VSHD-...", deux-points + année sur
-    # 4 chiffres juste après le PRI), rejeté silencieusement par le parser
-    # rfc3164 (aucune erreur nulle part, juste zéro donnée dans Loki : root
-    # cause trouvée en confirmant par tcpdump qu'un paquet réel arrivait
-    # bien côté réseau). "raw" évite le parsing d'en-tête entièrement, on
-    # n'a besoin que du contenu du message pour le filtre allowlist.
+    # NX-OS émet un syslog non conforme RFC3164, rejeté silencieusement (zéro
+    # donnée dans Loki). "raw" évite le parsing d'en-tête, on garde juste le message.
     alloy_custom_args:
       - "--stability.level=experimental"
     monitoring_loki_password: !vault |
@@ -57,23 +42,8 @@
         # tout le reste du syslog de data01 est jeté (voir stage.drop).
         keep_regex: "(?P<interesting>%ETHPORT-|%ETH_PORT_CHANNEL-|%STP-)"
 
-      # OPNsense : un port dédié par nœud (voir host_vars
-      # opnsense_syslog_alloy_port) car config.alloy.j2 applique un jeu de
-      # labels STATIQUE par listener : deux nœuds sur un seul port seraient
-      # indistinguables dans Loki (voir README du rôle opnsense_syslog).
-      #
-      # ⚠ Format non vérifié empiriquement (voir README opnsense_syslog
-      # "État de validation") -- rfc3164 est un pari raisonnable (OPNsense
-      # utilise syslog-ng avec framing legacy/BSD par défaut, rfc5424=false
-      # côté destination), mais data01/NX-OS a déjà démontré qu'un firmware
-      # peut émettre un framing non conforme que rfc3164 rejette
-      # silencieusement (zéro erreur nulle part, juste zéro donnée). Avant de
-      # faire confiance à ces deux sources : vérifier
-      # loki_source_syslog_entries_total / _parsing_errors_total sur
-      # monitoring01:12345/metrics après un peu de trafic réel. Si ça reste à
-      # zéro malgré des paquets confirmés (tcpdump port 5140/5141), basculer
-      # syslog_format en "raw" comme pour data01 -- rien à changer côté
-      # OPNsense pour ce fallback.
+      # Port dédié par nœud (labels statiques par listener, voir host_vars
+      # opnsense_syslog_alloy_port). Si zéro donnée malgré trafic confirmé, basculer en "raw".
       - name: opnsense01
         listen_address: "0.0.0.0:5140"
         protocol: udp
@@ -82,10 +52,8 @@
           job: opnsense
           instance: opnsense01
           env: infra
-        # Pas d'allowlist -- portée volontairement large (system + firewall
-        # + CARP/HA), voir README du rôle opnsense_syslog. keep_regex reste
-        # requis par le template (boucle for inconditionnelle) : "." matche
-        # toute ligne non vide, donc ne filtre rien en pratique.
+        # Pas d'allowlist, portée volontairement large (system + firewall + CARP/HA).
+        # keep_regex requis par le template ; "." matche tout, ne filtre rien ici.
         keep_regex: "(?P<interesting>.)"
 
       - name: opnsense02

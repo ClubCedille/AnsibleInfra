@@ -1,9 +1,7 @@
 ---
-# Sous-tâches pour playbooks/netbox/sync_vm_interfaces.yaml, inclus en
-# boucle sur vm_name (un `block:` ne peut pas être bouclé directement en
-# Ansible). Lit vm_nets (multi-NIC) ou vm_net (single-NIC, historique)
-# directement depuis les hostvars : aucune donnée dupliquée dans playbooks/
-# netbox/vars/.
+# Sous-tâches pour sync_vm_interfaces.yaml, incluses en boucle sur vm_name (un
+# `block:` ne peut pas être bouclé directement). Lit vm_nets/vm_net depuis les
+# hostvars, aucune donnée dupliquée dans playbooks/netbox/vars/.
 
 - name: Determine NIC list for this VM
   ansible.builtin.set_fact:

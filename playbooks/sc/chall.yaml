@@ -60,15 +60,8 @@
   gather_facts: true
   become: true
   pre_tasks:
-    # IMPORTANT (scale: this group can grow to 600-700+ VMs as more per-team
-    # challenges are added): delegate_to: localhost + run_once: true means
-    # GitHub is hit exactly ONCE for the whole play, regardless of host count.
-    # The archive is then pushed host-by-host over SSH (copy). The role's own
-    # "Download Node Exporter archive" get_url task targets this exact same
-    # dest path: since the file already exists with a matching checksum, it
-    # short-circuits locally and never re-downloads from GitHub. Do NOT remove
-    # this staging step or per-host count growth will start tripping GitHub's
-    # unauthenticated rate limit (60 req/h per source IP).
+    # delegate_to: localhost + run_once ensures GitHub is hit exactly ONCE (scales to
+    # 600-700+ VMs). Do NOT remove: per-host downloads would hit GitHub's rate limit.
     - name: Ensure local archive staging directory exists  # noqa: run-once[task]
       ansible.builtin.file:
         path: /tmp/monitoring-archives
@@ -104,9 +97,8 @@
     - cedille.monitoring.docker_state_exporter
 
   post_tasks:
-    # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:
-    # when node_exporter_extra_args is empty, Restart=on-failure gets concatenated
-    # to the --collector.textfile.directory argument, causing node_exporter to hang.
+    # trim_blocks bug in the role template: empty node_exporter_extra_args
+    # concatenates Restart=on-failure into the previous arg, hanging the service.
     - name: Fix node_exporter service unit
       ansible.builtin.copy:
         dest: "{{ node_exporter_paths.service_unit }}"

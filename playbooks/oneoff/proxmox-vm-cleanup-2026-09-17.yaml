@@ -1,23 +1,8 @@
 ---
-# Nettoyage ponctuel décidé le 2026-09-17 suite au recensement complet des
-# VMs Proxmox (playbooks/proxmox/census_vms.yaml) :
-#
-#   1. Suppression de VMs confirmées obsolètes/hors scope :
-#      - arena01-16.arena.etsmtl.club (16 VMs, stoppées) : code d'un projet,
-#        pas de l'infra club, à supprimer.
-#      - clonezilla.event.etsmtl.ca, jumpbox.dci.etsmtl.club,
-#        opnsense-template, opnsense.template.etsmtl.club,
-#        uploadbox.dciets.com : confirmés obsolètes/doublons.
-#      trackmania.event.lanets.ca est explicitement CONSERVÉE (utile pour
-#      le prochain Lan_ETS), ne pas y toucher.
-#
-#   2. Renommage (metadata Proxmox seulement, pas le hostname invité) pour
-#      aligner sur la convention FQDN existante :
-#      - omni01-prod -> omni01.prod.etsmtl.club
-#      - monitoring01-infra -> monitoring-internal.etsmtl.club
-#
-# Playbook à usage unique, ids/nœuds figés au moment du recensement
-# (2026-09-17), à ne pas relancer tel quel après application.
+# Nettoyage ponctuel du 2026-09-17 (suite au recensement census_vms.yaml) : supprime
+# les VMs confirmées obsolètes (16 VMs arena*, clonezilla, jumpbox.dci, opnsense-template,
+# uploadbox) et renomme omni01-prod/monitoring01-infra vers la convention FQDN.
+# Playbook à usage unique, IDs figés au recensement : ne pas relancer tel quel.
 #
 # Usage :
 #   make oneoff/proxmox-vm-cleanup-2026-09-17

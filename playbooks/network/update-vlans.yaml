@@ -109,11 +109,8 @@
     _pve_vlans_to_remove: "{{ hostvars[groups['pve'][0]]['pve_vlans_to_remove'] }}"
 
   tasks:
-    # NX-OS VLAN names reject spaces and most punctuation (max ~32 chars):
-    # pve_vlans_desired's `comment` field is free-form documentation text
-    # (spaces, parens, accents) meant for Proxmox interface comments, which
-    # have no such restriction. Sanitize a switch-only copy here rather
-    # than constraining the source data.
+    # NX-OS VLAN names reject spaces/punctuation (max ~32 chars); sanitize a
+    # switch-only copy here rather than constraining the source `comment` field.
     - name: Build NX-OS-safe VLAN name for each desired VLAN
       ansible.builtin.set_fact:
         _pve_vlans_desired_nxos: >-
