@@ -59,9 +59,8 @@
     - cedille.monitoring.node_exporter
 
   post_tasks:
-    # cedille.monitoring.node_exporter service unit template has a trim_blocks bug:
-    # when node_exporter_extra_args is empty, Restart=on-failure gets concatenated
-    # to the --collector.textfile.directory argument, causing node_exporter to hang.
+    # trim_blocks bug in the role template: empty node_exporter_extra_args
+    # concatenates Restart=on-failure into the previous arg, hanging the service.
     - name: Fix node_exporter service unit
       ansible.builtin.copy:
         dest: "{{ node_exporter_paths.service_unit }}"
@@ -93,12 +92,8 @@
   hosts: monitoring_core
   become: true
   pre_tasks:
-    # The Grafana apt "loki" package does not reliably create the loki system
-    # user/group on install (cedille.monitoring.loki role assumes it does), which
-    # makes "Ensure Loki directories exist" fail with "chgrp failed: failed to
-    # look up group loki". Create them ourselves before the role runs.
-    # A system user (useradd -r) does not get an auto-created private group on
-    # Ubuntu, so the group must be created explicitly and passed to the user task.
+    # Grafana apt "loki" package doesn't reliably create the loki user/group (role
+    # assumes it does); create them ourselves first (Ubuntu needs explicit group).
     - name: Ensure loki system group exists
       ansible.builtin.group:
         name: loki
@@ -208,12 +203,8 @@
                  | map('regex_replace', '^(.*)$', '\1:9100')
                  | list }}
 
-    # Per-team challenge VMs (NanoControl_*, etc.) — each exposes its own node_exporter
-    # with the ctf_container_state/* textfile metrics from the docker-state-exporter
-    # role. All challenge/team/service labels live on the metrics themselves (baked in
-    # per-host by docker-state-exporter), so this job is just a flat target list —
-    # no per-challenge relabeling needed here, which is what makes new challenges
-    # show up automatically without touching this playbook.
+    # Per-team VMs: metrics self-describe (labels baked in by docker-state-exporter),
+    # so this is just a flat target list, no relabeling needed.
     - name: Build node_exporter job from chall group (per-team challenge VMs)
       ansible.builtin.set_fact:
         _chall_node_job:
@@ -225,10 +216,8 @@
                  | list }}
       when: groups['chall'] | default([]) | length > 0
 
-    # Single-instance challenge VMs (playbooks/sc/single_instance_chall.yaml) — same
-    # docker-state-exporter role, same self-describing metrics (TEAM=shared here
-    # instead of a team number), so this is the same flat-target-list pattern as
-    # node_exporter_chall above.
+    # Single-instance challenges: same self-describing metrics pattern as
+    # node_exporter_chall above (TEAM=shared instead of a team number).
     - name: Build node_exporter job from single_instance_challenges group
       ansible.builtin.set_fact:
         _single_instance_node_job:
@@ -292,7 +281,7 @@
     - cedille.monitoring.grafana
 
   tasks:
-    # Dashboards JSON statiques (playbooks/monitoring/files/dashboards/) — pas un
+    # Dashboards JSON statiques (playbooks/monitoring/files/dashboards/), pas un
     # rôle réutilisable, voir docs/revue-infra-2026-09/14-ansibleroles-consolidation.md.
     - name: Copy Grafana dashboards
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../includes/grafana-dashboards.yaml"
@@ -318,7 +307,7 @@
           - infra-logs-switch.json
 
   post_tasks:
-    # cedille.monitoring.grafana datasource template does not write uid — dashboard
+    # cedille.monitoring.grafana datasource template does not write uid, but dashboard
     # panels reference datasources by uid: 'prometheus' / 'loki', so without it nothing renders.
     - name: Write Grafana datasources with uid
       ansible.builtin.copy:
@@ -354,7 +343,7 @@
       notify: Restart Blackbox Exporter
       become: true
 
-    # snmp_exporter v0.30 removed version/auth from modules — role template still writes
+    # snmp_exporter v0.30 removed version/auth from modules, but role template still writes
     # them, causing a parse error on startup. Overwrite with the correct v0.30 format.
     - name: Write snmp_exporter configuration (v0.30 format)
       ansible.builtin.template:
@@ -393,7 +382,7 @@
         - Restart Node Exporter
       become: true
 
-    # The cedille.monitoring.prometheus template does not support params: — Prometheus v3
+    # The cedille.monitoring.prometheus template does not support params:, but Prometheus v3
     # requires params: for blackbox probes instead of query strings in metrics_path.
     # Overwrite with our corrected template after the role has run.
     - name: Write Prometheus configuration with params support

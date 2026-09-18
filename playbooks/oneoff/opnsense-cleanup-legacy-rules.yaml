@@ -1,24 +1,17 @@
 ---
-# Removes all legacy firewall rules from the OPNsense CARP cluster.
-#
-# Targets:
-#   - 17 unnamed Automation/Filter rules (pre-Ansible GUI duplicates)
-#   - 1 named Automation/Filter rule "HASync + diag depuis subnet sync" (replaced by seq 600)
-#   - 18 classic rules in config.xml <filter> (legacy per-interface format)
+# Removes all legacy firewall rules from the OPNsense CARP cluster: 17 unnamed +
+# 1 named Automation/Filter rule, plus 18 classic config.xml rules. Phase 1 validates
+# the 18 Ansible rules exist before deleting; Phase 2 (SSH) backs up config.xml first.
 #
 # Prerequisites:
-#   opnsense-config.yaml must have been applied first — all 18 named Ansible
+#   opnsense-config.yaml must have been applied first: all 18 named Ansible
 #   rules must be present and active in Automation/Filter before running this.
 #
-# Safety:
-#   Phase 1 validates that all 18 Ansible rules are present before deleting anything.
-#   Phase 2 (SSH) backs up config.xml before modifying it.
-#
 # Usage:
-#   make infra/opnsense-cleanup-legacy-rules VAULT_PASSWORD_FILE=~/CEDILLE/.vault
+#   make oneoff/opnsense-cleanup-legacy-rules
 
 # ---------------------------------------------------------------------------
-# Phase 1 — Remove unnamed + old HA rule from Automation/Filter via API
+# Phase 1: Remove unnamed + old HA rule from Automation/Filter via API
 # ---------------------------------------------------------------------------
 
 - name: Remove legacy Automation/Filter rules via API
@@ -131,7 +124,7 @@
           (expected ~48 = 30 system + 18 Ansible)
 
 # ---------------------------------------------------------------------------
-# Phase 2 — Remove classic rules from config.xml via SSH
+# Phase 2: Remove classic rules from config.xml via SSH
 # ---------------------------------------------------------------------------
 
 - name: Remove classic rules from config.xml via SSH

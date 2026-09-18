@@ -1,6 +1,6 @@
 ---
 # Déploie les dashboards Grafana (JSON statiques dans files/dashboards/, spécifiques
-# à l'infra Cedille — pas un rôle réutilisable, voir
+# à l'infra Cedille, pas un rôle réutilisable ; voir
 # docs/revue-infra-2026-09/14-ansibleroles-consolidation.md).
 # À exécuter après monitoring/infra-core.yaml.
 # Hôtes : monitoring_core

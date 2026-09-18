@@ -1,9 +1,9 @@
 ---
-# Déploie les challenges "single-instance" (extra.deployment_info.individual_instance: false
-# dans challenge.yml) — une seule VM partagée par tout l'événement, par opposition aux
-# challenges par-équipe déployés par playbooks/sc/chall.yaml (groupe `chall`).
-# Voir le tableau dans README.md (« Génération de l'inventaire summercamp ») pour la
-# distinction complète entre les deux groupes.
+# Déploie les challenges "single-instance" (individual_instance: false), une seule VM
+# partagée par tout l'événement, par opposition aux challenges par-équipe (sc/chall.yaml,
+# groupe `chall`). Voir README.md (« Génération de l'inventaire summercamp »).
+# Hôtes : single_instance_challenges
+# Usage : make sc/single_instance_chall
 
 - name: Provision Single-Instance Challenge VMs on Proxmox
   hosts: single_instance_challenges

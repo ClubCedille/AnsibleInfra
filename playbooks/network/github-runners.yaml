@@ -6,12 +6,12 @@
 # Prérequis :
 #   - github_runner_org renseigné dans
 #     inventories/infra/group_vars/github_runners.yaml
-#   - github_runner_admin_token vaulté dans le même fichier — un PAT
+#   - github_runner_admin_token vaulté dans le même fichier : un PAT
 #     classic avec le scope admin:org (ou un jeton d'installation GitHub
 #     App avec la permission organization_self_hosted_runners:write, une
 #     fois cette permission accordée à l'App existante). Sert uniquement à
 #     obtenir un jeton d'enregistrement de courte durée (1h) à chaque
-#     exécution — jamais utilisé directement par les runners.
+#     exécution, jamais utilisé directement par les runners.
 #
 # Hôtes : github_runners
 # Usage : make network/github-runners
@@ -39,9 +39,8 @@
   gather_facts: false
   become: true
   vars:
-    # cedille.github.runner defaults (github_runner_paths.data_dir) aren't in
-    # scope here — this play doesn't run the role — so this must stay in
-    # sync with that role's default data_dir.
+    # cedille.github.runner defaults aren't in scope here (role not run), so this
+    # must stay in sync with the role's default data_dir.
     _github_runner_data_dir: /var/lib/github-runner
   tasks:
     - name: Check for an existing .runner registration file
@@ -55,7 +54,7 @@
   gather_facts: false
   vars:
     # group_vars/github_runners.yaml only applies to hosts in that group, not
-    # to localhost — fetch these through hostvars of a group member instead.
+    # to localhost: fetch these through hostvars of a group member instead.
     _github_runner_org: "{{ hostvars[groups['github_runners'][0]].github_runner_org }}"
     _github_runner_admin_token: "{{ hostvars[groups['github_runners'][0]].github_runner_admin_token }}"
     _github_runner_groups_desired: "{{ hostvars[groups['github_runners'][0]].github_runner_groups_desired }}"
@@ -97,7 +96,7 @@
   vars:
     _any_unregistered: "{{ groups['github_runners'] | map('extract', hostvars, ['_runner_registered', 'stat', 'exists']) | select('equalto', false) | list | length > 0 }}"
     # group_vars/github_runners.yaml only applies to hosts in that group, not
-    # to localhost — fetch these through hostvars of a group member instead.
+    # to localhost: fetch these through hostvars of a group member instead.
     _github_runner_org: "{{ hostvars[groups['github_runners'][0]].github_runner_org }}"
     _github_runner_admin_token: "{{ hostvars[groups['github_runners'][0]].github_runner_admin_token }}"
   tasks:

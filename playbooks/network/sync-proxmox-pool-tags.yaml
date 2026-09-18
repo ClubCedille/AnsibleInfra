@@ -1,16 +1,8 @@
 ---
-# Standalone sync of Proxmox pool membership + tags for any host with
-# vm_pool/vm_tags defined in its vars — without touching the rest of the
-# VM lifecycle (creation, disk, resize, boot order). Safe to run against
-# already-existing, actively-used VMs (k8s nodes, etc.) since it never
-# calls proxmox_kvm with anything other than tags, and never creates or
-# deletes a VM.
-#
-# Same throttling/idempotency workarounds as cedille.proxmox.vm's
-# create_vm.yaml (see that file's comments for the full diagnosis):
-# proxmox_pool_member errors instead of no-op'ing on a redundant add, and
-# concurrent hosts targeting the same pool race on Proxmox's
-# read-modify-write pool-update endpoint.
+# Standalone sync of Proxmox pool membership + tags for any host with vm_pool/vm_tags
+# defined, without touching the rest of the VM lifecycle. Safe on existing VMs.
+# Same throttling/idempotency workarounds as cedille.proxmox.vm's create_vm.yaml:
+# proxmox_pool_member errors on redundant add, concurrent hosts race on pool updates.
 #
 # Usage: make network/sync-proxmox-pool-tags
 

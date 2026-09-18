@@ -1,10 +1,8 @@
 ---
-# Configure SNMP v2c read-only community sur les switches infra pour le scraping Prometheus.
-# La communauté est vaultée dans group_vars/monitoring_exporters.yaml.
-# ACL restreint les requêtes SNMP à la VM monitoring uniquement.
-#
-# État : seule la section NX-OS est active. La section IOS (Cisco 3850) est commentée
-# en attente d'une résolution du bug cisco.ios.ios_snmp_server (voir issue upstream).
+# Configure SNMP v2c read-only community sur les switches infra pour le scraping Prometheus
+# (communauté vaultée dans group_vars/monitoring_exporters.yaml, ACL restreinte à la VM monitoring).
+# Seule la section NX-OS est active ; IOS (Cisco 3850) commentée en attendant un fix
+# upstream de cisco.ios.ios_snmp_server.
 # Hôtes actifs : nxos
 # Usage : make cisco-config/snmp
 

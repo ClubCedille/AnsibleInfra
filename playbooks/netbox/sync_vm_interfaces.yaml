@@ -1,19 +1,13 @@
 ---
-# Synchronise dans NetBox les interfaces réseau de chaque VM du groupe
-# virtual_machines, avec leur VLAN (mode Access, untagged_vlan) et leur IP
-# quand elle est connue.
-#
-# Source de données : l'inventaire Ansible lui-même (vm_nets pour les VMs
-# multi-NIC, vm_net pour le single-NIC historique -- lu directement depuis
-# hostvars, aucun fichier vars/ séparé à maintenir en parallèle). Ça inclut
-# vm_net défini au niveau group_vars (ex. netservices_dhcp, forgejo_runners)
-# avec juste mac: "{{ vm_mac }}" surchargé par host.
+# Synchronise dans NetBox les interfaces réseau (VLAN, IP) de chaque VM du groupe
+# virtual_machines, lues directement depuis l'inventaire Ansible (vm_nets/vm_net
+# dans les hostvars), sans fichier vars/ séparé à maintenir en parallèle.
 #
 # Pré-requis : playbooks/netbox/sync_vms.yaml doit avoir tourné avant (les
 # VMs doivent exister dans NetBox).
 #
 # Usage :
-#   make netbox/sync_vm_interfaces VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make netbox/sync_vm_interfaces
 
 - name: Sync NetBox VM interfaces/IPs from vm_net/vm_nets (Ansible inventory)
   hosts: localhost

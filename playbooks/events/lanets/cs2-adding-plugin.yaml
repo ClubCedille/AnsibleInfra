@@ -1,6 +1,7 @@
 ---
 # Installe un plugin CounterStrike sur le serveur CS2 (LanETS).
 # Hôtes : cs2
+# Usage : make events/lanets/cs2-adding-plugin
 
 - name: Adding plugin to cs2 server
   hosts: cs2

@@ -1,26 +1,15 @@
 ---
-# OPNsense interface escape-hatch — SSH-based interface assignment.
-#
-# USE ONLY when interface assignment or IP addressing needs to change and
-# the OPNsense GUI is not available. The OPNsense API does not support
-# interface assignment (GitHub opnsense/core#9345, closed as "not planned").
-#
-# What this playbook does:
-#   1. Reads current /conf/config.xml from the OPNsense node.
-#   2. Asserts that each VLAN device exists (from vm_net_trunk.vlans).
-#   3. Shows the current <interfaces> section for manual review.
-#   4. (With --tags apply) Patches the interface IP addresses in config.xml
-#      and reloads the interface subsystem via configctl.
-#
-# CAUTION: This playbook edits config.xml directly. Always backup first:
-#   ssh root@<node> "cp /conf/config.xml /conf/backup/config-pre-iface-$(date +%s).xml"
+# OPNsense interface escape-hatch, SSH-based interface assignment. USE ONLY when
+# the GUI is unavailable and interface/IP assignment must change (the API doesn't
+# support this: opnsense/core#9345). Read-only by default; --tags apply patches IPs.
+# CAUTION: edits config.xml directly, always backs it up first.
 #
 # Usage:
 #   Read-only review (default):
 #     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
 #       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass
 #
-#   Apply interface IP changes (destructive — requires explicit --tags apply):
+#   Apply interface IP changes (destructive, requires explicit --tags apply):
 #     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
 #       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass \
 #       --tags apply --limit opnsense01
@@ -121,7 +110,7 @@
             # Only update IP if it differs
             current_ip = iface_el.findtext('ipaddr', '')
             if current_ip != vlan['network']:
-              # Note: we set the node IP, not the CARP VIP — CARP VIP is in <virtualip>
+              # Note: we set the node IP, not the CARP VIP (CARP VIP is in <virtualip>)
               print(f'INFO: {iface_name} IP unchanged (node IP must be set manually — this script only validates)')
             else:
               print(f'OK: {iface_name} IP matches')

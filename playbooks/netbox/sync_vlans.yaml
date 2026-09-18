@@ -1,22 +1,12 @@
 ---
-# Synchronise dans NetBox l'état des VLANs/prefixes tel que déclaré par
-# Ansible. Source de vérité unique : pve_vlans_desired dans
-# inventories/infra/group_vars/pve.yaml — le même playbook (network/
-# update-vlans.yaml) crée réellement ces VLANs sur le trunk PVE, et ce
-# playbook-ci se contente de lire les mêmes données (+ les clés netbox_*
-# optionnelles, voir les commentaires de pve_vlans_desired) pour les
-# refléter dans NetBox. Pas de liste dupliquée à maintenir en parallèle.
+# Synchronise dans NetBox les VLANs/prefixes déclarés par pve_vlans_desired
+# (group_vars/pve.yaml), la même source que network/update-vlans.yaml qui les crée
+# réellement sur PVE. netbox_api_token est un token NetBox v1 classique (pas le
+# format v2 "Bearer nbt_..."), incompatible avec les modules netbox.netbox (pynetbox).
 #
 # Usage :
-#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault
-#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault DRY_RUN=1
-#
-# netbox_api_url / netbox_api_token viennent de
-# inventories/infra/group_vars/all.yaml (token vaulté). netbox_api_token
-# est un token NetBox v1 classique (40 caractères en clair) — pas le
-# format v2 "Bearer nbt_<key>.<secret>" : les modules netbox.netbox
-# (pynetbox) envoient "Authorization: Token <valeur>", incompatible avec
-# le schéma v2.
+#   make netbox/sync_vlans
+#   make netbox/sync_vlans DRY_RUN=1
 
 - name: Sync NetBox VLANs/prefixes from pve_vlans_desired (Ansible source of truth)
   hosts: localhost
@@ -24,10 +14,8 @@
   gather_facts: false
   vars:
     netbox_site_name: "ets-d"
-    # pve_vlans_desired est défini dans group_vars/pve.yaml (groupe [pve])
-    # -- Ansible charge tous les hostvars à l'initialisation, donc on peut
-    # le lire depuis n'importe quel host de ce groupe (même idiome que
-    # playbooks/network/update-vlans.yaml, Play 2).
+    # Lu depuis n'importe quel host du groupe [pve] (hostvars déjà chargés),
+    # même idiome que playbooks/network/update-vlans.yaml.
     _pve_vlans_desired: "{{ hostvars[groups['pve'][0]]['pve_vlans_desired'] }}"
     # VLANs à synchroniser dans NetBox : celles avec netbox_ignore non défini/false.
     netbox_vlans: "{{ _pve_vlans_desired | rejectattr('netbox_ignore', 'defined') | list + _pve_vlans_desired | selectattr('netbox_ignore', 'defined') | rejectattr('netbox_ignore') | list }}"

@@ -1,13 +1,10 @@
 ---
-# Recensement en lecture seule de toutes les VMs/CT du cluster Proxmox
-# OneBigCluster, config incluse (pour lire les tags VLAN par NIC). Une seule
-# VM du cluster suffit comme point d'entrée API — l'appel est cluster-wide
-# (cluster().resources()), pas limité au nœud interrogé.
+# Recensement en lecture seule de toutes les VMs/CT du cluster Proxmox (config incluse,
+# tags VLAN par NIC). Un seul host suffit comme point d'entrée API (appel cluster-wide).
+# Écrit le résultat brut dans /tmp/proxmox_census.json.
 #
 # Usage :
-#   make proxmox/census_vms VAULT_PASSWORD_FILE=~/Cedille/.vault
-#
-# Écrit le résultat brut dans /tmp/proxmox_census.json pour analyse.
+#   make proxmox/census_vms
 
 - name: Census all Proxmox VMs/CTs (cluster-wide, read-only)
   hosts: pve01.mgmt.etsmtl.club
@@ -39,11 +36,8 @@
       ansible.builtin.debug:
         msg: "{{ proxmox_census.proxmox_vms | length }} VMs/CT trouvées, écrites dans /tmp/proxmox_census.json"
 
-    # --- Infos réseau live via qemu-guest-agent, pour les VMs sans IP
-    #     statique en config (tous les nodes Talos : DHCP sur VLAN dédié) et
-    #     les hosts multi-NIC (jumpbox, k8s-*). Requête une VM à la fois --
-    #     le module échoue toute la tâche si UNE VM n'a pas d'agent actif,
-    #     donc pas moyen de faire ça en un seul appel cluster-wide.
+    # Requête une VM à la fois : le module échoue toute la tâche si UNE VM n'a pas
+    # d'agent actif (pas de bulk cluster-wide possible dans ce cas).
     - name: Get live network info via qemu-guest-agent, one VM at a time
       community.proxmox.proxmox_vm_info:
         api_host: "{{ ansible_host }}"

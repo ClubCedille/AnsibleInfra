@@ -1,4 +1,8 @@
 ---
+# Pointe pip vers le miroir PyPI local (docker_registry_mirror_host, défini
+# dans les group_vars de l'inventaire appelant) pour éviter le rate-limit
+# PyPI lors d'installs répétées sur les VMs de l'event.
+
 - name: Configure pip proxy
   ansible.builtin.copy:
     content: |

@@ -1,29 +1,11 @@
 ---
-# Remédiation ponctuelle décidée le 2026-09-17, suite à l'audit de
-# playbooks/netbox/report.yaml :
-#
-#   1. sync_vlans.yaml (1er run) a créé un Site "OneBigCluster" — erreur :
-#      OneBigCluster est le nom du Cluster Proxmox (déjà existant), pas un
-#      site physique. Ce playbook supprime ce site et tout ce qu'on y avait
-#      accroché (17 VLANs + 9 prefixes), pour que sync_vlans.yaml (corrigé,
-#      site réel "École de technologie supérieure - Pavillon D" /
-#      location "D2021") les recrée proprement au bon endroit.
-#
-#   2. Tag `to_retire` sur les VLANs legacy confirmées obsolètes ou
-#      superseded par le sync Ansible (cf. docs/VMInventoryAudit.md pour
-#      1001/1002/1004-1008, et le mapping 1:1 avec pve_vlans_desired pour
-#      21/247/1003/1009/1010 — vid 500 "Services" est déjà taggé to_retire,
-#      pas retouché ici).
-#
-#   3. Fix mapping IP pve06/pve07 : 10.0.21.56/24 était assignée par erreur
-#      sur l'interface de pve07 (qui a déjà .57) au lieu de pve06 (qui
-#      n'avait aucune IP). Réassigne .56 à pve06 et la met en primary IPv4.
-#
-# Playbook à usage unique — pas destiné à être relancé après application
-# (le nettoyage de l'étape 1 n'a d'effet que tant que le site fantôme existe).
+# Remédiation ponctuelle du 2026-09-17, suite à l'audit de netbox/report.yaml :
+# supprime le site fantôme "OneBigCluster" créé par erreur par sync_vlans.yaml (confondu
+# avec le Cluster Proxmox), tag `to_retire` sur les VLANs legacy obsolètes, et corrige
+# le mapping IP pve06/pve07 (10.0.21.56 mal assignée à pve07). Usage unique, non-relançable.
 #
 # Usage :
-#   make netbox/fixups VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make oneoff/netbox-fixups-2026-09-17
 
 - name: One-time NetBox remediation (site scope mistake, legacy tagging, IP fix)
   hosts: localhost

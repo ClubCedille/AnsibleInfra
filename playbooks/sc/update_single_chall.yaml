@@ -1,15 +1,11 @@
 ---
-# Update a Single-Instance Challenge's docker compose deployment: push the
-# latest docker-compose.yml (from install_docker_compose_content, refreshed
-# via `make sync-compose`), pull the latest images, then down/up the project
-# only if the compose file or an image actually changed (forces containers
-# to pick up a new image tag, since a plain `up` won't recreate a container
-# whose config didn't change).
+# Update Single-Instance docker compose deployment: push docker-compose.yml (via
+# `make sync-compose`), pull images, down/up only if compose/image changed (forces
+# recreate). Unlike update_chall.yaml (per-team), never removes volumes: these VMs
+# are shared by the whole event.
 #
-# Unlike playbooks/sc/update_chall.yaml (per-team `chall` group), the down
-# never removes volumes: single-instance challenges are shared by the whole
-# event, so wiping volumes here would nuke state for everyone instead of
-# just one team.
+# Hôtes : single_instance_challenges
+# Usage : make sc/update_single_chall/<hosts ou groupe>
 - name: Update Single-Instance Challenge docker compose deployment
   hosts: single_instance_challenges
   gather_facts: false

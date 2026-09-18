@@ -1,24 +1,15 @@
 ---
-# Provisioning et configuration des serveurs DHCP pour VLAN 67.
-# 2 VMs Ubuntu avec Kea DHCP4 hot-standby HA.
-# Réplique la config du pool DHCP "AP-MGMT" du WLC Cisco :
-#   réseau 10.67.0.0/16, dns-server 1.1.1.1 8.8.8.8, default-router 10.67.0.50,
-#   option 43 hex f104.0a43.0032 (AP-manager), lease 0 4 (4h).
-# Pool dynamique restreint à 10.67.1.0 - 10.67.20.255.
+# Provisioning DHCP VLAN 67 : 2 VMs Ubuntu, Kea DHCP4 hot-standby HA, réplique le pool
+# "AP-MGMT" du WLC Cisco (10.67.0.0/16, option 43 AP-manager).
+# INCOMPLET : le groupe [vlan67_dhcp] n'est pas déclaré dans hosts.ini (voir [vlan66_dhcp]
+# pour le modèle) ; ce playbook n'a donc aucun hôte à cibler pour l'instant.
 #
 # Prérequis :
 #   - VLAN 67 existant sur les hôtes Proxmox (network/update-vlans.yaml)
 #   - Image Ubuntu disponible : /var/lib/vz/images/lanets/ubuntu_2404.img
 #
-# INCOMPLET : group_vars/vlan67_dhcp.yaml et les host_vars dhcp01-67/dhcp02-67
-# existent, mais le groupe [vlan67_dhcp] n'a jamais été déclaré dans
-# inventories/infra/hosts.ini (jamais fait même au commit d'origine
-# 105b0a1) — ce playbook n'a donc actuellement aucun hôte à cibler tant que
-# ce groupe (ansible_host + vm_id des VMs dhcp01-67/dhcp02-67) n'y est pas
-# ajouté, sur le modèle de [vlan66_dhcp].
-#
 # Usage :
-#   ansible-playbook playbooks/events/vlan67-dhcp.yaml -i inventories/infra/
+#   make events/vlan67-dhcp
 
 - name: Provision DHCP VMs for VLAN 67
   hosts: vlan67_dhcp

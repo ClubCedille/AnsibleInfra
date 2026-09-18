@@ -1,14 +1,11 @@
 ---
-# Rapport en lecture seule de l'état actuel de NetBox — ne modifie rien.
-# Sert à valider ce qui existe déjà avant de synchroniser devices/VMs, pour
-# éviter d'écraser du travail de mapping manuel déjà fait (ex. devices PVE).
+# Rapport en lecture seule de l'état actuel de NetBox, ne modifie rien. Sert à
+# valider ce qui existe déjà avant de synchroniser devices/VMs (ex. devices PVE
+# déjà mappés à la main). Écrit un JSON consolidé dans /tmp/netbox_report.json ;
+# no_log sur les tâches HTTP pour ne jamais faire fuiter le token dans les logs.
 #
 # Usage :
-#   make netbox/report VAULT_PASSWORD_FILE=~/Cedille/.vault
-#
-# Écrit un JSON consolidé dans /tmp/netbox_report.json (jamais affiché en
-# clair dans les logs — les tâches HTTP utilisent no_log pour éviter de
-# faire fuiter le token dans la sortie Ansible).
+#   make netbox/report
 
 - name: Read-only report of current NetBox state
   hosts: localhost

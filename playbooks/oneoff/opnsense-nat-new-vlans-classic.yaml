@@ -1,16 +1,8 @@
 ---
-# One-off: add classic-format outbound NAT rules for the newly segmented
-# VLANs (40 CI/CD, 45 Monitoring, 48 Utilities) — matching the exact
-# format of the 7 existing outbound NAT rules (all classic, "<interface
-# name> → WAN CARP"). The new-format module (oxlorg.opnsense.nat_source)
-# doesn't work against this cluster: outbound NAT is in "advanced"
-# (manual) mode, and the module expects an API response shape that only
-# exists in automatic/hybrid mode — confirmed live, 2026-09-10.
-#
-# Interface names differ per node (GUI-assigned, not synced — see
-# host_vars comments on opnsense01/02):
-#   opnsense01: opt1=VLAN40, opt2=VLAN45, opt4=VLAN48
-#   opnsense02: opt2=VLAN40, opt4=VLAN45, opt6=VLAN48
+# One-off: adds classic-format outbound NAT rules for the newly segmented VLANs
+# (40/45/48), matching the 7 existing classic rules. The new-format module doesn't
+# work here (outbound NAT is in "advanced" mode; confirmed live, 2026-09-10).
+# Interface names differ per node (GUI-assigned, not synced, see host_vars comments).
 #
 # Usage: ansible-playbook -i inventories/infra/hosts.ini \
 #   playbooks/oneoff/opnsense-nat-new-vlans-classic.yaml --ask-vault-pass

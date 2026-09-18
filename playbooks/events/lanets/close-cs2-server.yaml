@@ -1,6 +1,7 @@
 ---
 # Arrête le serveur CS2 (LanETS) proprement via le rôle lanets.cs2.close_server.
 # Hôtes : cs2
+# Usage : make events/lanets/close-cs2-server
 
 - name: Closing cs2 server
   hosts: cs2

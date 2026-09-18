@@ -8,8 +8,8 @@
 #      → Activer opnsense_manage_vips dans routers.yaml et relancer opnsense-config.yaml
 #
 # Usage :
-#   ansible-playbook playbooks/infra/opnsense-k8s-poc.yaml -i inventories/infra/
-#   ansible-playbook playbooks/infra/opnsense-k8s-poc.yaml -i inventories/infra/ --check
+#   make infra/opnsense-k8s-poc
+#   make infra/opnsense-k8s-poc DRY_RUN=1
 
 - name: Add k8s-poc firewall rules to OPNsense
   hosts: routers

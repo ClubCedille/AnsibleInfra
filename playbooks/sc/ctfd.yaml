@@ -1,5 +1,5 @@
 ---
-# Déploie CTFd (plateforme de gestion du CTF — scoreboard, challenges, équipes) via Docker Compose.
+# Déploie CTFd (plateforme de gestion du CTF : scoreboard, challenges, équipes) via Docker Compose.
 # Hôtes : ctfd
 # Usage : make sc/ctfd
 

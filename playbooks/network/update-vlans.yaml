@@ -2,7 +2,7 @@
 # Synchronise les VLANs sur les hôtes Proxmox ET sur le switch core NX-OS.
 # Source de vérité : pve_vlans_desired / pve_vlans_to_remove dans group_vars/pve.yaml.
 #
-# Usage : make network/update-vlans [VAULT_PASSWORD_FILE=~/.vault]
+# Usage : make network/update-vlans
 
 # ── Play 1 : sous-interfaces VLAN sur les hôtes Proxmox ───────────────────────
 - name: Update VLAN sub-interfaces on PVE nodes
@@ -104,16 +104,13 @@
   gather_facts: false
   vars:
     # pve_vlans_desired / pve_vlans_to_remove sont définis dans group_vars/pve.yaml.
-    # Ansible charge tous les hostvars à l'initialisation — on les lit depuis pve01.
+    # Ansible charge tous les hostvars à l'initialisation, on les lit depuis pve01.
     _pve_vlans_desired: "{{ hostvars[groups['pve'][0]]['pve_vlans_desired'] }}"
     _pve_vlans_to_remove: "{{ hostvars[groups['pve'][0]]['pve_vlans_to_remove'] }}"
 
   tasks:
-    # NX-OS VLAN names reject spaces and most punctuation (max ~32 chars) —
-    # pve_vlans_desired's `comment` field is free-form documentation text
-    # (spaces, parens, accents) meant for Proxmox interface comments, which
-    # have no such restriction. Sanitize a switch-only copy here rather
-    # than constraining the source data.
+    # NX-OS VLAN names reject spaces/punctuation (max ~32 chars); sanitize a
+    # switch-only copy here rather than constraining the source `comment` field.
     - name: Build NX-OS-safe VLAN name for each desired VLAN
       ansible.builtin.set_fact:
         _pve_vlans_desired_nxos: >-

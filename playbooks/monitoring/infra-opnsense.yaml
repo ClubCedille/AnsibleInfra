@@ -1,25 +1,8 @@
 ---
-# Observability parity with pve01-08 for the OPNsense CARP cluster:
-#   1. os-telegraf plugin — system/interface/PF metrics, native Prometheus
-#      exporter (pull, port 9273). monitoring01's Prometheus must scrape it
-#      (see prometheus_scrape_configs.opnsense_telegraf in
-#      inventories/infra/group_vars/monitoring_core.yaml) — it then
-#      remote_writes onward to Mimir like everything else in that stack.
-#   2. Remote syslog (system + firewall + CARP/HA) -> Alloy receiver on
-#      monitoring01 -> Loki (see infra-syslog-switches.yaml for the receiver
-#      side, which this playbook does NOT touch).
-#
-# This playbook runs from the Ansible control machine (connection: local),
-# same pattern as opnsense-config.yaml. API calls go to vm_net.ip on each
-# node.
-#
-# ⚠ PRODUCTION FIREWALLS, NEVER RUN BY AN AGENT WITHOUT EXPLICIT HUMAN
-# SIGN-OFF. Neither role in this playbook has been exercised against a live
-# OPNsense instance — see the opnsense_telegraf and opnsense_syslog role
-# READMEs ("État de validation") for exactly what was verified (against
-# published plugin/API source) versus what remains to be confirmed live
-# (endpoint behavior, syslog wire format). Validate on a lab OPNsense first
-# if one is available.
+# Observability parity with pve01-08 for OPNsense: os-telegraf metrics (port 9273,
+# scraped by monitoring01) and remote syslog to Alloy (see infra-syslog-switches.yaml).
+# Runs from the control machine (connection: local), same pattern as opnsense-config.yaml.
+# ⚠ PRODUCTION FIREWALLS: NEVER RUN BY AN AGENT WITHOUT HUMAN SIGN-OFF, neither role validated live.
 #
 # Usage:
 #   make monitoring/infra-opnsense                   # apply

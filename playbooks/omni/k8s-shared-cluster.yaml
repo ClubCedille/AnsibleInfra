@@ -1,31 +1,12 @@
 ---
-# Rattache les 3 NOUVEAUX nodes de k8s-shared (worker-6, worker-7, controlplane-4) au
-# cluster existant (RUNNING depuis 2025-04-24, cf. omnictl get machinesets).
-#
-# Contrairement à k8s-poc (MachineSetNodes créés manuellement, cf. k8s-poc-cluster.yaml),
-# les MachineSets de k8s-shared utilisent l'allocation automatisée par MachineClass
-# (constaté en exécution réelle le 2026-08-17 : "adding machine set node ... is not allowed:
-# the machine set is using automated machine allocation"). Vérifié via
-# `omnictl get machinesets/machineclasses` : k8s-shared-control-planes/k8s-shared-workers
-# référencent les MachineClasses k8s-shared-controlplane/k8s-shared-worker, qui matchent sur
-# les labels `role` + `cluster-candidate` (mécanisme documenté dans notes.md section 1). Ce
-# playbook labellise donc les machines au lieu de créer des MachineSetNodes — Omni les
-# rattache lui-même automatiquement une fois les labels posés.
-#
-# Ne touche PAS aux Clusters.omni.sidero.dev / MachineSets.omni.sidero.dev existants.
+# Rattache les 3 nouveaux nodes k8s-shared au cluster existant en les labellisant
+# (MachineClass alloue automatiquement, contrairement à k8s-poc où les MachineSetNodes
+# sont créés à la main ; ne touche pas aux Clusters/MachineSets existants). Machines
+# identifiées par cores (pas de hostname sur ces VLANs) + absence d'assignation cluster.
 #
 # Prérequis : les 3 VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
-# Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
 #
-# Découverte des machines par cores (pas par hostname) : constaté en exécution réelle le
-# 2026-08-17, Omni n'assigne pas de hostname à ces machines (VLANs 500/1009 n'ont pas de
-# mécanisme DHCP/reverse-DNS documenté, cf. notes.md) — l'UI affiche l'UUID brut à la place.
-# La tâche identifie donc les 3 nouvelles machines par : pas encore assignées à un cluster
-# (absence du label omni.sidero.dev/cluster) + nombre de cores correspondant à la cible
-# (host_vars controlplane-4/worker-6). Sûr ici car un seul CP et deux workers avec ces cores
-# exacts sont attendus parmi les machines non assignées de tout l'organisme Omni.
-#
-# Usage : ansible-playbook playbooks/omni/k8s-shared-cluster.yaml -i inventories/infra/
+# Usage : make omni/k8s-shared-cluster
 - name: Label new k8s-shared machines for automated Omni allocation
   hosts: localhost
   gather_facts: false
@@ -33,13 +14,8 @@
 
   tasks:
     - name: Fetch machine UUIDs from Omni (unassigned machines, matched by hardware spec)
-      # Ne peut pas discriminer par hostname : Omni n'a pas de hostname pour ces machines
-      # (aucun mécanisme DHCP/reverse-DNS documenté pour ces VLANs — cf. notes.md, section
-      # "Réseau" — omnictl affiche l'UUID brut à la place, constaté en exécution réelle le
-      # 2026-08-17). Discrimine plutôt par : (a) absence du label
-      # "omni.sidero.dev/cluster" (= pas encore assigné à un cluster/MachineSet), (b) cores
-      # correspondant à la cible controlplane-4 (vm_cpu_cores du group_vars CP) ou
-      # worker-6/worker-7 (vm_cpu_cores du group_vars workers).
+      # Pas de hostname disponible (VLANs sans DHCP/reverse-DNS) : discrimine par
+      # absence du label cluster + nombre de cores (cible CP vs workers).
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
@@ -71,9 +47,8 @@
         worker_target_cores: "{{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}"
       changed_when: false
       args:
-        # /bin/bash n'existe pas sur NixOS (pas de FHS /bin standard) — /bin/sh est le seul
-        # chemin garanti présent partout ; ici c'est un lien vers bash, donc "set -o pipefail"
-        # fonctionne quand même.
+        # /bin/bash absent sur NixOS ; /bin/sh (lien vers bash ici) fonctionne
+        # pareillement pour "set -o pipefail".
         executable: /bin/sh
 
     - name: Parse machine UUID lists
@@ -101,19 +76,8 @@
           correspondent à la cible (CP: {{ hostvars['k8s-shared-controlplane-4'].vm_cpu_cores }},
           workers: {{ hostvars['k8s-shared-worker-6'].vm_cpu_cores }}) avant de relancer.
 
-    # Cible MachineLabels.omni.sidero.dev (id = UUID machine), PAS Machines.omni.sidero.dev :
-    # rencontré en exécution réelle "PermissionDenied ... only read access is permitted" en
-    # ciblant Machines (owner: MachineController, géré par un controller, en lecture seule
-    # pour les clients API). MachineLabels est la ressource dédiée aux labels posés par
-    # l'utilisateur (owner vide, confirmé éditable), visible dans l'UI Omni via le bouton
-    # "+ new label" sur chaque machine.
-    #
-    # Idempotent : relit la ressource, saute si les 2 labels sont déjà présents. Préserve tout
-    # le reste du document (ex. annotations "platform-tag-labels-initialized") — un
-    # `omnictl apply` avec un document incomplet REMPLACE la ressource entière (constaté en
-    # dry-run sur Machines : un spec vide remettait connected à false). Gère les deux cas :
-    # une machine déjà labellisée a un bloc "labels:" existant (on y ajoute nos 2 entrées) ;
-    # une machine neuve n'en a aucun (on insère le bloc "labels:" avant "spec: {}").
+    # Cible MachineLabels (pas Machines, lecture seule côté API). Relit d'abord et
+    # saute si déjà labellisé ; préserve le reste du document (apply remplace tout).
     - name: Label new control-plane machine for automated allocation
       ansible.builtin.shell:
         cmd: |
