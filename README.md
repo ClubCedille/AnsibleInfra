@@ -228,6 +228,16 @@ make lint
 
 ## Installation
 
+### Avec Nix (recommandé)
+
+Le repo fournit un `flake.nix` + `.envrc` (direnv). `direnv allow` (ou
+`nix develop`) crée/rafraîchit automatiquement un venv Python depuis
+`requirements.txt` — équivalent de `make venv`, mais sans dépendre de
+paquets système. Ensuite `make galaxy-install`, `make lint`, `make <cible>`
+fonctionnent normalement.
+
+### Sans Nix
+
 Documentation faite en fonction d'une distribution Debian-based:
 
 Installer make, python, pip, virtualenv

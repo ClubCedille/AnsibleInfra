@@ -6,6 +6,8 @@
 
 # Ansible Log
 ansible.log
+screenlog.*
+*_console.log
 
 # Configuration Output
 out/*
@@ -13,6 +15,8 @@ out/*
 .cache/*
 tmp.yaml
 
+# direnv
+.direnv
+
 # prompts
-.github
 .claude
