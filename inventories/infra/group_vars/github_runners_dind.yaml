@@ -1,16 +1,23 @@
 ---
 # Pool "Docker-in-Docker" — pour les jobs de build/push d'images
-# volumineuses. Contrairement à Forgejo/act_runner, un runner GitHub
-# Actions self-hosted exécute les jobs directement sur l'hôte (pas dans un
-# conteneur imposé par l'agent) : aucun montage de socket ni mode
-# privilégié n'est nécessaire pour que `docker build`/`buildx` fonctionne
-# dans un `run:` — l'utilisateur github-runner est simplement dans le
-# groupe docker (comme les autres pools). Ce pool existe surtout pour
-# isoler les jobs lourds en I/O (plus de disque, label dédié), pas pour
-# contourner une limitation d'accès Docker.
+# volumineuses.
+#
+# Isolation réelle depuis 2026-09-18 (AnsibleRoles feat/dind-real-isolation) :
+# contrairement au comportement historique de ce pool (runner installé
+# directement sur l'hôte, `docker build` parlant au dockerd de l'hôte via
+# l'appartenance au groupe docker — aucune isolation), le runner tourne
+# maintenant dans un conteneur Docker privilégié avec son propre dockerd
+# imbriqué (github_runner_containerized: true, voir defaults/main.yaml du
+# rôle cedille.github.runner pour le détail et la limite connue : conteneur
+# long-vécu, pas encore éphémère par job).
+#
+# Voir memory project_ci_dind_pools_audit pour l'historique de l'audit qui a
+# révélé que ce nom "dind" ne correspondait à aucune isolation réelle.
 vm_disk_size: "80G"
 
 github_runner_labels:
   - "docker-dind"
 
 github_runner_group: "dind"
+
+github_runner_containerized: true
