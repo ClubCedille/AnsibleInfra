@@ -36,6 +36,22 @@ pkgcache_apt:
       components: main contrib non-free non-free-firmware
       signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
 
+# cedille.proxmox.apt_sources (>= 2.2.0) est désormais seul propriétaire du
+# dépôt apt.grafana.com sur pve (fichier combiné, AnsibleRoles#132) : on
+# coupe la gestion du dépôt côté alloy pour éviter que les deux rôles se le
+# disputent. Reste activé partout ailleurs (ex. nas), donc override complet
+# du dict ici plutôt qu'un override partiel (remplacerait tout le reste).
+alloy_install:
+  update_cache: true
+  package_state: present
+  packages:
+    - alloy
+  prereq_packages:
+    - gpg
+    - python3-debian
+  repository:
+    enabled: false
+
 pve_trunk_bridge: vmbr1
 
 # VLANs à maintenir actifs (sub-interfaces PVE). netbox_* consommés uniquement par
