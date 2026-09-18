@@ -39,9 +39,14 @@
   gather_facts: false
   become: true
   vars:
-    # cedille.github.runner defaults aren't in scope here (role not run), so this
-    # must stay in sync with the role's default data_dir.
-    _github_runner_data_dir: /var/lib/github-runner
+    # cedille.github.runner defaults aren't in scope here (role not run), so
+    # these must stay in sync with the role's default data_dir /
+    # container_data_dir. Containerized pools persist their registration in a
+    # different directory than bare-metal ones — see
+    # github_runner_container_data_dir in the role for why.
+    _github_runner_data_dir: >-
+      {{ '/var/lib/github-runner-container' if (github_runner_containerized | default(false))
+         else '/var/lib/github-runner' }}
   tasks:
     - name: Check for an existing .runner registration file
       ansible.builtin.stat:
