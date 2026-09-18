@@ -1,0 +1,32 @@
+---
+# Gère les sources APT (Proxmox/Ceph/Debian/Grafana) en deb822 sur les hôtes
+# PVE. cedille.proxmox.apt_sources >= 3.0.0 (AnsibleRoles#132) : blocs
+# debian/pve activés par défaut (no-subscription, déjà alignés sur l'état
+# réel du parc). ceph et grafana activés explicitement ci-dessous : Ceph
+# tourne hyperconvergé sur ces mêmes nœuds pve (confirmé par audit SSH des
+# 8 nœuds, ceph-tentacle) ; grafana pour Alloy, qui n'en gère plus lui-même
+# le dépôt (cf. alloy_install.repository.enabled: false dans
+# group_vars/pve.yaml) -- apt_sources en devient le seul propriétaire.
+# pbs reste désactivé (pas de Proxmox Backup Server sur ces nœuds).
+# Hôtes : pve
+# Usage : make proxmox/apt-sources (DRY_RUN=1 recommandé avant un premier run)
+
+- name: Manage APT sources on Proxmox hosts
+  hosts: pve
+  gather_facts: true
+  become: true
+  vars:
+    apt_sources_ceph:
+      enabled: true
+      version: trixie
+      release: tentacle
+      channel: no-subscription
+    apt_sources_grafana:
+      enabled: true
+      key_url: https://apt.grafana.com/gpg-full.key
+      key_path: /etc/apt/keyrings/grafana.asc
+      uris: https://apt.grafana.com
+      suites: stable
+      components: main
+  roles:
+    - cedille.proxmox.apt_sources
