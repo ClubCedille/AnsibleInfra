@@ -1,4 +1,5 @@
 ---
+
 # Pool "Docker-in-Docker" — pour les jobs de build/push d'images.
 # Sidecar docker:dind réel depuis AnsibleRoles#98 (remplace le DooD
 # précédent) — voir forgejo_runner_dind_sidecar_enabled dans AnsibleRoles.

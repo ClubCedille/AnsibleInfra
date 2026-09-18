@@ -1,10 +1,8 @@
 ---
 docker_registry_mirror_host: 10.150.0.100
 
-# Matches cedille.docker.install's role default for install_docker_compose_target_dir.
-# Defined here (not just as a role default) so it's still available in plays that
-# don't run cedille.docker.install — e.g. the docker-state-exporter play in chall.yaml,
-# which reads it to know where to find each challenge's docker-compose.yml.
+# Matches the role default ; défini ici pour rester disponible dans les plays qui ne
+# roulent pas cedille.docker.install (ex. docker-state-exporter dans chall.yaml).
 install_docker_compose_target_dir: "/home/{{ ansible_user | default(ansible_facts['user_id'] | default('root')) }}/ansible-docker-compose"
 
 vm_proxmox_api:

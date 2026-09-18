@@ -1,5 +1,5 @@
 ---
-# Pool "KVM/Packer" — accès /dev/kvm pour les jobs de build d'image
+# Pool "KVM/Packer" : accès /dev/kvm pour les jobs de build d'image
 # (Packer/QEMU). Même pattern que forgejo_runners_kvm.
 vm_disk_size: "60G"
 

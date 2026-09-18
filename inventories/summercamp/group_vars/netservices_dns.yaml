@@ -95,7 +95,7 @@ netservices_dns:
         master_file: /var/lib/bind/db.ctf
         slave_file: /var/cache/bind/db.ctf
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:

@@ -15,14 +15,12 @@ vm_delete_if_exists: false
 vm_start_after_creation: true
 vm_onboot: true
 
-# No pull-through registry mirror on the mgmt network — runners pull directly
+# No pull-through registry mirror on the mgmt network, runners pull directly
 # from upstream registries.
 docker_registry_mirror_enabled: false
 
-# cedille.docker.install always runs "docker compose up" against
-# install_docker_compose_target_dir at the end of the role, even with no
-# compose stack to manage. An empty "services: {}" project makes that fail
-# with "no service selected", so give it one trivial idle service instead.
+# cedille.docker.install always runs "docker compose up", which fails on an
+# empty "services: {}" project ("no service selected"); give it a noop idle service.
 install_docker_compose_source_type: inline
 install_docker_compose_content: |
   services:
@@ -34,10 +32,8 @@ install_docker_compose_content: |
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ 'pve02' if inventory_hostname.startswith('forgejo-runner02') else 'pve01' }}"
 
-# Migrated 2026-09-10 from VLAN21 (10.0.21.236-244) to the dedicated
-# CI/CD VLAN (tag 40, 10.0.40.0/24) — see AnsibleRoles opnsense role for
-# the interface/firewall-rule side. Renumbered .10-.18 rather than
-# keeping the old last octets, since it's a clean cutover.
+# Migrated 2026-09-10 from VLAN21 to the dedicated CI/CD VLAN (tag 40),
+# renumbered .10-.18 (clean cutover, not the old last octets).
 vm_net:
   mac: "{{ vm_mac }}"
   bridge: "vmbr1"
@@ -60,15 +56,12 @@ vm_proxmox_api:
     3564
   host: "10.0.21.51"
 
-# Forgejo instance this runner pair registers against. Each runner's
-# registration token (from /admin/actions/runners) is per-host — see
-# host_vars/forgejo-runner0{1,2}.mgmt.etsmtl.club.yaml.
+# Instance cible ; le token d'enregistrement (/admin/actions/runners) est
+# par host, voir host_vars/forgejo-runner0{1,2}.mgmt.etsmtl.club.yaml.
 forgejo_runner_instance_url: "https://git.etsmtl.club"
 
-# Dedicated Proxmox pool for the runner fleet (2026-09-10) — previously
-# split inconsistently across RP-Management-Infra (01/02 only) and
-# untagged/unpooled (03 + all 6 new nodes). New pool created idempotently
-# by cedille.proxmox.vm on first apply.
+# Pool dédié (2026-09-10), auparavant réparti entre RP-Management-Infra
+# (01/02) et non taggé (03 + 6 nouveaux nodes).
 vm_pool: "RP-CICD-Runners"
 vm_pool_comment: "Flotte runners CI/CD Forgejo (generic/kvm/dind)"
 vm_tags:

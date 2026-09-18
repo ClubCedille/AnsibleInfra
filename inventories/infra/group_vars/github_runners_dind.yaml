@@ -1,4 +1,5 @@
 ---
+
 # Pool "Docker-in-Docker" — pour les jobs de build/push d'images.
 # Containerized depuis AnsibleRoles#98/#102 (remplace le bare-metal sans
 # isolation précédent) — voir github_runner_containerized dans AnsibleRoles.

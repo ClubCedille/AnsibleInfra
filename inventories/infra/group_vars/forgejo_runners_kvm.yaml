@@ -1,14 +1,12 @@
 ---
-# Pool "KVM/Packer" — exécution host-native avec accès /dev/kvm, pour les
-# jobs de build d'image (Packer/QEMU). Reprend le pattern déjà en place sur
-# forgejo-runner03 (host_vars/forgejo-runner03.mgmt.etsmtl.club.yaml).
+# Pool "KVM/Packer" : exécution host-native avec accès /dev/kvm, pour les
+# jobs de build d'image (Packer/QEMU). Pattern déjà en place sur forgejo-runner03.
 vm_disk_size: "60G"
 
 forgejo_runner_labels:
   - "kvm-runner:host"
 
-# Image builds are long (~10+ min under KVM) and CPU/IO heavy — avoid
-# running more than one at a time per box.
+# Builds longs (~10+ min) et CPU/IO heavy : un seul à la fois par box.
 forgejo_runner_capacity: 1
 
 forgejo_runner_extra_groups:

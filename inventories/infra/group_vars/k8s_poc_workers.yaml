@@ -1,7 +1,6 @@
 ---
-# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
-# already uniform across all 8 hosts. vm_pool shared with controlplanes,
-# see group_vars/k8s_poc.yaml.
+# Codifies existing live state (Proxmox API, 2026-09-10) ; vm_pool partagé
+# avec controlplanes, voir group_vars/k8s_poc.yaml.
 vm_tags:
   - "PRODUCTION"
   - "POC"

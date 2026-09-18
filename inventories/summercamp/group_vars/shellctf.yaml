@@ -56,7 +56,7 @@ vm_net:
   nameservers: "10.130.0.21,10.130.0.22"
   search_domain: "summercamp.etsmtl.club"
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus, noble).
 pkgcache_apt:
   credentials:

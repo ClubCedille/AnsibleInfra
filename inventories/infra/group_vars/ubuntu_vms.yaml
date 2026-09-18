@@ -1,6 +1,6 @@
 ---
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
-# Mirrors Ubuntu par défaut du rôle, pas de surcharge nécessaire ici.
+# Cache de paquets interne (mirror direct, BasicAuth). Mirrors Ubuntu par
+# défaut du rôle, pas de surcharge nécessaire ici.
 pkgcache_apt:
   credentials:
     username: fleet

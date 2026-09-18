@@ -43,10 +43,8 @@ vm_start_after_creation: true
 vm_name: "{{ inventory_hostname }}"
 vm_proxmox_node: "{{ {0: 'pve01', 1: 'pve02', 2: 'pve03', 3: 'pve04', 4: 'pve07'}[(vm_id | int) % 5] }}"
 
-# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
-# already uniform across all 3 hosts. Lowercase/manual-prefixed scheme
-# (vs. the PRODUCTION;... taxonomy used elsewhere) is the pre-existing
-# convention for this group, kept as-is.
+# Codifies existing live state (Proxmox API, 2026-09-10) ; convention lowercase
+# pré-existante pour ce groupe (vs. la taxonomie PRODUCTION;... ailleurs), gardée telle quelle.
 vm_pool: "RP-DCI"
 vm_tags:
   - "manual"
@@ -65,9 +63,8 @@ vm_net:
 
 docker_registry_mirror_enabled: true
 
-# node_exporter (textfile collector for ctf_docker_state_exporter) — same overrides
-# as inventories/summercamp/group_vars/monitoring_hosts.yaml: avoid the role's
-# recursive-template archive_url and the /tmp sticky-bit-stripping mode=0755 default.
+# Mêmes overrides que summercamp/group_vars/monitoring_hosts.yaml : évite le
+# archive_url récursif du rôle et le mode=0755 par défaut sur /tmp.
 node_exporter_paths:
   install_dir: /opt/node_exporter
   archive_download_dir: /opt/monitoring-downloads

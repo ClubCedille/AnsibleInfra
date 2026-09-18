@@ -21,16 +21,12 @@ forgejo_runner_registration_token: !vault |
   64653732323463663230353439376466366363363935643034323937323232376336363931633431
   6630353538376333666635353835616230633433323463326365
 
-# Proxmox display name pinned independently of inventory_hostname —
-# manually renamed in Proxmox to match the Forgejo runner label
-# (2026-09-10). Without this override, a future cedille.proxmox.vm
-# run would revert to the inventory hostname.
+# Renommé manuellement dans Proxmox (2026-09-10) pour matcher le label runner ;
+# sans cet override, un futur run cedille.proxmox.vm reviendrait à inventory_hostname.
 vm_name: "Docker-Runner-3"
 
-# Pinned to match where the VM actually lives today (confirmed via
-# Proxmox API, 2026-09-10) — the group default formula doesn't
-# account for this host, and update-type API calls (tags, pool,
-# boot order) need the correct node to resolve the config path.
+# Pinned au node réel (Proxmox API, 2026-09-10) : la formule par défaut du
+# groupe ne couvre pas ce host, et les appels API update en ont besoin.
 vm_proxmox_node: "pve01"
 
 vm_mac: "BC:24:11:55:F0:C8"

@@ -22,20 +22,18 @@ opnsense_api_secret: !vault |
   63633433313331376137636130353233663234636533633165636438336663333762616635396539
   3461
 
-# opnsense02 n'est pas joignable directement depuis le control node — passe par opnsense01
+# opnsense02 n'est pas joignable directement depuis le control node, passe par opnsense01
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o ProxyJump=root@10.0.21.2'
 
 # Node identity
 vm_is_master: false
 
-# Real LAN IP of the peer node (not the CARP VIP) — see
+# Real LAN IP of the peer node (not the CARP VIP), see
 # AnsibleRoles opnsense/roles/config/templates/carp-wireguard-hook.sh.j2.
 opnsense_peer_lan_ip: "10.0.21.2"
 
-# Interfaces assigned via OPNsense GUI for the VLAN21 segmentation chantier
-# (2026-09-09) — opt numbering confirmed different from opnsense01, see
-# host_vars/opnsense01.prod.etsmtl.club.yaml for the matching CARP entries
-# (same id/vip/network, different interface_name).
+# Interfaces assignées via GUI (segmentation VLAN21, 2026-09-09) : opt numbering
+# diffère d'opnsense01 (voir son host_vars pour les mêmes CARP entries).
 vm_net_trunk_extra_vlans:
   - id: 40
     interface_name: opt2
@@ -56,15 +54,13 @@ vm_net_trunk_extra_vlans:
     network: "10.0.48.0"
     parent_nic: vtnet0
 
-# Management IP — used as OPNsense API target (firewall: parameter)
+# Management IP, used as OPNsense API target (firewall: parameter)
 vm_net:
   ip: "10.0.21.3"
   vip: "142.137.247.101"
   netmask: 24
-  # WAN is GUI-assigned per node like the other opt interfaces (not synced
-  # between HA members) — confirmed via /api/firewall/filter/get on each
-  # node 2026-09-17: opnsense01 WAN key is "wan", opnsense02 WAN key is
-  # "opt1" (its "opt2" is CICD, see vm_net_trunk_extra_vlans above).
+  # WAN est GUI-assigned par node (pas sync HA) : "opt1" ici, "wan" sur
+  # opnsense01 (confirmé 2026-09-17 ; "opt2" est CICD, voir vlans ci-dessus).
   custom_name: "opt1"
   gateway: "142.137.247.1"
 
@@ -72,7 +68,6 @@ vm_net:
 opnsense_ha_device_ip: "10.255.254.254"
 opnsense_ha_peer_ip: "10.255.254.253"
 
-# Dedicated Alloy syslog listener port on monitoring01 (see
-# AnsibleRoles monitoring/roles/opnsense_syslog README — one port per node,
-# config.alloy.j2 only supports static labels per listener).
+# Port dédié sur monitoring01 (labels statiques par listener dans config.alloy.j2,
+# voir README du rôle opnsense_syslog).
 opnsense_syslog_alloy_port: 5141

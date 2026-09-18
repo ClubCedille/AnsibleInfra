@@ -1,5 +1,5 @@
 ---
-# NOUVEAU — n'existe pas encore. vm_id choisi en suivant la séquence des workers existants
+# NOUVEAU, n'existe pas encore. vm_id suit la séquence des workers existants
 # (1009010-1009015) ; à revalider comme libre juste avant provisionnement réel.
 vm_id: 1009016
 vm_name: k8s-shared-worker-6

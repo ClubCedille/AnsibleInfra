@@ -25,16 +25,12 @@ forgejo_runner_registration_token: !vault |
   64316161346361353032313266333565323165653234393233396564323737376666613537353133
   3865613861363462366565643236356232376538663232653964
 
-# Host-native execution so the job gets direct access to /dev/kvm — needed
-# for the opnsense-cloudinit Packer/QEMU image builds. Kept off the default
-# "ubuntu-latest" pool used by the two Docker runners.
-# The ":host" suffix is required: act_runner falls back to Docker execution
-# (image node:22-bookworm, no /dev/kvm) on any label without a scheme.
+# Host-native pour l'accès direct à /dev/kvm (Packer/QEMU). ":host" requis :
+# sans scheme, act_runner retombe sur exécution Docker (pas de /dev/kvm).
 forgejo_runner_labels:
   - "kvm-runner:host"
 
-# Image builds are long (~10+ min under KVM) and CPU/IO heavy — avoid
-# running more than one at a time on this box.
+# Builds longs (~10+ min) et CPU/IO heavy : un seul à la fois sur cette box.
 forgejo_runner_capacity: 1
 
 forgejo_runner_extra_groups:
@@ -46,16 +42,12 @@ forgejo_runner_extra_packages:
   - qemu-utils
   - ovmf
 
-# Proxmox display name pinned independently of inventory_hostname —
-# manually renamed in Proxmox to match the Forgejo runner label
-# (2026-09-10). Without this override, a future cedille.proxmox.vm
-# run would revert to the inventory hostname.
+# Renommé manuellement dans Proxmox (2026-09-10) pour matcher le label runner ;
+# sans cet override, un futur run cedille.proxmox.vm reviendrait à inventory_hostname.
 vm_name: "KVM-Runner-1"
 
-# Pinned to match where the VM actually lives today (confirmed via
-# Proxmox API, 2026-09-10) — the group default formula doesn't
-# account for this host, and update-type API calls (tags, pool,
-# boot order) need the correct node to resolve the config path.
+# Pinned au node réel (Proxmox API, 2026-09-10) : la formule par défaut du
+# groupe ne couvre pas ce host, et les appels API update en ont besoin.
 vm_proxmox_node: "pve02"
 
 vm_mac: "BC:24:11:88:41:83"

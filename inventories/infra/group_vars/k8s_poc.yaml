@@ -24,15 +24,14 @@ vm_disk_format: raw
 vm_cpu_cores: 4
 vm_memory_mb: 8192
 
-# Codifies existing live state (verified via Proxmox API, 2026-09-10) —
-# shared by both controlplanes and workers. Role-specific tags in
-# group_vars/k8s_poc_controlplanes.yaml and k8s_poc_workers.yaml.
+# Codifies existing live state (Proxmox API, 2026-09-10), partagé par les deux
+# rôles ; tags spécifiques dans k8s_poc_controlplanes/workers.yaml.
 vm_pool: "RP-K8s-POC"
 
 # vm_net est défini entièrement dans chaque host_vars (les dicts Ansible ne font pas de deep merge par défaut).
 # Chaque host_vars contient : bridge, vlan, device, ip, gateway, netmask, nameservers, search_domain.
 
-# Talos ne lit pas cloud-init — ces champs sont requis par le rôle cedille.proxmox.vm mais ignorés.
+# Talos ne lit pas cloud-init ; champs requis par le rôle cedille.proxmox.vm mais ignorés.
 vm_user: "unused"
 vm_password: "unused"
 vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXzhuXLOwWSvswuR louis@nixos"

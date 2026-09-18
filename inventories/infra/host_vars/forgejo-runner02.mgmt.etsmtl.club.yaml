@@ -24,10 +24,8 @@ forgejo_runner_registration_token: !vault |
 forgejo_runner_extra_packages:
   - qemu-guest-agent
 
-# Proxmox display name pinned independently of inventory_hostname —
-# manually renamed in Proxmox to match the Forgejo runner label
-# (2026-09-10). Without this override, a future cedille.proxmox.vm
-# run would revert to the inventory hostname.
+# Renommé manuellement dans Proxmox (2026-09-10) pour matcher le label runner ;
+# sans cet override, un futur run cedille.proxmox.vm reviendrait à inventory_hostname.
 vm_name: "Generic-Runner-2"
 
 vm_mac: "BC:24:11:0F:C9:60"

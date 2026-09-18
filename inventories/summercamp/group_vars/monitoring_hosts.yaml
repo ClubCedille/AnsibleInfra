@@ -1,12 +1,8 @@
 ---
-# Override *_install variables to avoid Ansible recursive template evaluation.
-# Several cedille.monitoring roles define archive_url/archive_name/extracted_dir
-# using Jinja2 templates that self-reference the parent dict (e.g.
-# blackbox_exporter_install.archive_url references blackbox_exporter_install.version).
-# Newer Ansible versions detect this as a recursive loop. Flattening all URLs here fixes it.
-
-# Override *_paths to avoid the roles setting mode=0755 on /tmp (strips sticky bit).
-# All roles use archive_download_dir=/tmp by default — redirect to a dedicated dir instead.
+# Override *_install : évite la boucle récursive Jinja2 détectée par les Ansible récents
+# (archive_url référence archive_name qui référence... le même dict parent).
+# Override *_paths : évite mode=0755 sur /tmp (strips sticky bit), redirige vers un
+# dossier dédié plutôt que le défaut archive_download_dir=/tmp des rôles.
 _monitoring_download_dir: /opt/monitoring-downloads
 
 node_exporter_paths:

@@ -8,8 +8,8 @@ ansible_password: !vault |
   6333623135383336610a343532623531353331643164353261666333663637643437383861373161
   3564
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
-# Mirrors Debian (nas est Debian, pas Ubuntu) — pas les défauts du rôle.
+# Cache de paquets interne (mirror direct, BasicAuth). Mirrors Debian (nas est
+# Debian, pas Ubuntu), pas les défauts du rôle.
 pkgcache_apt:
   credentials:
     username: fleet

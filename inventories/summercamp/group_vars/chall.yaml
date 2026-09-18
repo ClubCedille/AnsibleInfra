@@ -54,9 +54,8 @@ vm_net:
 
 docker_registry_mirror_enabled: true
 
-# node_exporter (textfile collector for ctf_docker_state_exporter) — same overrides
-# as inventories/summercamp/group_vars/monitoring_hosts.yaml: avoid the role's
-# recursive-template archive_url and the /tmp sticky-bit-stripping mode=0755 default.
+# Mêmes overrides que group_vars/monitoring_hosts.yaml : évite le archive_url
+# récursif du rôle et le mode=0755 par défaut sur /tmp.
 node_exporter_paths:
   install_dir: /opt/node_exporter
   archive_download_dir: /opt/monitoring-downloads
@@ -78,7 +77,7 @@ docker_state_exporter_extra_env:
   LABEL_CHALLENGE: "{{ (group_names | difference(['chall', 'single_instance_challenges'])) | first }}"
   LABEL_TEAM: "{{ ansible_host.split('.')[-1] }}"
 
-# cedille.pkgcache.apt — cache de paquets interne (mirror direct, BasicAuth).
+# Cache de paquets interne (mirror direct, BasicAuth).
 # Mirrors Ubuntu par défaut du rôle (image de base ci-dessus).
 pkgcache_apt:
   credentials:

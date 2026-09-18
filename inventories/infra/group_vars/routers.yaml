@@ -7,25 +7,21 @@ ansible_user: root
 # opnsense-config.yaml overrides connection to local (API calls from control machine).
 ansible_connection: ssh
 
-# HA sync interface — dedicated NIC vtnet2, subnet 10.255.254.252/30
+# HA sync interface, dedicated NIC vtnet2, subnet 10.255.254.252/30
 opnsense_ha_interface: "opt15"
 opnsense_ha_peer_net: "10.255.254.252/30"
 
 # VIPs are already correctly configured (vhid 1-6, descriptions empty).
 # Disabled until vip_nat.yaml matching is updated to use vhid+interface.
 opnsense_manage_vips: false
-# NAT is in classic format — kept as-is pending rules analysis.
+# NAT is in classic format, kept as-is pending rules analysis.
 opnsense_manage_nat: false
 # VLANs already exist; interface_vlan module has no match_fields so it would
-# try to create duplicates. Skip — assert task confirms they're present.
+# try to create duplicates. Skip; assert task confirms they're present.
 opnsense_skip_vlan_create: true
 
-# CARP shared password. The "empty = no auth" assumption below was never
-# actually exercised (opnsense_manage_vips was always false, so no VIP
-# creation call had gone through this var) — turned out the live cluster
-# already shares one real password across all 7 existing VIPs (read from
-# config.xml, 2026-09-10) and the API rejects an empty one on create.
-# Reusing the same shared secret for new VIPs for consistency.
+# CARP shared password: the live cluster shares one real password across all
+# 7 existing VIPs (config.xml, 2026-09-10); reused here for new VIPs too.
 vip_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   37646663356365333531393061333039376233326636336238376132313565633464356533336230
@@ -46,10 +42,8 @@ vm_password: !vault |
   6333623135383336610a343532623531353331643164353261666333663637643437383861373161
   3564
 
-# cedille.pkgcache.opnsense — expérimental, pointe le repo FreeBSD de base
-# vers le cache interne freebsd-pkg. Ne gère PAS le dépôt OPNsense
-# lui-même (pkg.opnsense.org, firmware, plugins) — aucun backend serveur
-# dédié n'existe pour celui-ci. Voir cedille.pkgcache docs/README.md.
+# Expérimental : pointe le repo FreeBSD de base vers le cache freebsd-pkg,
+# ne gère PAS le dépôt OPNsense lui-même (pkg.opnsense.org, firmware, plugins).
 pkgcache_opnsense:
   credentials:
     username: fleet
@@ -61,16 +55,8 @@ pkgcache_opnsense:
       6461303965343232320a393263663231373932626637396235396532386335636339363536643061
       32343734376134333132313865336239323635313534366461363039346663393031
 
-# VLAN trunk — all VLANs on vtnet0.
-# VLAN 247 (vtnet0_vlan247): WAN delivery VLAN managed at Proxmox/switch level —
-# intentionally not managed by this role. Candidate for removal from OPNsense config.
-#
-# Final list is this shared set plus each node's vm_net_trunk_extra_vlans
-# (host_vars) — needed because interface assignment via the OPNsense GUI is
-# per-node and doesn't guarantee the same optX numbering on both routers
-# (confirmed 2026-09-09: VLAN 40 landed on opt1 on opnsense01 but opt2 on
-# opnsense02). Don't add a new shared entry below assuming identical optX
-# on both nodes without checking — verify per-node first.
+# VLAN trunk partagé (vtnet0) ; VLAN 247 (WAN, géré par Proxmox/switch) exclu.
+# optX diverge entre nodes (vm_net_trunk_extra_vlans en host_vars) : vérifier avant d'ajouter ici.
 vm_net_trunk:
   vlans: "{{ _vm_net_trunk_shared_vlans + (vm_net_trunk_extra_vlans | default([])) }}"
 
