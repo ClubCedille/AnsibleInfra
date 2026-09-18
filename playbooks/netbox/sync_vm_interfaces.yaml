@@ -13,7 +13,7 @@
 # VMs doivent exister dans NetBox).
 #
 # Usage :
-#   make netbox/sync_vm_interfaces VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make netbox/sync_vm_interfaces
 
 - name: Sync NetBox VM interfaces/IPs from vm_net/vm_nets (Ansible inventory)
   hosts: localhost

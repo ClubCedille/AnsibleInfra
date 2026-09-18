@@ -2,14 +2,14 @@
 # One-time migration of the forgejo runner fleet from VLAN21
 # (10.0.21.236-244) to the dedicated CI/CD VLAN (tag 40, 10.0.40.0/24,
 # renumbered 10.0.40.10-18). Run once hosts.ini/group_vars already
-# declare the new IPs/VLAN (the desired end-state) — this playbook is
+# declare the new IPs/VLAN (the desired end-state); this playbook is
 # what actually makes it true on Proxmox + inside each guest.
 #
-# serial: 1 — at most one runner offline at a time, never a total outage
+# serial: 1, at most one runner offline at a time, never a total outage
 # of the CI/CD fleet.
 #
 # Per host:
-#   1. cloud-init clean while still reachable on the OLD IP (VLAN21) —
+#   1. cloud-init clean while still reachable on the OLD IP (VLAN21):
 #      without this, a reboot alone won't make cloud-init re-render
 #      netplan from the new ipconfig0/net0 Proxmox hands it; NoCloud
 #      only fully re-inits when it doesn't recognize its cached state.
@@ -17,7 +17,7 @@
 #      2026-09-10: pushing net0 while the VM is RUNNING silently didn't
 #      persist the new VLAN tag (ipconfig0 took effect, net0 didn't),
 #      and a state:restarted (guest-level ACPI reboot) afterwards
-#      doesn't re-attach the vNIC either — only a genuine stop+start
+#      doesn't re-attach the vNIC either: only a genuine stop+start
 #      forces Proxmox to re-attach it with the current net0 config.
 #   3. Push new net0 (VLAN tag) + ipconfig0 (new IP/gateway) via the API
 #      while stopped.
@@ -25,8 +25,7 @@
 #   5. Wait for SSH to come back on the NEW IP (ansible_host already
 #      points there from the inventory change).
 #
-# Usage: ansible-playbook -i inventories/infra/hosts.ini \
-#   playbooks/oneoff/network-migrate-forgejo-runners-vlan40.yaml --ask-vault-pass
+# Usage: make oneoff/network-migrate-forgejo-runners-vlan40
 
 - name: Migrate forgejo runners to VLAN 40 (CI/CD)
   hosts: forgejo_runners
@@ -38,13 +37,13 @@
 
   tasks:
     - name: "Clean cloud-init state while still reachable on the old IP"
-      # hosts.ini's ansible_host already points at the NEW (VLAN 40) IP —
+      # hosts.ini's ansible_host already points at the NEW (VLAN 40) IP:
       # that's the desired end-state, but the VM is still physically on
       # VLAN21 until later tasks run. Old IP follows a fixed pattern
-      # (10.0.21.<vm_id mod 1000> — e.g. vm_id 21236 → 10.0.21.236,
+      # (10.0.21.<vm_id mod 1000>, e.g. vm_id 21236 -> 10.0.21.236,
       # matching every runner's original VLAN21 address) so it doesn't
       # need a second inventory field just for this one-time migration.
-      # Runs over SSH to the guest — must NOT inherit the control
+      # Runs over SSH to the guest: must NOT inherit the control
       # machine's venv interpreter used by the delegate_to:localhost
       # Proxmox API tasks below.
       ansible.builtin.command:
@@ -57,7 +56,7 @@
     - name: "Authenticate to Proxmox API (ticket)"
       # community.proxmox.proxmox_kvm's state:stopped was unreliable here
       # (confirmed live, 2026-09-10: "VM quit/powerdown failed" timeout,
-      # VM never actually stopped) — raw API stop/start calls (same ones
+      # VM never actually stopped), raw API stop/start calls (same ones
       # used to recover the botched first attempt) proved reliable.
       ansible.builtin.uri:
         url: "https://{{ vm_proxmox_api.host }}:8006/api2/json/access/ticket"
@@ -90,7 +89,7 @@
         seconds: 10
 
     - name: "Look up the VM's actual current node"
-      # These runners are HA-managed — confirmed live, 2026-09-10:
+      # These runners are HA-managed (confirmed live, 2026-09-10):
       # stopping via the plain qemu status/stop endpoint (rather than
       # the HA-aware path) can trigger Proxmox's HA stack to relocate
       # the VM to a different node as part of its own reconciliation,
@@ -120,7 +119,7 @@
       # THE actual root cause of two failed attempts (confirmed by
       # reading module source, 2026-09-10): proxmox_kvm silently DROPS
       # the `net` param on any update unless update_unsafe:true is
-      # explicitly passed — a deliberate safety guard ("don't update
+      # explicitly passed, a deliberate safety guard ("don't update
       # disk... and network interface, unless update_unsafe=True"),
       # completely unrelated to VM power state. ipconfig0 was never
       # affected by this (it's not in the guarded list), which is why it

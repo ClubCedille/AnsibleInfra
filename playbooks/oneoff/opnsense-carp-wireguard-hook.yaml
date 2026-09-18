@@ -2,31 +2,30 @@
 # Bootstrap fix for the "can't reach opnsense02 from the VPN" bug.
 #
 # Root cause: the stock os-wireguard CARP hook only ever re-applies the
-# WireGuard config on any CARP transition — it never actually stops the
+# WireGuard config on any CARP transition, it never actually stops the
 # service on BACKUP (unlike OpenVPN, which is naturally inert on the
 # backup node because its server binds to the CARP VIP interface object).
 # So wg0 runs active-active on both HA nodes: the backup keeps a locally
 # connected route for the VPN client pool and silently swallows reply
 # traffic that should instead transit back to the client via the master.
 # This breaks any TCP/UDP flow sourced from a VPN client IP toward
-# opnsense02 directly — SSH, and the OPNsense API used by
+# opnsense02 directly: SSH, and the OPNsense API used by
 # opnsense-config.yaml/opnsense-diff.yaml.
 #
 # This playbook uses plain SSH (connection: ssh, inherited from
-# group_vars/routers.yaml), not the OPNsense API — opnsense02's
+# group_vars/routers.yaml), not the OPNsense API: opnsense02's
 # ansible_ssh_common_args already has a working ProxyJump through
 # opnsense01, so this runs fine over VPN today without needing a jumpbox.
 #
 # It's a standalone bootstrap: the same fix also lives in
 # AnsibleRoles opnsense/roles/config (carp_wireguard_hook.yaml, wired into
-# main.yaml) for the long-term managed flow — but that only reaches this
+# main.yaml) for the long-term managed flow, but that only reaches this
 # repo after a `make galaxy-install-dev` refresh from the pushed branch.
 # Run this once now to unblock the API immediately; the packaged role
 # version will just no-op (file already correct) once it's live here too.
 #
 # Usage:
-#   .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
-#     playbooks/oneoff/opnsense-carp-wireguard-hook.yaml --ask-vault-pass
+#   make oneoff/opnsense-carp-wireguard-hook
 
 - name: Fix WireGuard CARP transition hook on both routers
   hosts: routers
@@ -47,24 +46,24 @@
         mode: "0755"
         content: |
           #!/bin/sh
-          # Managed by Ansible — see playbooks/oneoff/opnsense-carp-wireguard-hook.yaml
+          # Managed by Ansible, see playbooks/oneoff/opnsense-carp-wireguard-hook.yaml
           # and AnsibleRoles opnsense/roles/config/templates/carp-wireguard-hook.sh.j2
           # for the full diagnosis. Args: $1 = subsystem ("vhid@interface"),
           # $2 = event type (MASTER/BACKUP/INIT).
           #
           # Full sequence validated live against opnsense01/02, 2026-09-09:
-          #   1. `configctl wireguard stop` is a no-op — wg0 is an *assigned*
+          #   1. `configctl wireguard stop` is a no-op: wg0 is an *assigned*
           #      OPNsense interface ("breakingglass", opt11, now the primary
-          #      admin VPN — legacy name from when OpenVPN was primary), so
+          #      admin VPN, legacy name from when OpenVPN was primary), so
           #      the service stop/start actions don't touch its interface
           #      state. `ifconfig down` does remove the broad connected
-          #      route for the tunnel subnet — necessary but not sufficient.
+          #      route for the tunnel subnet, necessary but not sufficient.
           #   2. The WireGuard kernel driver injects a /32 host route per
-          #      peer independent of admin up/down state — these persist
+          #      peer independent of admin up/down state: these persist
           #      after `ifconfig down` and keep swallowing replies for any
           #      peer that already has one. Deleted explicitly below.
           #   3. Once wg0 is down and its routes are gone, the backup has
-          #      *no* route back to the VPN pool at all — an explicit
+          #      *no* route back to the VPN pool at all: an explicit
           #      static route via the peer's real LAN IP is required so
           #      replies transit back to the client through the master,
           #      which still owns the live tunnel session.

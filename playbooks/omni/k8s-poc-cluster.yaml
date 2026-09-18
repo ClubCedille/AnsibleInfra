@@ -1,9 +1,9 @@
 ---
 # Crée les ressources Omni pour le cluster k8s-poc (Cluster + MachineSets + MachineSetNodes).
 # Prérequis : les VMs doivent avoir booté et être visibles dans Omni UI (état "Available").
-# Exécuté en local — utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
+# Exécuté en local, utilise omnictl avec l'auth interactive déjà en cache (~/.talos/keys/).
 #
-# Usage : ansible-playbook playbooks/omni/k8s-poc-cluster.yaml -i inventories/infra/
+# Usage : make omni/k8s-poc-cluster
 - name: Apply k8s-poc cluster resources to Omni
   hosts: localhost
   gather_facts: false

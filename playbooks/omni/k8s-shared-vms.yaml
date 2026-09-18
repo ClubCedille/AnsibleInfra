@@ -1,31 +1,33 @@
 ---
 # Provision les 3 nouveaux nodes k8s-shared (worker-6/pve05, worker-7/pve08,
 # controlplane-4/pve01) sur Proxmox, en reproduisant la configuration exacte des 10 VMs
-# k8s-shared existantes — vérifiée via `pvesh get .../qemu/<vmid>/config` et
+# k8s-shared existantes, vérifiée via `pvesh get .../qemu/<vmid>/config` et
 # `omnictl get machinestatuses` sur les 10 nodes le 2026-08-17 (aucun playbook d'origine
 # retrouvé, tag Proxmox "TF" présent sur ces VMs mais sans correspondance dans les repos
-# Terraform clonés localement — origine non déterminée) :
+# Terraform clonés localement, origine non déterminée) :
 #
 #   - Control-planes : disque unique scsi0 (40G, virtio-scsi), 2 NICs (VLAN 500 + VLAN 1009).
 #   - Workers : disque unique ide0 (250G), 3 NICs (VLAN 500 + VLAN 1009 + VLAN 247/IP publique).
 #   - ostype "other" (pas l26), pas de cloud-init.
 #   - Boot ISO self-install (comme k8s-poc-vms.yaml) : une control-plane existante rapporte
 #     encore un CD-ROM dans son inventaire matériel Talos (device resté dans l'état interne
-#     d'Omni depuis l'installation initiale, taille cohérente avec l'ISO) — le CDROM est
+#     d'Omni depuis l'installation initiale, taille cohérente avec l'ISO) ; le CDROM est
 #     ensuite éjecté du config Proxmox après l'installation, comme sur k8s-poc.
 #   - VLAN 1009 (tag net1) = réseau réel des nodes Talos/Kubernetes (10.5.9.0/24, confirmé via
 #     l'interface OPNsense vtnet0_vlan1009) ; usage exact de VLAN 500 (net0) non déterminé.
 #
-# Reconstruction sur la base de l'état observé, sans playbook source retrouvé — à valider par
+# Reconstruction sur la base de l'état observé, sans playbook source retrouvé ; à valider par
 # l'opérateur avant toute exécution réelle (cf.
 # ~/Cedille/docs/migration-prodv2-to-k8s-shared/resize-runbook.md).
 #
 # Prerequisites :
 #   - ISO Talos k8s-shared uploadée sur pve01/pve05/pve08 :
-#     ansible-playbook playbooks/proxmox/upload-talos-iso-k8s-shared.yaml -i inventories/infra/
+#     make proxmox/upload-talos-iso-k8s-shared
 #   - VLANs 500/1009/247 déjà actifs sur pve01/pve05/pve08 (utilisés par les VMs k8s-shared
 #     existantes, aucune action réseau attendue ici)
 #   - Les 3 VMs ne doivent pas déjà exister
+#
+# Usage : make omni/k8s-shared-vms
 
 - name: Provision new k8s-shared control-plane (scsi0 disk, 2 NICs, ISO boot)
   hosts: k8s-shared-controlplane-4

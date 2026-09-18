@@ -5,8 +5,10 @@
 #
 # Prerequisites:
 #   - ISO present on all PVE hosts: /var/lib/vz/template/iso/talos-1.13.5-bios-nocloud-amd64.iso
-#     (distribute via: ansible-playbook playbooks/omni/upload-talos-iso.yaml)
+#     (distribute via: make proxmox/upload-talos-iso)
 #   - VMs must not exist (run cleanup first if needed)
+#
+# Usage : make omni/k8s-poc-vms
 
 - name: Provision k8s PoC VMs on Proxmox (ISO boot)
   hosts: k8s_poc

@@ -10,6 +10,9 @@
 # never removes volumes: single-instance challenges are shared by the whole
 # event, so wiping volumes here would nuke state for everyone instead of
 # just one team.
+#
+# Hôtes : single_instance_challenges
+# Usage : make sc/update_single_chall/<hosts ou groupe>
 - name: Update Single-Instance Challenge docker compose deployment
   hosts: single_instance_challenges
   gather_facts: false

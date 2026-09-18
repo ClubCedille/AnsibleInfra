@@ -6,10 +6,10 @@
 #
 # Schematic et version confirmés en direct via `omnictl get machinestatuses -o yaml` sur les
 # 10 VMs k8s-shared existantes le 2026-08-17 (champ spec.schematic.fullid, identique sur les
-# 10 machines) — pas une valeur copiée de k8s-poc. Extensions : intel-ucode + qemu-guest-agent
+# 10 machines), pas une valeur copiée de k8s-poc. Extensions : intel-ucode + qemu-guest-agent
 # (pas de lldpd, contrairement à k8s-poc).
 #
-# Usage : ansible-playbook playbooks/proxmox/upload-talos-iso-k8s-shared.yaml -i inventories/infra/
+# Usage : make proxmox/upload-talos-iso-k8s-shared
 - name: Upload Talos ISO for k8s-shared to target Proxmox hosts
   hosts: pve01.mgmt.etsmtl.club,pve05.mgmt.etsmtl.club,pve08.mgmt.etsmtl.club
   gather_facts: false

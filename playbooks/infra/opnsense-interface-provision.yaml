@@ -1,5 +1,5 @@
 ---
-# OPNsense interface escape-hatch — SSH-based interface assignment.
+# OPNsense interface escape-hatch, SSH-based interface assignment.
 #
 # USE ONLY when interface assignment or IP addressing needs to change and
 # the OPNsense GUI is not available. The OPNsense API does not support
@@ -20,7 +20,7 @@
 #     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
 #       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass
 #
-#   Apply interface IP changes (destructive — requires explicit --tags apply):
+#   Apply interface IP changes (destructive, requires explicit --tags apply):
 #     .venv/bin/ansible-playbook -i inventories/infra/hosts.ini \
 #       playbooks/infra/opnsense-interface-provision.yaml --ask-vault-pass \
 #       --tags apply --limit opnsense01
@@ -121,7 +121,7 @@
             # Only update IP if it differs
             current_ip = iface_el.findtext('ipaddr', '')
             if current_ip != vlan['network']:
-              # Note: we set the node IP, not the CARP VIP — CARP VIP is in <virtualip>
+              # Note: we set the node IP, not the CARP VIP (CARP VIP is in <virtualip>)
               print(f'INFO: {iface_name} IP unchanged (node IP must be set manually — this script only validates)')
             else:
               print(f'OK: {iface_name} IP matches')

@@ -22,11 +22,11 @@
   become: true
   vars:
     # NX-OS (7.0.3.I6(2) sur data01) émet un syslog non conforme RFC3164
-    # ("<189>: 2026 Sep 2 18:24:04 UTC: %VSHD-..." — deux-points + année sur
+    # ("<189>: 2026 Sep 2 18:24:04 UTC: %VSHD-...", deux-points + année sur
     # 4 chiffres juste après le PRI), rejeté silencieusement par le parser
-    # rfc3164 (aucune erreur nulle part, juste zéro donnée dans Loki — root
+    # rfc3164 (aucune erreur nulle part, juste zéro donnée dans Loki : root
     # cause trouvée en confirmant par tcpdump qu'un paquet réel arrivait
-    # bien côté réseau). "raw" évite le parsing d'en-tête entièrement — on
+    # bien côté réseau). "raw" évite le parsing d'en-tête entièrement, on
     # n'a besoin que du contenu du message pour le filtre allowlist.
     alloy_custom_args:
       - "--stability.level=experimental"
@@ -53,11 +53,11 @@
           job: switch
           instance: data01
           env: infra
-        # Interfaces (up/down/flap, transceivers), port-channels, STP —
+        # Interfaces (up/down/flap, transceivers), port-channels, STP :
         # tout le reste du syslog de data01 est jeté (voir stage.drop).
         keep_regex: "(?P<interesting>%ETHPORT-|%ETH_PORT_CHANNEL-|%STP-)"
 
-      # OPNsense — un port dédié par nœud (voir host_vars
+      # OPNsense : un port dédié par nœud (voir host_vars
       # opnsense_syslog_alloy_port) car config.alloy.j2 applique un jeu de
       # labels STATIQUE par listener : deux nœuds sur un seul port seraient
       # indistinguables dans Loki (voir README du rôle opnsense_syslog).

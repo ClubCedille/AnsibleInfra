@@ -1,8 +1,8 @@
 ---
-# Sous-tâches pour playbooks/netbox/sync_vm_interfaces.yaml — inclus en
+# Sous-tâches pour playbooks/netbox/sync_vm_interfaces.yaml, inclus en
 # boucle sur vm_name (un `block:` ne peut pas être bouclé directement en
 # Ansible). Lit vm_nets (multi-NIC) ou vm_net (single-NIC, historique)
-# directement depuis les hostvars -- aucune donnée dupliquée dans playbooks/
+# directement depuis les hostvars : aucune donnée dupliquée dans playbooks/
 # netbox/vars/.
 
 - name: Determine NIC list for this VM

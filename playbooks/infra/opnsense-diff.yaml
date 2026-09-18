@@ -1,5 +1,5 @@
 ---
-# OPNsense configuration diff/validation — read-only debug menu.
+# OPNsense configuration diff/validation, read-only debug menu.
 #
 # Reads current state from the OPNsense API and SSH (for classic rules),
 # compares with the desired state defined in host_vars/group_vars, and
@@ -16,7 +16,7 @@
 #     [--limit opnsense01]
 
 # ---------------------------------------------------------------------------
-# Play 1: API-based reads (connection: local — calls go from control machine)
+# Play 1: API-based reads (connection: local, calls go from control machine)
 # ---------------------------------------------------------------------------
 - name: OPNsense diff — API state
   hosts: routers
@@ -80,7 +80,7 @@
       tags: [interfaces]
 
     # -----------------------------------------------------------------------
-    # RULES (new format — Firewall → Automation → Filter)
+    # RULES (new format, Firewall -> Automation -> Filter)
     # -----------------------------------------------------------------------
     - name: "[rules] Fetch current new-format rules from API"
       ansible.builtin.uri:

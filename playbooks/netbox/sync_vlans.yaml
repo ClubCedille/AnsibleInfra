@@ -1,19 +1,19 @@
 ---
 # Synchronise dans NetBox l'état des VLANs/prefixes tel que déclaré par
 # Ansible. Source de vérité unique : pve_vlans_desired dans
-# inventories/infra/group_vars/pve.yaml — le même playbook (network/
+# inventories/infra/group_vars/pve.yaml. Le même playbook (network/
 # update-vlans.yaml) crée réellement ces VLANs sur le trunk PVE, et ce
 # playbook-ci se contente de lire les mêmes données (+ les clés netbox_*
 # optionnelles, voir les commentaires de pve_vlans_desired) pour les
 # refléter dans NetBox. Pas de liste dupliquée à maintenir en parallèle.
 #
 # Usage :
-#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault
-#   make netbox/sync_vlans VAULT_PASSWORD_FILE=~/Cedille/.vault DRY_RUN=1
+#   make netbox/sync_vlans
+#   make netbox/sync_vlans DRY_RUN=1
 #
 # netbox_api_url / netbox_api_token viennent de
 # inventories/infra/group_vars/all.yaml (token vaulté). netbox_api_token
-# est un token NetBox v1 classique (40 caractères en clair) — pas le
+# est un token NetBox v1 classique (40 caractères en clair), pas le
 # format v2 "Bearer nbt_<key>.<secret>" : les modules netbox.netbox
 # (pynetbox) envoient "Authorization: Token <valeur>", incompatible avec
 # le schéma v2.

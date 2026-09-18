@@ -1,6 +1,6 @@
 ---
 # Standalone sync of Proxmox pool membership + tags for any host with
-# vm_pool/vm_tags defined in its vars — without touching the rest of the
+# vm_pool/vm_tags defined in its vars, without touching the rest of the
 # VM lifecycle (creation, disk, resize, boot order). Safe to run against
 # already-existing, actively-used VMs (k8s nodes, etc.) since it never
 # calls proxmox_kvm with anything other than tags, and never creates or

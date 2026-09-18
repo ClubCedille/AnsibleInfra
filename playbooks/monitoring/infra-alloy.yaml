@@ -47,7 +47,7 @@
           env: infra
           instance: "{{ ansible_hostname }}"
     alloy_journal_sources:
-      # ── PVE — daemons Proxmox/cluster ─────────────────────────────────────
+      # ── PVE : daemons Proxmox/cluster ──────────────────────────────────────
       - name: corosync
         matches: "_SYSTEMD_UNIT=corosync.service"
         labels:
@@ -83,7 +83,7 @@
           unit: ceph-crash
           env: infra
           instance: "{{ ansible_hostname }}"
-      # ── NAS — daemons applicatifs ──────────────────────────────────────────
+      # ── NAS : daemons applicatifs ───────────────────────────────────────────
       - name: garage
         matches: "_SYSTEMD_UNIT=garage.service"
         labels:
@@ -112,7 +112,7 @@
           unit: NetworkManager
           env: infra
           instance: "{{ ansible_hostname }}"
-      # ── Système — commun PVE + NAS (rsyslog absent, journald-only) ────────
+      # ── Système : commun PVE + NAS (rsyslog absent, journald-only) ─────────
       - name: ssh
         matches: "_SYSTEMD_UNIT=ssh.service"
         labels:
@@ -135,10 +135,10 @@
           env: infra
           instance: "{{ ansible_hostname }}"
         # pve03/pve04 (HPE Gen9, PCIe root port 00:02.2 hosting the 82599ES
-        # 10G NIC) are stuck in a PCIe PME spurious-interrupt storm — known
+        # 10G NIC) are stuck in a PCIe PME spurious-interrupt storm: a known
         # ixgbe/82599 kernel bug, not fixable without a reboot
         # (pcie_pme=nomsi) or a live PCI rescan. Drop it here so it doesn't
-        # flood Loki in the meantime — see Plateforme-Cedille#657.
+        # flood Loki in the meantime, see Plateforme-Cedille#657.
         drop_regex: "PME: Spurious native interrupt"
   roles:
     - cedille.monitoring.alloy

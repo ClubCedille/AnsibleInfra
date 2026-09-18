@@ -1,9 +1,9 @@
 ---
 # Audit en lecture seule de la configuration réseau sur tous les nœuds PVE.
-# Utilise l'API Proxmox (proxmoxer) depuis le controller — pas de SSH.
+# Utilise l'API Proxmox (proxmoxer) depuis le controller, pas de SSH.
 #
 # Usage :
-#   ansible-playbook -i inventories/infra/hosts.ini playbooks/proxmox/gather-network.yaml
+#   make proxmox/gather-network
 - name: Gather PVE network interface state
   hosts: pve
   gather_facts: false

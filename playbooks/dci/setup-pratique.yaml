@@ -1,4 +1,9 @@
 ---
+# Provisionne les VMs "pratique" du DCI (dockercache + challenge), attend le
+# SSH, puis installe Docker et démarre le challenge via Docker Compose.
+# Hôtes : dci_vms
+# Usage : make dci/setup-pratique
+
 - name: Provision Challenge VMs on Proxmox
   hosts: dci_vms
   gather_facts: false

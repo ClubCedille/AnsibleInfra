@@ -9,7 +9,7 @@
   gather_facts: false
   become: true
   tasks:
-    # Run once — all PVE nodes share the same Ceph cluster config.
+    # Run once: all PVE nodes share the same Ceph cluster config.
     # The prometheus module exposes metrics on port 9283 on the active MGR node;
     # Prometheus scrapes all nodes and only the active one responds.
     - name: Enable Ceph MGR Prometheus module

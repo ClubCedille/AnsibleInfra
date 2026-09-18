@@ -28,7 +28,7 @@
         path: /tmp
         mode: "1777"
 
-    # Override only config_template in prometheus_paths — combine() shallow-merges
+    # Override only config_template in prometheus_paths: combine() shallow-merges
     # so we don't have to duplicate all default path values.
     - name: Set Prometheus config template to infra-specific version
       ansible.builtin.set_fact:

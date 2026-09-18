@@ -1,6 +1,7 @@
 ---
 # Crée la VM du serveur CS2 sur Proxmox (LanETS).
-# Hôtes : cs2 (connection: local → Proxmox API)
+# Hôtes : cs2 (connection: local, appels vers l'API Proxmox)
+# Usage : make events/lanets/cs2-create-vm
 
 - name: Create a vm for a cs2 server
   hosts: cs2

@@ -5,7 +5,7 @@
 #   1. Les 4 anciens prefixes des VLANs événementiels (10.110/120/130/
 #      140.0.0/16) sont remplacés par les vrais (10.66-69.0.0/16, cf.
 #      netbox_prefix corrigé sur les VLANs 66-69). Les anciens ne sont pas
-#      réutilisés (CIDR différent, pas juste un renommage) -- supprimés.
+#      réutilisés (CIDR différent, pas juste un renommage), supprimés.
 #
 #   2. VLANs 310/320/330/340 ("EVENT - ...") : ancien schéma de
 #      numérotation événementiel abandonné, remplacé par 66-69. Supprimés.
@@ -14,16 +14,16 @@
 #      site=None) : Management(21), DMZ(247), Services(500), k8s03(1003),
 #      k8s09(1009), k8s10(1010). Vérifié avant suppression qu'aucune
 #      interface de device physique ne les référence (untagged_vlan/
-#      tagged_vlans) -- aucun membre orphelin après coup. Le seul prefix
+#      tagged_vlans), aucun membre orphelin après coup. Le seul prefix
 #      qui pointait sur l'une d'elles (142.137.247.0/24 -> DMZ) a déjà été
 #      réassigné à "wan" automatiquement par sync_vlans.yaml (le module
 #      netbox_prefix matche par valeur de CIDR, pas par VLAN).
 #
-# Playbook à usage unique -- IDs figés au moment de l'audit (2026-09-17),
+# Playbook à usage unique, IDs figés au moment de l'audit (2026-09-17),
 # à ne pas relancer tel quel après application.
 #
 # Usage :
-#   make netbox/cleanup_2026-09-17b VAULT_PASSWORD_FILE=~/Cedille/.vault
+#   make oneoff/netbox-cleanup-2026-09-17b
 
 - name: One-time NetBox cleanup (stale event prefixes, retired VLANs, duplicates)
   hosts: localhost

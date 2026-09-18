@@ -19,7 +19,7 @@
   gather_facts: true
   become: true
   vars:
-    # DMZ host — internal registry mirror (10.150.0.100) is not reachable
+    # DMZ host, internal registry mirror (10.150.0.100) is not reachable
     # Role uses both prefixed (defaults) and un-prefixed (when: condition) variants
     install_docker_registry_mirror_enabled: false
     docker_registry_mirror_enabled: false
