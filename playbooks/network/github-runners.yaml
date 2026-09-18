@@ -38,17 +38,21 @@
   hosts: github_runners
   gather_facts: false
   become: true
-  vars:
-    # Doit rester synchro avec data_dir/container_data_dir du rôle (pas en
-    # scope ici, rôle non exécuté) — voir github_runner_container_data_dir.
-    _github_runner_data_dir: >-
-      {{ '/var/lib/github-runner-container' if (github_runner_containerized | default(false))
-         else '/var/lib/github-runner' }}
   tasks:
-    - name: Check for an existing .runner registration file
+    # Mode containerized : rien à inspecter sur l'hôte (pas de fichier
+    # persisté, voir AnsibleRoles#104) — on mint systématiquement un jeton.
+    - name: Check for an existing .runner registration file (bare-metal only)
       ansible.builtin.stat:
-        path: "{{ _github_runner_data_dir }}/.runner"
-      register: _runner_registered
+        path: /var/lib/github-runner/.runner
+      register: _runner_registered_stat
+      when: not (github_runner_containerized | default(false))
+
+    - name: Compute registration status
+      ansible.builtin.set_fact:
+        _runner_registered: >-
+          {{ {'stat': {'exists': _runner_registered_stat.stat.exists}}
+             if not (github_runner_containerized | default(false))
+             else {'stat': {'exists': false}} }}
 
 - name: Ensure GitHub org runner groups exist
   hosts: localhost
