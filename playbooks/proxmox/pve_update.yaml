@@ -2,7 +2,7 @@
 # Met à jour les hôtes PVE
 #
 # Hôtes : pve
-# Usage : make proxmox/pve_updatte.yaml
+# Usage : make proxmox/pve_update.yaml
 
 - name: Update all PVE hosts
   hosts: pve

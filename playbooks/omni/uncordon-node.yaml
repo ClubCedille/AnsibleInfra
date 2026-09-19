@@ -1,0 +1,41 @@
+---
+# Étape 4 du runbook de maintenance Talos (voir AnsibleRoles/talos/docs/README.md).
+# Décordonne un node une fois l'upgrade Talos terminé. Cible exactement un node :
+#   make omni/uncordon-node LIMIT=k8s-shared-worker-0
+# run_once au niveau du play (pas de la task) : ansible-lint (profil
+# production) rejette run_once sur une task seule ("peut se comporter
+# différemment avec strategy: free"). Sans incidence ici puisqu'une fois la
+# vérification passée il ne reste qu'un seul host de toute façon.
+# connection: local — les nodes Talos n'ont pas de SSH (OS immuable) ; le
+# host d'inventaire ne sert qu'à identifier le node/ses group_vars, toutes
+# les actions (omnictl/talosctl/kubectl) tournent depuis le runner/l'opérateur.
+- name: Décordonner un node après maintenance
+  hosts: k8s_shared
+  connection: local
+  gather_facts: false
+  become: false
+  run_once: true
+
+  pre_tasks:
+    - name: Vérifier qu'un seul node est ciblé
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+        fail_msg: >-
+          Cette target doit cibler exactement un node : relancer avec
+          LIMIT=<hostname> (ex. LIMIT=k8s-shared-worker-0).
+        quiet: true
+      # Sauté en dry-run (--check) : le CI de PR lance cette target sans
+      # LIMIT sur tout le groupe k8s_shared, ce qui ferait toujours échouer
+      # cette garde.
+      when: not ansible_check_mode
+
+  roles:
+    # when ici aussi (pas juste sur la garde ci-dessus) : le rôle appelle
+    # omnictl/kubectl pour de vrai contre l'instance Omni/le cluster de prod
+    # même en lecture seule — un --check sur le dry-run CI automatique de PR
+    # ne doit jamais toucher l'infra réelle, LIMIT ou pas.
+    - role: cedille.talos.cordon
+      vars:
+        talos_cordon_state: uncordoned
+      when: not ansible_check_mode

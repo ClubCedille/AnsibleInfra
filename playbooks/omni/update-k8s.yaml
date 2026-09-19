@@ -1,0 +1,34 @@
+---
+# Étape 5 du runbook de maintenance Talos (voir AnsibleRoles/talos/docs/README.md).
+# Upgrade Kubernetes sur TOUT le cluster (control plane + kubelets), une fois
+# que tous ses nodes ont déjà été upgradés en Talos (étapes 1-4 répétées par
+# node). Cible un cluster entier, pas un node :
+#   make omni/update-k8s LIMIT=k8s_shared \
+#     EXTRA_VARS="talos_target_kubernetes_version=1.34.1 talos_expected_version=1.13.8"
+# connection: local — les nodes Talos n'ont pas de SSH (OS immuable) ; le
+# host d'inventaire ne sert qu'à identifier le node/ses group_vars, toutes
+# les actions (omnictl/talosctl/kubectl) tournent depuis le runner/l'opérateur.
+- name: Upgrader Kubernetes sur un cluster
+  hosts: k8s_shared
+  connection: local
+  gather_facts: false
+  become: false
+  run_once: true
+
+  pre_tasks:
+    - name: Vérifier que tous les nodes ciblés appartiennent au même cluster Omni
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length > 0
+          - (ansible_play_hosts_all | map('extract', hostvars, 'talos_omni_cluster') | unique | list | length) == 1
+        fail_msg: >-
+          Cette target doit cibler un seul cluster à la fois : relancer avec
+          LIMIT=k8s_shared, pas un sous-ensemble ambigu.
+        quiet: true
+
+  roles:
+    # when : le rôle appelle omnictl/talosctl pour de vrai contre l'instance
+    # Omni/le cluster de prod même en lecture seule — un --check sur le
+    # dry-run CI automatique de PR ne doit jamais toucher l'infra réelle.
+    - role: cedille.talos.update_k8s
+      when: not ansible_check_mode
