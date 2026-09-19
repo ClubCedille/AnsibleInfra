@@ -3,7 +3,7 @@
 # Cordonne un node en vue d'un upgrade Talos. Cible exactement un node :
 #   make omni/cordon-node LIMIT=k8s-shared-worker-0
 - name: Cordonner un node avant maintenance
-  hosts: k8s_shared:k8s_cedille_production_v2
+  hosts: k8s_shared
   gather_facts: false
   become: false
 

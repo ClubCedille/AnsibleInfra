@@ -3,7 +3,7 @@
 # Décordonne un node une fois l'upgrade Talos terminé. Cible exactement un node :
 #   make omni/uncordon-node LIMIT=k8s-shared-worker-0
 - name: Décordonner un node après maintenance
-  hosts: k8s_shared:k8s_cedille_production_v2
+  hosts: k8s_shared
   gather_facts: false
   become: false
 

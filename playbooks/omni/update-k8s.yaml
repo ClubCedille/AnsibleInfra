@@ -6,7 +6,7 @@
 #   make omni/update-k8s LIMIT=k8s_shared \
 #     EXTRA_VARS="talos_target_kubernetes_version=1.34.1 talos_expected_version=1.13.8"
 - name: Upgrader Kubernetes sur un cluster
-  hosts: k8s_shared:k8s_cedille_production_v2
+  hosts: k8s_shared
   gather_facts: false
   become: false
   run_once: true
@@ -19,8 +19,7 @@
           - (ansible_play_hosts_all | map('extract', hostvars, 'talos_omni_cluster') | unique | list | length) == 1
         fail_msg: >-
           Cette target doit cibler un seul cluster à la fois : relancer avec
-          LIMIT=k8s_shared ou LIMIT=k8s_cedille_production_v2, pas les deux à
-          la fois ni un sous-ensemble ambigu.
+          LIMIT=k8s_shared, pas un sous-ensemble ambigu.
         quiet: true
 
   roles:
