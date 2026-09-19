@@ -1,0 +1,17 @@
+---
+# Config partagée par tous les clusters gérés par l'instance Omni cloud
+# (cedille.na-west-1.omni.siderolabs.io) — k8s-shared et
+# k8s-cedille-production-v2. Ne concerne PAS k8s-poc (omni.etsmtl.club,
+# self-hébergé, SA omni-ansible séparé — voir docs/omni-saml-auth.md).
+#
+# talos_omni_cluster (nom de la ressource Cluster dans Omni, propre à chaque
+# cluster) reste dans group_vars/k8s_shared.yaml et
+# group_vars/k8s_cedille_production_v2.yaml, pas ici.
+
+talos_omni_endpoint: "https://cedille.na-west-1.omni.siderolabs.io:443/"
+
+# SA dédié à l'automatisation GitHub Actions (rôle Operator, pas Admin, pas
+# le SA omni-ansible existant) — voir AnsibleRoles/talos/docs/README.md pour
+# la commande de création. Clé à vaulter ici une fois générée :
+#   ansible-vault encrypt_string --stdin-name talos_omni_service_account_key
+talos_omni_service_account_key: ""

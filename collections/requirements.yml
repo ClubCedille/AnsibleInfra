@@ -26,3 +26,5 @@ collections:
     type: dir
   - name: .cache/AnsibleRoles/omni
     type: dir
+  - name: .cache/AnsibleRoles/talos
+    type: dir

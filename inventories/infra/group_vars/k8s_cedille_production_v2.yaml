@@ -1,0 +1,12 @@
+---
+# Adoption minimale (décision 2026-09-19, voir mémoire
+# project_talos_collection_github_sa) : prod-v2 est candidat à la
+# décommission, donc pas de group_vars détaillés type k8s_shared.yaml
+# (pools, tags, réseau Proxmox complet) — juste ce qu'il faut pour piloter
+# la maintenance Talos/K8s via la collection cedille.talos en attendant.
+#
+# Nom de la ressource Cluster dans Omni (cedille.na-west-1.omni.siderolabs.io,
+# voir group_vars/talos_omni_managed.yaml pour l'endpoint/SA partagés) — à
+# CONFIRMER via `omnictl get clusters` avant le premier run, pas vérifié en
+# direct à l'écriture.
+talos_omni_cluster: "k8s-cedille-production-v2"

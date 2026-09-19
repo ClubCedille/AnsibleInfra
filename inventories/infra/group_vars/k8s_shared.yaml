@@ -44,3 +44,10 @@ vm_sshkeys: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+RLnMHSHLIy8iHgBY0Xkiv3u1zpXz
 vm_start_after_creation: true
 vm_onboot: true
 vm_delete_if_exists: false
+
+# Nom de la ressource Cluster dans Omni (cedille.na-west-1.omni.siderolabs.io,
+# voir group_vars/talos_omni_managed.yaml pour l'endpoint/SA partagés) — à
+# CONFIRMER via `omnictl get clusters` avant le premier run de la collection
+# cedille.talos, pas vérifié en direct à l'écriture (voir mémoire
+# project_talos_collection_github_sa).
+talos_omni_cluster: "k8s-shared"

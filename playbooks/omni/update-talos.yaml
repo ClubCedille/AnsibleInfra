@@ -1,0 +1,24 @@
+---
+# Étape 3 du runbook de maintenance Talos (voir AnsibleRoles/talos/docs/README.md).
+# Upgrade Talos OS sur UN SEUL node déjà cordonné (étape 1) et vidé
+# manuellement (étape 2). Cible exactement un node :
+#   make omni/update-talos LIMIT=k8s-shared-worker-0 \
+#     EXTRA_VARS="talos_target_version=1.13.8 talos_schematic_id=<id>"
+- name: Upgrader Talos sur un node
+  hosts: k8s_shared:k8s_cedille_production_v2
+  gather_facts: false
+  become: false
+
+  pre_tasks:
+    - name: Vérifier qu'un seul node est ciblé
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+        fail_msg: >-
+          Cette target doit cibler exactement un node : relancer avec
+          LIMIT=<hostname> (ex. LIMIT=k8s-shared-worker-0).
+        quiet: true
+      run_once: true
+
+  roles:
+    - cedille.talos.update_talos

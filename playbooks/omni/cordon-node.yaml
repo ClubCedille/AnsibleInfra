@@ -1,0 +1,24 @@
+---
+# Étape 1 du runbook de maintenance Talos (voir AnsibleRoles/talos/docs/README.md).
+# Cordonne un node en vue d'un upgrade Talos. Cible exactement un node :
+#   make omni/cordon-node LIMIT=k8s-shared-worker-0
+- name: Cordonner un node avant maintenance
+  hosts: k8s_shared:k8s_cedille_production_v2
+  gather_facts: false
+  become: false
+
+  pre_tasks:
+    - name: Vérifier qu'un seul node est ciblé
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+        fail_msg: >-
+          Cette target doit cibler exactement un node : relancer avec
+          LIMIT=<hostname> (ex. LIMIT=k8s-shared-worker-0).
+        quiet: true
+      run_once: true
+
+  roles:
+    - role: cedille.talos.cordon
+      vars:
+        talos_cordon_state: cordoned
