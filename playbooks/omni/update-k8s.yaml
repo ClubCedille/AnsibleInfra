@@ -5,8 +5,12 @@
 # node). Cible un cluster entier, pas un node :
 #   make omni/update-k8s LIMIT=k8s_shared \
 #     EXTRA_VARS="talos_target_kubernetes_version=1.34.1 talos_expected_version=1.13.8"
+# connection: local — les nodes Talos n'ont pas de SSH (OS immuable) ; le
+# host d'inventaire ne sert qu'à identifier le node/ses group_vars, toutes
+# les actions (omnictl/talosctl/kubectl) tournent depuis le runner/l'opérateur.
 - name: Upgrader Kubernetes sur un cluster
   hosts: k8s_shared
+  connection: local
   gather_facts: false
   become: false
   run_once: true
@@ -23,4 +27,8 @@
         quiet: true
 
   roles:
-    - cedille.talos.update_k8s
+    # when : le rôle appelle omnictl/talosctl pour de vrai contre l'instance
+    # Omni/le cluster de prod même en lecture seule — un --check sur le
+    # dry-run CI automatique de PR ne doit jamais toucher l'infra réelle.
+    - role: cedille.talos.update_k8s
+      when: not ansible_check_mode
