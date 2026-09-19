@@ -1,0 +1,21 @@
+---
+# Met à jour les hôtes PVE
+#
+# Hôtes : pve
+# Usage : make proxmox/pve_updatte.yaml
+
+- name: Update all PVE hosts
+  hosts: pve
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Apt upgrade on all PVE hosts
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: safe
+      when: not (full_upgrade | default(false))
+    - name: Dist-upgrade all PVE hosts
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+      when: (full_upgrade | default(false))
