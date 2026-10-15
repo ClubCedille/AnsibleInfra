@@ -68,6 +68,10 @@ pve_vlans_desired:
     comment: "LAN management"
     netbox_name: "lan-management"
     netbox_prefix: "10.0.21.0/24"
+  - id: 22
+    comment: "Kumulus management"
+    netbox_name: "kumulus-management"
+    netbox_prefix: "10.1.22.0/24"
   - id: 30
     comment: "Deploiement Day 0 - Switches"
     netbox_ignore: true # hors périmètre IPAM
