@@ -1,12 +1,14 @@
 ---
-# Déploie le serveur CS2 depuis l'image publiée, avec Docker Compose.
+# Déploie CS2 Server Manager et prépare un serveur CS2.
 # Hôtes : cs2
 # Usage : make events/lanets/cs2-server
 
-- name: Deploying the CS2 server with Docker Compose
+- name: Deploying the CS2 server with CS2 Server Manager
   hosts: cs2
   become: true
   tasks:
-    - name: Install Docker, pull the published image, and run CS2
+    - name: Install CS2 Server Manager and bootstrap CS2
       ansible.builtin.include_role:
-        name: lanets.cs2.csm
+        name: lanets.cs2.server_manager
+      vars:
+        cs2_server_manager_rcon_password: "{{ cs2_rcon_password }}"
