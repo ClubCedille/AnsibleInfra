@@ -1,13 +1,13 @@
 ---
-# Crée la VM du serveur CS2 sur Proxmox (LanETS).
+# Crée les 4 VMs CS2 sur Proxmox (LanETS); chaque VM héberge 4 serveurs de jeu.
 # Hôtes : cs2 (connection: local, appels vers l'API Proxmox)
 # Usage : make events/lanets/cs2-create-vm
 
-- name: Create a vm for a cs2 server
+- name: Create four CS2 game-server VMs
   hosts: cs2
   connection: local
   tasks:
-    - name: Create vm for the server
+    - name: Create VM for four CS2 game servers
       ansible.builtin.include_role:
         name: cedille.proxmox.vm
         apply:

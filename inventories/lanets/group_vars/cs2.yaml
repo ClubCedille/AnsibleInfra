@@ -20,11 +20,14 @@ cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/downl
 cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.368/counterstrikesharp-with-runtime-linux-1.0.368.zip"
 cs2_matchzy_url: "https://github.com/sivert-io/MatchZy-Enhanced/releases/download/v1.4.21/MatchZy-1.4.21.zip"
 
-# VM specification for cs2 server
+# Each CS2 VM hosts four game servers.
+cs2_server_manager_num_servers: 4
+
+# Per-VM resources for four concurrent CS2 game servers.
 vm_cpu_type: "host"
-vm_cpu_cores: 4
-vm_memory_mb: 8192
-vm_disk_size: "100G"
+vm_cpu_cores: 16
+vm_memory_mb: 32768
+vm_disk_size: "150G"
 
 vm_proxmox_api:
   user: "root@pam"

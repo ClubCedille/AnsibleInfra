@@ -1,6 +1,6 @@
 ---
-# Déploie CS2 Server Manager et prépare un serveur CS2.
-# Hôtes : cs2
+# Déploie CS2 Server Manager et prépare les serveurs CS2.
+# Hôtes : cs2 (cs01 à cs04)
 # Usage : make events/lanets/cs2-server
 
 - name: Deploying the CS2 server with CS2 Server Manager
