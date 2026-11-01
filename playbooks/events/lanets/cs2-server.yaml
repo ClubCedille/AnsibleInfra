@@ -6,6 +6,7 @@
 - name: Deploying the CS2 server with CS2 Server Manager
   hosts: cs2
   become: true
+  serial: 1
   tasks:
     - name: Install CS2 Server Manager and bootstrap CS2
       ansible.builtin.include_role:

@@ -6,6 +6,7 @@
 - name: Create four CS2 game-server VMs
   hosts: cs2
   connection: local
+  serial: 1
   tasks:
     - name: Create VM for four CS2 game servers
       ansible.builtin.include_role:
