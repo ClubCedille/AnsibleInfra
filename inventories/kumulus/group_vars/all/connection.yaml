@@ -1,0 +1,9 @@
+---
+ansible_user: ansible
+ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+ssh_pubkeys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEmBjpz7mbyJmQyIPMdR3wDNCyMJzA6810dQMX3JYnOd threadgiver@peninsula"
+  - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCkd7wb9JlLg8ntRKSRLlLkjQ6/NA++nyy0SuIW4h2JNPhzwt7BiMA6XMGjF6kl3xHDWghoUONb3LeuofJyPylXuxz95dX2jIeI9PTglOi6JmVmMDKX1k1+zsYBM3V/LuBR7yDL+sxcy77oHqcZC/rGvSijP0HYM9qXWdc6eRbjBBVlJkpTtJeKG5cj/9MDNNKT3Um7qmt1TIAD509TFvpD77I8Va0ZmiwbmJ9Ol09ZxrZQDANQHzXiho13gZeQMmh8cYVdMgr5c0jaIERiQvYb/5ZTck1pyAEtpaSKKVexiqcCdfgRUGyKEnQDEZOH7DX9gNDg/bQBRCr+kOSJnWHmcnPbEVfhuccIeZwNV3xLE82Fr8jQeWLEONuxwesOsJJyeKDahCultZPSxwQtquTiyMQeQRhdw7Q3Eahy+vYm/HWr9dUStmDHX/tGR6XCQ5KmTn7NGS3gZNRiFQ3FvVdB7ATcg6+sOSIQInXWBtfM3X/ULtoa88mkO2AjqDbjancmZfT3EPFinZhD9qHchcU9qvjYYNO84/UaDliWvYvlP4eO29klcOnoNGmF0zoPeOHW39XzXcSMynAVJbENAYVc3dsNyE9ORzrUlqz812vF++KEex2yAWB9qHMdTkshCMoZFtMmuPxUuR5d6fgiczEWpIdxYdytTkhk18tVlVIe0w== kad@ordi"
+
+ssh_pubkeys_string: "{{ ssh_pubkeys | join('\n') }}\n"
