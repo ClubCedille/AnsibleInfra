@@ -1,0 +1,6 @@
+---
+- name: Deploy jumpbox VM
+  hosts: jumpbox
+  gather_facts: false
+  roles:
+    - cedille.proxmox.vm
