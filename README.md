@@ -25,6 +25,7 @@ l'événement SummerCamp (`playbooks/sc/vars/flags.yml`).
 .
 ├─ inventories/
 │   ├─ infra          ← infra permanente du club
+│   ├─ kumulus        ← plateforme Kumulus (jumpbox, k8s, runners CI)
 │   ├─ lanets          ← LAN party ETS (hosts *.lanets.ca)
 │   └─ summercamp      ← SummerCamp CTF (archivé entre deux éditions)
 ├─ playbooks/
@@ -38,6 +39,7 @@ l'événement SummerCamp (`playbooks/sc/vars/flags.yml`).
 │   │   └─ lanets/     ← spécifique Lan ETS (serveur CS2)
 │   ├─ includes/       ← fragments de tasks réutilisables entre playbooks (pip_proxy, grafana-dashboards…) — pas des playbooks autonomes
 │   ├─ infra/          ← OPNsense CARP (config, diff, interface-provision, règles k8s-poc) — infra permanente
+│   ├─ kumulus/        ← déploiement de la plateforme Kumulus — infra permanente
 │   ├─ monitoring/     ← Prometheus/Grafana/Loki — infra-* = infra permanente, sans préfixe = event SC
 │   │   └─ files/dashboards/  ← dashboards Grafana JSON statiques, spécifiques à cette infra
 │   ├─ netbox/         ← synchronisation NetBox (source de vérité = inventaire Ansible) — infra permanente
@@ -69,8 +71,8 @@ monitoring, Proxmox…) et **le cycle de vie**. C'est ce second axe qui définit
 quatre grandes catégories :
 
 - **Infra permanente** — tourne en continu, hors événement : `cisco-config/`,
-  `cisco-pnp/`, `infra/`, `monitoring/infra-*`, `netbox/`, `network/`,
-  `omni/` (sauf `k8s-poc-*`), `proxmox/`.
+  `cisco-pnp/`, `infra/`, `kumulus/`, `monitoring/infra-*`, `netbox/`,
+  `network/`, `omni/` (sauf `k8s-poc-*`), `proxmox/`.
 - **Événements** — éphémère/saisonnier, et **mutuellement exclusif** : mettre en
   place l'infra d'un événement suppose de détruire celle de l'autre (même
   segment réseau, VLANs 66-69 réutilisés d'une édition à l'autre). `events/lanets/`
@@ -107,6 +109,8 @@ quatre grandes catégories :
 | `cisco-pnp/deployment.yaml`                                                       | Serveur Cisco PnP (Zero Touch Provisioning), répertoires profils/configs Day-0       | `pnp-server`                              |
 | **dci/**                                                                          |                                                                                      |                                           |
 | `dci/setup-pratique.yaml`                                                         | Provisionne les VMs de pratique du club étudiant DCI + Docker                        | `dci_vms`                                 |
+| **kumulus/** (plateforme Kumulus, inventaire dédié)                               |                                                                                      |                                           |
+| `kumulus/deploy-jumpbox.yaml`                                                     | Crée la VM jumpbox de la plateforme Kumulus                                          | `jumpbox`                                 |
 | **events/** (VMs taguées LANETS, inventaire dans `infra/` — voir Catégories ci-dessus) |                                                                                 |                                           |
 | `events/vlan66-dhcp.yaml`                                                         | DHCP Kea HA (VLAN 66), pool `10.66.1-20.0.255`                                       | `vlan66_dhcp`                             |
 | `events/vlan67-dhcp.yaml`                                                         | DHCP Kea HA (VLAN 67), réplique le pool WLC Cisco "AP-MGMT" — **incomplet**, groupe `vlan67_dhcp` jamais déclaré dans `hosts.ini` | `vlan67_dhcp`                             |
@@ -204,20 +208,32 @@ make list-playbooks
 
 Exécuter un playbook — l'inventaire par défaut est déduit automatiquement du
 chemin de la cible (`sc/*` et `oneoff/sc-*` → `summercamp`, `events/lanets/*` →
-`lanets`, le reste — y compris `events/vlan66-dhcp.yaml`/`vlan67-dhcp.yaml`,
-dont les VMs sont déclarées dans l'inventaire infra — → `infra`) :
+`lanets`, `kumulus/*` → `kumulus`, le reste — y compris
+`events/vlan66-dhcp.yaml`/`vlan67-dhcp.yaml`, dont les VMs sont déclarées dans
+l'inventaire infra — → `infra`) :
 
 ```bash
 make network/update-vlans        # infra
 make events/vlan66-dhcp          # infra (VM déclarée dans inventories/infra)
 make sc/dhcp                     # summercamp, automatiquement
 make events/lanets/cs2-server    # lanets, automatiquement
+make kumulus/deploy-jumpbox      # kumulus, automatiquement
 ```
 
-Forcer un inventaire explicitement (prioritaire sur la déduction automatique) :
+Forcer un inventaire explicitement (prioritaire sur la déduction automatique).
+`inventory_name` accepte les noms de dossiers sous `inventories/` (`infra`,
+`lanets`, `kumulus`, `summercamp`, avec l'alias historique `sc`) ; `inventory`
+accepte directement un chemin de fichier d'inventaire :
 
 ```bash
 make cisco-pnp/deployment inventory_name=lanets
+make kumulus/deploy-jumpbox inventory=inventories/kumulus/hosts.ini
+```
+
+Pour vérifier l'inventaire réellement choisi sans exécuter le playbook :
+
+```bash
+make -n kumulus/deploy-jumpbox | grep ansible-playbook
 ```
 
 Valider la qualité YAML/Ansible localement:

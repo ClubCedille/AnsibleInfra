@@ -1,26 +1,32 @@
 infra_inventory = inventories/infra/hosts.ini
 lanets_inventory = inventories/lanets/hosts.ini
+kumulus_inventory = inventories/kumulus/hosts.ini
 sc_inventory = inventories/summercamp/hosts.ini
 
-# inventory_name=<infra|lanets|sc|summercamp> force explicitement l'inventaire
-# (prioritaire sur la déduction automatique par cible ci-dessous).
-ifeq ($(origin inventory_name),command line)
-inventory_explicit := 1
-else ifeq ($(origin inventory_name),environment)
+# inventory_name=<infra|lanets|kumulus|sc|summercamp> force explicitement
+# l'inventaire (prioritaire sur la déduction automatique par cible ci-dessous).
+# On peut aussi passer directement inventory=<chemin>/hosts.ini (utilisé par
+# le workflow GitHub Actions "Make Targets"). Les deux formes sont explicites
+# et prioritaires sur la déduction automatique par cible.
+ifneq ($(filter command line environment,$(origin inventory_name) $(origin inventory)),)
 inventory_explicit := 1
 else
 inventory_name ?= infra
 inventory_explicit :=
 endif
 
+# "sc" est un alias historique de "summercamp" (nom du dossier d'inventaire).
+# Tout autre inventory_name doit correspondre à un dossier d'inventaires/.
 ifeq ($(inventory_name),lanets)
 inventory ?= $(lanets_inventory)
+else ifeq ($(inventory_name),kumulus)
+inventory ?= $(kumulus_inventory)
 else ifeq ($(inventory_name),sc)
 inventory ?= $(sc_inventory)
 else ifeq ($(inventory_name),summercamp)
 inventory ?= $(sc_inventory)
 else
-inventory ?= $(infra_inventory)
+inventory ?= inventories/$(inventory_name)/hosts.ini
 endif
 
 playbook = playbooks
@@ -36,18 +42,29 @@ playbook_files = $(shell find $(playbook) -mindepth 2 -type f -name '*.yaml' \
 playbook_targets = $(patsubst $(playbook)/%.yaml,%,$(playbook_files))
 
 # Devine l'inventaire par défaut d'une cible d'après son chemin, pour que
-# `make sc/dhcp` ou `make events/lanets/cs2-server` n'exigent plus
-# inventory_name=... à chaque appel. inventory_name=... explicite reste
-# prioritaire (cf. inventory_explicit ci-dessus).
+# `make sc/dhcp`, `make kumulus/deploy-jumpbox` ou
+# `make events/lanets/cs2-server` n'exigent plus inventory_name=... à chaque
+# appel. inventory_name=... ou inventory=... explicite reste prioritaire (cf.
+# inventory_explicit et resolve_inventory ci-dessous).
 #
-# events/lanets/* (ex. cs2) cible des hôtes déclarés dans inventories/lanets
-# (groupe cs2, hosts.ini). events/*.yaml directement sous events/ (vlan66-dhcp,
-# vlan67-dhcp) cible en revanche des VMs déclarées dans inventories/infra
-# (groupes vlan66_dhcp/vlan67_dhcp) : ces VMs restent dans l'inventaire infra
-# car elles sont aussi membres de ubuntu_vms:children/virtual_machines:children
-# (apt mirror + sync NetBox) — les en sortir casserait ces agrégats transverses,
-# même si leur usage (tags LANETS, config Kea) est spécifique à un événement.
-default_inventory_for = $(if $(or $(filter sc/%,$(1)),$(filter oneoff/sc-%,$(1))),$(sc_inventory),$(if $(filter events/lanets/%,$(1)),$(lanets_inventory),$(infra_inventory)))
+# Chaque chemin de playbook est rattaché à l'inventaire qui déclare ses hôtes :
+#   sc/*, oneoff/sc-*   -> inventories/summercamp
+#   events/lanets/*     -> inventories/lanets (groupe cs2)
+#   kumulus/*           -> inventories/kumulus
+#   tout le reste       -> inventories/infra
+#
+# events/*.yaml directement sous events/ (vlan66-dhcp, vlan67-dhcp) cible en
+# revanche des VMs déclarées dans inventories/infra (groupes vlan66_dhcp/
+# vlan67_dhcp) : ces VMs restent dans l'inventaire infra car elles sont aussi
+# membres de ubuntu_vms:children/virtual_machines:children (apt mirror + sync
+# NetBox) — les en sortir casserait ces agrégats transverses, même si leur usage
+# (tags LANETS, config Kea) est spécifique à un événement.
+default_inventory_for = $(strip $(or \
+	$(and $(filter sc/%,$(1)),$(sc_inventory)), \
+	$(and $(filter oneoff/sc-%,$(1)),$(sc_inventory)), \
+	$(and $(filter events/lanets/%,$(1)),$(lanets_inventory)), \
+	$(and $(filter kumulus/%,$(1)),$(kumulus_inventory)), \
+	$(infra_inventory)))
 resolve_inventory = $(if $(inventory_explicit),$(inventory),$(1))
 
 PYTHON = .venv/bin/python3
