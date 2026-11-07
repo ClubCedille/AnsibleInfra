@@ -8,13 +8,13 @@ on:
         required: true
         default: "list-playbooks"
       inventory:
-        description: "Inventory (infra ou event)"
+        description: "Inventory (doit correspondre à inventories/<nom>/hosts.ini)"
         required: true
         default: "infra"
         type: choice
         options:
           - infra
-          - event
+          - lanets
           - summercamp
           - kumulus
       limit:
