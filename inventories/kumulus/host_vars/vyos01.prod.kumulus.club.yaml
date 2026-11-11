@@ -1,0 +1,25 @@
+---
+vm_id: 5201101
+
+vm_nets:
+  - bridge: "vmbr1"
+    vlan: 247
+    mac: BC:24:11:FD:2A:7E
+    ip: 142.137.247.222
+    netmask: 24
+    gateway: 142.137.247.1
+  - bridge: "Mgmt"
+    mac: BC:24:11:CC:27:A7
+    ip: 10.100.110.2
+    netmask: 24
+    gateway:
+  - bridge: "Runners"
+    mac: BC:24:11:31:C2:6F
+    ip: 10.100.120.2
+    netmask: 24
+    gateway:
+  - bridge: "K8s"
+    mac: BC:24:11:56:75:43
+    ip: 10.100.130.2
+    netmask: 24
+    gateway:
