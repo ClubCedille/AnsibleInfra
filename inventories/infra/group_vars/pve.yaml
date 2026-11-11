@@ -108,8 +108,8 @@ pve_vlans_desired:
     netbox_tag: "event"
     netbox_prefix: "10.69.0.0/16" # corrigé 2026-09-17 (était 10.140.0.0/16, obsolète)
   - id: 110
-    comment: "Kumulus management"
-    netbox_name: "kumulus-management"
+    comment: "Kumulus Mgmt"
+    netbox_name: "kumulus-mgmt"
     netbox_prefix: "10.100.110.0/24"
   - id: 120
     comment: "Kumulus runners"
