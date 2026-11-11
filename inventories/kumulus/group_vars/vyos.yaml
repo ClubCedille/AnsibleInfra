@@ -17,7 +17,7 @@ vm_proxmox_node: "pve01"
 vm_cpu_type: "host"
 vm_cpu_cores: 4
 vm_memory_mb: 4096
-vm_disk_size: "8G"
+vm_disk_size: "12G"
 
 vm_net:
   nameservers: "1.1.1.1,8.8.8.8"
