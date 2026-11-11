@@ -1,0 +1,6 @@
+---
+- name: Deploy vyos VMs
+  hosts: vyos
+  gather_facts: false
+  roles:
+    - cedille.proxmox.vm
