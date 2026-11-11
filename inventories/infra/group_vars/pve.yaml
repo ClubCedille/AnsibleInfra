@@ -68,10 +68,6 @@ pve_vlans_desired:
     comment: "LAN management"
     netbox_name: "lan-management"
     netbox_prefix: "10.0.21.0/24"
-  - id: 22
-    comment: "Kumulus management"
-    netbox_name: "kumulus-management"
-    netbox_prefix: "10.1.22.0/24"
   - id: 30
     comment: "Deploiement Day 0 - Switches"
     netbox_ignore: true # hors périmètre IPAM
@@ -111,6 +107,18 @@ pve_vlans_desired:
     netbox_name: "event-additionnel"
     netbox_tag: "event"
     netbox_prefix: "10.69.0.0/16" # corrigé 2026-09-17 (était 10.140.0.0/16, obsolète)
+  - id: 110
+    comment: "Kumulus management"
+    netbox_name: "kumulus-management"
+    netbox_prefix: "10.100.110.0/24"
+  - id: 120
+    comment: "Kumulus runners"
+    netbox_name: "kumulus-runners"
+    netbox_prefix: "10.100.120.0/24"
+  - id: 130
+    comment: "Kumulus k8s"
+    netbox_name: "kumulus-k8s"
+    netbox_prefix: "10.100.130.0/24"
   - id: 247
     comment: "WAN"
     netbox_name: "wan"
