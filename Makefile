@@ -109,6 +109,9 @@ ifneq ($(strip $(LIMIT)),)
 LIMIT_FLAG = --limit "$(LIMIT)"
 endif
 
+# AMOUNT indique combien d'adresses mac à générer
+AMOUNT ?=
+
 .PHONY: venv
 venv:
 	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
@@ -167,8 +170,8 @@ list-playbooks:
 # d'erreur du rôle (`make -n gen-mac`) puisse le détecter et le suggérer
 # plutôt que le chemin absolu du script.
 .PHONY: gen-mac
-gen-mac: galaxy-install
-	@$(VENV_BIN)/python3 "$(LOCAL_ROLES_DIR)/cedille.proxmox.vm/scripts/gen_mac.py"
+gen-mac:
+	@$(VENV_BIN)/python3 "$(LOCAL_ROLES_DIR)/cedille.proxmox.vm/scripts/gen_mac.py" $(AMOUNT)
 
 .PHONY: lint-tools
 lint-tools: venv
