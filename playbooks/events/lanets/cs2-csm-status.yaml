@@ -1,0 +1,20 @@
+---
+- name: Show CSM status on game hosts
+  hosts: cs2
+  gather_facts: false
+  tasks:
+    - name: Read CSM server status
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/csm
+          - status
+      become: true
+      become_user: "{{ csm_user }}"
+      environment:
+        HOME: "{{ csm_home }}"
+      register: csm_status
+      changed_when: false
+
+    - name: Print CSM status
+      ansible.builtin.debug:
+        var: csm_status.stdout_lines

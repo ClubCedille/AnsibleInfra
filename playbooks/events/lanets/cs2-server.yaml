@@ -1,14 +1,9 @@
 ---
-# Déploie le serveur CS2 complet (prérequis système + server) sur la VM cs2 (LanETS).
+# Prépare les hôtes CSM. Auto Tournament crée ensuite les instances de jeu.
 # Hôtes : cs2
 # Usage : make events/lanets/cs2-server
 
-- name: Deploying cs2 server
+- name: Prepare CSM hosts for Auto Tournament
   hosts: cs2
-  tasks:
-    - name: Installing prerequise for cs2 server deployment
-      ansible.builtin.include_role:
-        name: lanets.cs2.deployment_prerequisites
-    - name: Deploying cs2 server
-      ansible.builtin.include_role:
-        name: lanets.cs2.deploy_server
+  roles:
+    - lanets.cs2.csm_host

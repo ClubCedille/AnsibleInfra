@@ -1,0 +1,22 @@
+---
+# Link one CSM host at a time. The one-time code is prompted privately and is
+# never stored in inventory. Invoke with --limit <one-host>.
+
+- name: Link a CSM host to Auto Tournament
+  hosts: cs2
+  gather_facts: false
+  vars_prompt:
+    - name: csm_platform_url
+      prompt: Auto Tournament base URL reachable from this VM
+      private: false
+    - name: csm_machine_link_code
+      prompt: One-time machine link code for this VM
+      private: true
+  pre_tasks:
+    - name: Require a single target VM for the one-time code
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+        fail_msg: Run this playbook once per VM with --limit <host>.
+  roles:
+    - lanets.cs2.csm_machine_link
