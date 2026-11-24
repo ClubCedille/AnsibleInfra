@@ -1,0 +1,24 @@
+---
+permissions_acls_legacy:
+  - { path: "/pool/Cedille-Staging", roleid: PVEVMUser, ugid: proxmox-k8s-cedille-sandbox-user, state: absent }
+  - { path: "/pool/Cedille-Staging", roleid: PVEVMAdmin, ugid: proxmox-k8s-cedille-sandbox-admin, state: absent }
+  - { path: "/pool/RP-K8s-Cedille-Prod", roleid: PVEVMUser, ugid: proxmox-k8s-cedille-prod-user, state: absent }
+  - { path: "/pool/RP-K8s-Cedille-Prod", roleid: PVEVMAdmin, ugid: proxmox-k8s-cedille-prod-admin, state: absent }
+  - { path: "/pool/RP-K8s-POC", roleid: PVEVMUser, ugid: proxmox-k8s-poc-user, state: absent }
+  - { path: "/pool/RP-K8s-POC", roleid: PVEVMAdmin, ugid: proxmox-k8s-poc-admin, state: absent }
+  - { path: "/pool/Management", roleid: PVEVMUser, ugid: proxmox-k8s-shared-user, state: absent }
+  - { path: "/pool/Management", roleid: PVEVMAdmin, ugid: proxmox-k8s-shared-admin, state: absent }
+  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMUser, ugid: proxmox-cedille-apps-user, state: absent }
+  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMAdmin, ugid: proxmox-cedille-apps-admin, state: absent }
+  - { path: "/pool/RP-DCI", roleid: PVEVMUser, ugid: proxmox-dci-user, state: absent }
+  - { path: "/pool/RP-DCI", roleid: PVEVMAdmin, ugid: proxmox-dci-admin, state: absent }
+  - { path: "/pool/RP-Eclipse", roleid: PVEVMUser, ugid: proxmox-eclipse-user, state: absent }
+  - { path: "/pool/RP-Eclipse", roleid: PVEVMAdmin, ugid: proxmox-eclipse-admin, state: absent }
+  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMUser, ugid: proxmox-lanets-user, state: absent }
+  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMAdmin, ugid: proxmox-lanets-admin, state: absent }
+  - { path: "/pool/RP-gameservers", roleid: PVEVMUser, ugid: proxmox-gameservers-user, state: absent }
+  - { path: "/pool/RP-gameservers", roleid: PVEVMAdmin, ugid: proxmox-gameservers-admin, state: absent }
+  - { path: "/pool/RP-Management-Infra", roleid: PVEVMUser, ugid: proxmox-management-infra-user, state: absent }
+  - { path: "/pool/RP-Management-Infra", roleid: PVEVMAdmin, ugid: proxmox-management-infra-admin, state: absent }
+  - { path: "/pool/Routers", roleid: PVEVMUser, ugid: proxmox-networking-core-user, state: absent }
+  - { path: "/pool/Routers", roleid: PVEVMAdmin, ugid: proxmox-networking-core-admin, state: absent }

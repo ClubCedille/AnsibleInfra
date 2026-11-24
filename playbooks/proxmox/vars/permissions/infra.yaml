@@ -1,0 +1,6 @@
+---
+permissions_acls_infra:
+  - { path: "/pool/RP-Management-Infra", roleid: PVEVMUser, ugid: pmx-management-infra-user }
+  - { path: "/pool/RP-Management-Infra", roleid: PVEVMAdmin, ugid: pmx-management-infra-admin }
+  - { path: "/pool/Routers", roleid: PVEVMUser, ugid: pmx-networking-core-user }
+  - { path: "/pool/Routers", roleid: PVEVMAdmin, ugid: pmx-networking-core-admin }

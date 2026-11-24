@@ -1,0 +1,64 @@
+---
+# Gestion centralisée du RBAC Proxmox des groupes synchronisés depuis Authentik.
+# Une seule cible suffit : l'API Proxmox est cluster-wide.
+#
+# Source de vérité : playbooks/proxmox/vars/permissions/ — un fichier par
+# domaine, avec les noms COMPLETS des groupes Authentik et les ACL associées.
+# Credentials : group_vars/pve.yaml (pve_api_user/pve_api_password, vaultés).
+# Rôle : cedille.proxmox.permissions (collection cedille.proxmox, AnsibleRoles).
+#
+# Usage :
+#   make proxmox/permissions
+#   make proxmox/permissions DRY_RUN=1   # compare l'état réel via l'API en lecture seule
+
+- name: Manage Proxmox ACLs for Authentik-backed groups
+  hosts: pve01.mgmt.etsmtl.club
+  gather_facts: false
+  connection: local
+  become: false
+
+  vars:
+    permissions_proxmox_api:
+      user: "{{ pve_api_user }}"
+      password: "{{ pve_api_password }}"
+      host: "{{ ansible_host }}"
+      port: 8006
+      validate_certs: false
+    # Révocation des ACL des anciens groupes "proxmox-*" : à passer à true
+    # APRÈS le renommage Authentik et la synchronisation des nouveaux groupes.
+    permissions_revoke_legacy: false
+
+  vars_files:
+    - vars/permissions/k8s.yaml
+    - vars/permissions/clubs.yaml
+    - vars/permissions/infra.yaml
+    - vars/permissions/legacy.yaml
+
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+
+  pre_tasks:
+    - name: Validate the ACL matrix
+      ansible.builtin.assert:
+        that:
+          - permissions_acls_k8s | length == 8
+          - permissions_acls_clubs | length == 10
+          - permissions_acls_infra | length == 4
+          - permissions_acls_legacy | length == 22
+          - >-
+            (permissions_acls_k8s + permissions_acls_clubs + permissions_acls_infra)
+            | map(attribute='ugid') | unique | list | length == 22
+        fail_msg: "Matrice incohérente : 22 ACL attendues, ugid uniques."
+
+    - name: Combine ACLs from all domains
+      ansible.builtin.set_fact:
+        permissions_acls: "{{ permissions_acls_k8s + permissions_acls_clubs + permissions_acls_infra }}"
+
+    - name: Add legacy ACLs to revoke
+      ansible.builtin.set_fact:
+        permissions_acls: "{{ permissions_acls + permissions_acls_legacy }}"
+      when: permissions_revoke_legacy | bool
+
+  roles:
+    - cedille.proxmox.permissions

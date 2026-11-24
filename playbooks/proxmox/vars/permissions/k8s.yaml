@@ -1,0 +1,10 @@
+---
+permissions_acls_k8s:
+  - { path: "/pool/Cedille-Staging", roleid: PVEVMUser, ugid: k8s-pmx-cedille-sandbox-user }
+  - { path: "/pool/Cedille-Staging", roleid: PVEVMAdmin, ugid: k8s-pmx-cedille-sandbox-admin }
+  - { path: "/pool/RP-K8s-Cedille-Prod", roleid: PVEVMUser, ugid: k8s-pmx-cedille-prod-user }
+  - { path: "/pool/RP-K8s-Cedille-Prod", roleid: PVEVMAdmin, ugid: k8s-pmx-cedille-prod-admin }
+  - { path: "/pool/RP-K8s-POC", roleid: PVEVMUser, ugid: k8s-pmx-poc-user }
+  - { path: "/pool/RP-K8s-POC", roleid: PVEVMAdmin, ugid: k8s-pmx-poc-admin }
+  - { path: "/pool/Management", roleid: PVEVMUser, ugid: k8s-pmx-shared-user }
+  - { path: "/pool/Management", roleid: PVEVMAdmin, ugid: k8s-pmx-shared-admin }
