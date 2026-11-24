@@ -1,0 +1,34 @@
+---
+- name: Configure NAT rules
+  hosts: vyos
+  gather_facts: true
+  tasks:
+    - name: Create SNAT rules (outward)
+      vyos.vyos.vyos_nat:
+        config:
+          nat:
+            source:
+              rule:
+                - id: "{{ item.id }}"
+                  description: "{{ item.description }}"
+                  protocol: tcp_udp
+                  outbound_interface:
+                    name: "{{ item.outbound_interface }}"
+                  translation:
+                    address: "{{ item.translation_ip }}"
+                  source:
+                    address: "{{ item.subnet }}"
+      loop: "{{ nat_source_rules_applied }}"
+
+    - name: Create DNAT rules (inward)
+      vyos.vyos.vyos_nat:
+        config:
+          nat:
+            destination:
+              rule:
+                - id: "{{ item.id }}"
+                  description: "{{ item.description }}"
+                  protocol: tcp_udp
+                  translation:
+                    address: "{{ item.translation_ip }}"
+      loop: "{{ nat_destination_rules_applied }}"

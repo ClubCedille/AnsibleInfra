@@ -44,3 +44,20 @@ vm_cloud_init_storage: "RBD_Common"
 
 vm_delete_if_exists: false
 vm_start_after_creation: true
+
+nat_source_rules_applied:
+  - id: 1000
+    description: "Allow runners to access internet"
+    outbound_interface: "eth0"
+    translation_ip: 142.137.247.221
+    subnet: 10.100.120.0/24
+  - id: 1010
+    description: "Allow k8s to access internet"
+    outbound_interface: "eth0"
+    translation_ip: 142.137.247.221
+    subnet: 10.100.130.0/24
+
+nat_destination_rules_applied:
+  - id: 1020
+    description: "Allow internet to access k8s ingress"
+    translation_ip: 10.100.130.1
