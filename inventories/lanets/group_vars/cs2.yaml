@@ -1,30 +1,19 @@
 ---
 # For all cs2 server.
 ansible_user: "lanets"
-ansible_password: "Bacon123"
-
-cs2_server_password: "cs21pass2026"
-
-cs2_rcon_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          34363865383263653438633136383338656630633635343161316262363765376133623531633366
-          3863366161363133386461366666386161633465663636350a323630633730353730343832363962
-          37383762323332376231643737383964316564663765306136326133613362333739313632383062
-          6630323936333436330a366436303932343265383032366239666431343837623035613233393335
-          3364
-
-cs2_ip: 0.0.0.0
+ansible_password: "{{ vm_password }}"
 
 # URLs for downloading necessary files
-cs2_metamod_url: "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1401/mmsource-2.0.0-git1401-linux.tar.gz"
-cs2_csssharp_url: "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.368/counterstrikesharp-with-runtime-linux-1.0.368.zip"
-cs2_matchzy_url: "https://github.com/sivert-io/MatchZy-Enhanced/releases/download/v1.4.21/MatchZy-1.4.21.zip"
-
-# VM specification for cs2 server
+# VM specification for each CSM host
 vm_cpu_type: "host"
-vm_cpu_cores: 4
-vm_memory_mb: 8192
-vm_disk_size: "100G"
+vm_cpu_cores: 16
+vm_memory_mb: 32768
+vm_disk_size: "150G"
+
+# Auto Tournament creates and manages four CSM servers on each host.
+csm_user: "cs2"
+csm_home: "/home/{{ csm_user }}"
+csm_instance_backend: "instances"
 
 vm_proxmox_api:
   user: "root@pam"
@@ -59,15 +48,3 @@ vm_delete_if_exists: false
 vm_start_after_creation: true
 
 # NO NEED TO APT UPDATE AND APT UPGRADE AFTER CREATING A VM
-
-# Tailscale section
-
-tailscale_auth_key: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          37653663366166353236366263323133336430303335336361373531633466326365653931326337
-          3433353738363764353236656264396566643161633866640a663334306364373337353965663262
-          33633238386239643862626236376434393137343136323363626662323164623666666338356163
-          3839346230313162660a363735643832646561303137363039346135386665383832623239386239
-          64393031316237653335623763386335613565313437326337643861666535323064366166626234
-          33613432316462323265313030656336316134373434393232316533663136363737303265663064
-          333262303133363062623532386431353934
