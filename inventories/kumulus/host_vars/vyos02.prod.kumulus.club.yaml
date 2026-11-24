@@ -5,21 +5,21 @@ vm_nets:
   - bridge: "vmbr1"
     vlan: 247
     mac: BC:24:11:72:6A:46
-    ip: 142.137.247.223
-    netmask: 24
-    gateway: 142.137.247.1
+    ip: "{{ subnets.wan | ansible.utils.nthhost(223) }}"
+    netmask: "{{ subnets.wan | ansible.utils.ipaddr('prefix') }}"
+    gateway: "{{ subnets.wan | ansible.utils.nthhost(1) }}"
   - bridge: "Mgmt"
     mac: BC:24:11:3E:1D:15
-    ip: 10.100.110.3
-    netmask: 24
+    ip: "{{ subnets.mgmt | ansible.utils.nthhost(3) }}"
+    netmask: "{{ subnets.mgmt | ansible.utils.ipaddr('prefix') }}"
     gateway:
   - bridge: "Runners"
     mac: BC:24:11:CB:F9:79
-    ip: 10.100.120.3
-    netmask: 24
+    ip: "{{ subnets.runners | ansible.utils.nthhost(3) }}"
+    netmask: "{{ subnets.runners | ansible.utils.ipaddr('prefix') }}"
     gateway:
   - bridge: "K8s"
     mac: BC:24:11:BB:1B:26
-    ip: 10.100.130.3
-    netmask: 24
+    ip: "{{ subnets.k8s | ansible.utils.nthhost(3) }}"
+    netmask: "{{ subnets.k8s | ansible.utils.ipaddr('prefix') }}"
     gateway:
