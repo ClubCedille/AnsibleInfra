@@ -28,26 +28,26 @@ vm_nets:
   - bridge: "vmbr1"
     vlan: 247
     mac: BC:24:11:9D:93:EC
-    ip: "{{ ansible_host }}"
-    netmask: 24
-    gateway: 142.137.247.1
+    ip: "{{ subnets.wan | ansible.utils.nthhost(231) }}"
+    netmask: "{{ subnets.wan | ansible.utils.ipaddr('prefix') }}"
+    gateway: "{{ subnets.wan | ansible.utils.nthhost(1) }}"
   - bridge: "vmbr1"
     vlan: 110
     mac: BC:24:11:56:9A:50
-    ip: 10.100.110.10
-    netmask: 24
+    ip: "{{ subnets.mgmt | ansible.utils.nthhost(10) }}"
+    netmask: "{{ subnets.mgmt | ansible.utils.ipaddr('prefix') }}"
     gateway:
   - bridge: "vmbr1"
     vlan: 120
     mac: BC:24:11:86:8D:42
-    ip: 10.100.120.10
-    netmask: 24
+    ip: "{{ subnets.runners | ansible.utils.nthhost(10) }}"
+    netmask: "{{ subnets.runners | ansible.utils.ipaddr('prefix') }}"
     gateway:
   - bridge: "vmbr1"
     vlan: 130
     mac: BC:24:11:BF:FE:3C
-    ip: 10.100.130.10
-    netmask: 24
+    ip: "{{ subnets.k8s | ansible.utils.nthhost(10) }}"
+    netmask: "{{ subnets.k8s | ansible.utils.ipaddr('prefix') }}"
     gateway:
 
 vm_user: "{{ ansible_user }}"

@@ -29,6 +29,8 @@
                 - id: "{{ item.id }}"
                   description: "{{ item.description }}"
                   protocol: tcp_udp
+                  destination:
+                    address: "{{ item.destination_ip }}"
                   translation:
                     address: "{{ item.translation_ip }}"
       loop: "{{ nat_destination_rules_applied }}"
