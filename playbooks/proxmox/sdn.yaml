@@ -1,13 +1,13 @@
 ---
 # Objets SDN Proxmox des réseaux événementiels (Lan ETS).
-# Zone LanEvents : vnets 66-69 et subnets 10.66-69.0.0/16, gateway sur .1.
+# Zone LanEvent : vnets 66-69 et subnets 10.66-69.0.0/16, gateway sur .1.
 # Les adresses IP des VM restent déclarées dans les inventaires Ansible.
 #
 # Usage :
 #   make proxmox/sdn
 #   make proxmox/sdn DRY_RUN=1
 
-- name: Manage LanEvents SDN zone, vnets and subnets
+- name: Manage LanEvent SDN zone, vnets and subnets
   hosts: pve01.mgmt.etsmtl.club
   gather_facts: false
   connection: local
