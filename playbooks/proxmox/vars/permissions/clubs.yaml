@@ -1,12 +1,12 @@
 ---
 permissions_acls_clubs:
-  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMUser, ugid: pmx-cedille-apps-user }
-  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMAdmin, ugid: pmx-cedille-apps-admin }
-  - { path: "/pool/RP-DCI", roleid: PVEVMUser, ugid: pmx-dci-user }
-  - { path: "/pool/RP-DCI", roleid: PVEVMAdmin, ugid: pmx-dci-admin }
-  - { path: "/pool/RP-Eclipse", roleid: PVEVMUser, ugid: pmx-eclipse-user }
-  - { path: "/pool/RP-Eclipse", roleid: PVEVMAdmin, ugid: pmx-eclipse-admin }
-  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMUser, ugid: pmx-lanets-user }
-  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMAdmin, ugid: pmx-lanets-admin }
-  - { path: "/pool/RP-gameservers", roleid: PVEVMUser, ugid: pmx-gameservers-user }
-  - { path: "/pool/RP-gameservers", roleid: PVEVMAdmin, ugid: pmx-gameservers-admin }
+  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMUser, ugid: pmx-cedille-apps-user-Authentik }
+  - { path: "/pool/RP-Cedille-Apps", roleid: PVEVMAdmin, ugid: pmx-cedille-apps-admin-Authentik }
+  - { path: "/pool/RP-DCI", roleid: PVEVMUser, ugid: pmx-dci-user-Authentik }
+  - { path: "/pool/RP-DCI", roleid: PVEVMAdmin, ugid: pmx-dci-admin-Authentik }
+  - { path: "/pool/RP-Eclipse", roleid: PVEVMUser, ugid: pmx-eclipse-user-Authentik }
+  - { path: "/pool/RP-Eclipse", roleid: PVEVMAdmin, ugid: pmx-eclipse-admin-Authentik }
+  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMUser, ugid: pmx-lanets-user-Authentik }
+  - { path: "/pool/Lan_ETS-Staging", roleid: PVEVMAdmin, ugid: pmx-lanets-admin-Authentik }
+  - { path: "/pool/RP-gameservers", roleid: PVEVMUser, ugid: pmx-gameservers-user-Authentik }
+  - { path: "/pool/RP-gameservers", roleid: PVEVMAdmin, ugid: pmx-gameservers-admin-Authentik }

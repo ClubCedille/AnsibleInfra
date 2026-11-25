@@ -1,12 +1,12 @@
 ---
 permissions_acls_sdn:
-  - { path: "/vms", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/sdn/zones/LanEvent", roleid: PVESDNAdmin, ugid: pmx-event-mgmt }
-  - { path: "/sdn/zones/LanEvent/event-client", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/sdn/zones/LanEvent/event-ap-mgmt", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/sdn/zones/LanEvent/event-dns-ctf", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/sdn/zones/LanEvent/event-additionnel", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/storage/RBD_Common", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/storage/local-lvm", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/pool/Lan_ETS-Staging", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
-  - { path: "/pool/RP-DCI", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/vms", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/sdn/zones/LanEvent", roleid: PVESDNAdmin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/sdn/zones/LanEvent/event-client", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/sdn/zones/LanEvent/event-ap-mgmt", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/sdn/zones/LanEvent/event-dns-ctf", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/sdn/zones/LanEvent/event-additionnel", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/storage/RBD_Common", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/storage/local-lvm", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/pool/Lan_ETS-Staging", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
+  - { path: "/pool/RP-DCI", roleid: pmx-event-admin, ugid: pmx-event-mgmt-Authentik }
