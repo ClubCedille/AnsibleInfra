@@ -1,0 +1,29 @@
+---
+# Objets SDN Proxmox des réseaux événementiels (Lan ETS).
+# Zone LanEvents : vnets 66-69 et subnets 10.66-69.0.0/16, gateway sur .1.
+# Les adresses IP des VM restent déclarées dans les inventaires Ansible.
+#
+# Usage :
+#   make proxmox/sdn
+#   make proxmox/sdn DRY_RUN=1
+
+- name: Manage LanEvents SDN zone, vnets and subnets
+  hosts: pve01.mgmt.etsmtl.club
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    sdn_proxmox_api:
+      user: "{{ pve_api_user }}"
+      password: "{{ pve_api_password }}"
+      host: "{{ ansible_host }}"
+      port: 8006
+      validate_certs: false
+  vars_files:
+    - vars/sdn/events.yaml
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  roles:
+    - cedille.proxmox.sdn

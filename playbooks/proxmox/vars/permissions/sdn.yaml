@@ -1,0 +1,12 @@
+---
+permissions_acls_sdn:
+  - { path: "/vms", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/sdn/zones/LanEvents", roleid: PVESDNAdmin, ugid: pmx-event-mgmt }
+  - { path: "/sdn/zones/LanEvents/event-client", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/sdn/zones/LanEvents/event-ap-mgmt", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/sdn/zones/LanEvents/event-dns-ctf", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/sdn/zones/LanEvents/event-additionnel", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/storage/RBD_Common", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/storage/local-lvm", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/pool/Lan_ETS-Staging", roleid: pmx-event-admin, ugid: pmx-event-mgmt }
+  - { path: "/pool/RP-DCI", roleid: pmx-event-admin, ugid: pmx-event-mgmt }

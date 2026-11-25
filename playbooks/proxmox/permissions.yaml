@@ -27,11 +27,14 @@
     # Révocation des ACL des anciens groupes "proxmox-*" : à passer à true
     # APRÈS le renommage Authentik et la synchronisation des nouveaux groupes.
     permissions_revoke_legacy: false
+    permissions_manage_roles: true
 
   vars_files:
+    - vars/permissions/roles.yaml
     - vars/permissions/k8s.yaml
     - vars/permissions/clubs.yaml
     - vars/permissions/infra.yaml
+    - vars/permissions/sdn.yaml
     - vars/permissions/legacy.yaml
 
   module_defaults:
@@ -45,15 +48,19 @@
           - permissions_acls_k8s | length == 8
           - permissions_acls_clubs | length == 10
           - permissions_acls_infra | length == 4
+          - permissions_acls_sdn | length == 10
           - permissions_acls_legacy | length == 22
           - >-
             (permissions_acls_k8s + permissions_acls_clubs + permissions_acls_infra)
             | map(attribute='ugid') | unique | list | length == 22
-        fail_msg: "Matrice incohérente : 22 ACL attendues, ugid uniques."
+          - permissions_acls_sdn | map(attribute='path') | unique | list | length == 10
+        fail_msg: "Matrice incohérente : 22 ACL pool + 10 ACL SDN attendues."
 
     - name: Combine ACLs from all domains
       ansible.builtin.set_fact:
-        permissions_acls: "{{ permissions_acls_k8s + permissions_acls_clubs + permissions_acls_infra }}"
+        permissions_acls: >-
+          {{ permissions_acls_k8s + permissions_acls_clubs
+             + permissions_acls_infra + permissions_acls_sdn }}
 
     - name: Add legacy ACLs to revoke
       ansible.builtin.set_fact:

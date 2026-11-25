@@ -1,0 +1,20 @@
+---
+permissions_roles:
+  - roleid: pmx-event-admin
+    privs:
+      - VM.Allocate
+      - VM.Audit
+      - VM.Config.CPU
+      - VM.Config.Disk
+      - VM.Config.Memory
+      - VM.Config.Network
+      - VM.Config.Options
+      - VM.Console
+      - VM.PowerMgmt
+      - Datastore.Audit
+      - Datastore.AllocateSpace
+      - Pool.Allocate
+      - Pool.Audit
+      - SDN.Audit
+      - SDN.Use
+    state: present
