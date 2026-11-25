@@ -8,13 +8,13 @@ sdn_zones:
     state: present
 
 sdn_vnets:
-  - { vnet: event-client, zone: LanEvent, tag: 66, alias: "Event client", state: present }
-  - { vnet: event-ap-mgmt, zone: LanEvent, tag: 67, alias: "Event AP management", state: present }
-  - { vnet: event-dns-ctf, zone: LanEvent, tag: 68, alias: "Event DNS/CTF", state: present }
-  - { vnet: event-additionnel, zone: LanEvent, tag: 69, alias: "Event additionnel", state: present }
+  - { vnet: eventclt, zone: LanEvent, tag: 66, alias: "Event client", state: present }
+  - { vnet: eventap, zone: LanEvent, tag: 67, alias: "Event AP management", state: present }
+  - { vnet: eventdns, zone: LanEvent, tag: 68, alias: "Event DNS/CTF", state: present }
+  - { vnet: eventadd, zone: LanEvent, tag: 69, alias: "Event additionnel", state: present }
 
 sdn_subnets:
-  - { subnet: "10.66.0.0/16", vnet: event-client, zone: LanEvent, gateway: "10.66.0.1", snat: false, state: present }
-  - { subnet: "10.67.0.0/16", vnet: event-ap-mgmt, zone: LanEvent, gateway: "10.67.0.1", snat: false, state: present }
-  - { subnet: "10.68.0.0/16", vnet: event-dns-ctf, zone: LanEvent, gateway: "10.68.0.1", snat: false, state: present }
-  - { subnet: "10.69.0.0/16", vnet: event-additionnel, zone: LanEvent, gateway: "10.69.0.1", snat: false, state: present }
+  - { subnet: "10.66.0.0/16", vnet: eventclt, zone: LanEvent, gateway: "10.66.0.1", snat: false, state: present }
+  - { subnet: "10.67.0.0/16", vnet: eventap, zone: LanEvent, gateway: "10.67.0.1", snat: false, state: present }
+  - { subnet: "10.68.0.0/16", vnet: eventdns, zone: LanEvent, gateway: "10.68.0.1", snat: false, state: present }
+  - { subnet: "10.69.0.0/16", vnet: eventadd, zone: LanEvent, gateway: "10.69.0.1", snat: false, state: present }
